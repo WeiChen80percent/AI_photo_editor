@@ -1,0 +1,3 @@
+Best For:Cinematic street photography, moody portraiture, narrative storytelling, and overcast landscapes.
+Style:Dark and moody, cinematic film grade, profound atmospheric depth.
+Technical Adjustments:Employs a cinematic luminance curve to sculpt contrast, utilizes shadow density compression for rich blacks, and applies smooth chroma roll-off to unify the color palette.

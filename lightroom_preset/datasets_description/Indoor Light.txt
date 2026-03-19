@@ -1,0 +1,3 @@
+Best For:Real estate interiors, low-light street photography, indoor events, and moody night cityscapes.
+Style:Clean, vibrant, noise-controlled, properly exposed.
+Technical Adjustments:Employs ambient light extraction to naturally lift dark environments, utilizes tungsten-balanced chrominance correction to neutralize harsh yellow/orange indoor color casts, and applies precise shadow noise suppression for a clean, professional finish.

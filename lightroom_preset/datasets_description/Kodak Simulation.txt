@@ -1,0 +1,4 @@
+Best For:Classic portraiture, vintage street photography, vibrant natural landscapes, and timeless documentary captures.
+Style:Kodachrome 64, deeply vibrant red/yellow reproduction, ultra-fine physical film grain.
+Technical Adjustments:Employs K-14 processing emulation to accurately render the iconic subtractive dye layers, utilizes precise halide density mapping for authentic positive film contrast, and mathematically preserves highlights for a true analog roll-off.
+Agfa Ultra Preset

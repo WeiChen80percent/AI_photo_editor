@@ -1,0 +1,3 @@
+Best For:Moody dramatic landscapes, atmospheric outdoor portraits, misty travel photography, and emotional cinematic storytelling.
+Style:Deep cinematic mood, rich vibrant undertones, profound analog depth.
+Technical Adjustments:Employs subtractive chrominance modulation to deepen shadows without losing color data, utilizes spectral depth mapping to organically separate subjects from moody backgrounds, and applies micro-halide atmospheric diffusion to soften digital edge contrast.

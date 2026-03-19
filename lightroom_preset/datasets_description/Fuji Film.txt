@@ -1,0 +1,3 @@
+Best For:Natural light portraits, cinematic street photography, and broad landscape color grading.
+Style:Classic analog aesthetic, characterized by cool undertones, muted highlights, and natural film grain.
+Technical Profile:Applies a customized S-curve for soft contrast, shifting greens and blues in the HSL panel to mirror traditional Fuji stock while retaining dynamic range.

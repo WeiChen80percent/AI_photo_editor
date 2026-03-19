@@ -1,0 +1,6 @@
+Best For:Urban street photography, moody architecture, overcast cityscapes, and atmospheric night shooting.
+Style:Cinematic motion picture film, soft matte, moody and refined.
+Technical Adjustments:Employs cinematic luminance compression to soften harsh highlights, utilizes desaturated shadow mapping to lift the black point for a true matte finish, and introduces subtractive color modeling to unify complex, mixed urban lighting.
+Fuji Pro Lightroom Preset
+Fuji Xpro Lightroom Preset
+Fuji Provia Lightroom Preset

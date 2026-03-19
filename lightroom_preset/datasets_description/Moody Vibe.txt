@@ -1,0 +1,3 @@
+Best For:Cinematic storytelling, moody urban street photography, dramatic portraits, and atmospheric travel logs.
+Style:Deep cinematic mood, dynamic color shifts, rich analog shadows.
+Technical Adjustments:Employs subtractive spectral density to deepen atmospheric tones naturally, utilizes halide shadow compression for dramatic cinematic contrast, and applies chromogenic mood synthesis for rich, dynamic color reproduction.

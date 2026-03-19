@@ -1,0 +1,3 @@
+Best For:Documentary photography, vintage street scenes, classic portraits, and sunlit travel shots.
+Style:Nostalgic slide film, high color contrast, rich primary colors.
+Technical Adjustments:Emulates dye-coupler processing by deepening shadow contrast, boosting red and yellow color luminance, and applying a tight, fine-grain structure.

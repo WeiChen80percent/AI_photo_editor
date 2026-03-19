@@ -1,0 +1,3 @@
+Best For:Fine art wedding photography, moody street scenes, atmospheric landscapes, and editorial portraits.
+Style:Classic matte film, faded and nostalgic, subtle vintage contrast.
+Technical Adjustments:Employs shadow luminance lifting to raise the black point authentically, utilizes base fog emulation to introduce a soft cinematic wash, and applies specular highlight compression to gently soften bright exposures.

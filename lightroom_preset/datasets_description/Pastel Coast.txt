@@ -1,0 +1,3 @@
+Best For:Soft coastal landscapes, airy beach portraits, bright lifestyle feeds, and romantic wedding photography.
+Style:Delicate pastel film, muted primary hues, soft analog fade.
+Technical Adjustments:Employs subtractive cyan-magenta desaturation to create a dreamy pastel palette, utilizes spectral highlight diffusion to gracefully soften harsh daylight, and applies a precise micro-halide retention technique to keep structural details intact without harsh contrast.

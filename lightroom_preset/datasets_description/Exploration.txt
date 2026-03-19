@@ -1,0 +1,3 @@
+Best For:Moody Pacific Northwest landscapes, overcast mountain portraits, dense woodland exploration, and dramatic travel feeds.
+Style:Deep cinematic mood, high-density shadows, cool atmospheric finish.
+Technical Adjustments:Employs subtractive luminance attenuation to carve out striking shadow depth, utilizes a cool-spectrum chrominance shift to mathematically enhance moody atmospheric blues and greens, and applies micro-halide density rendering for a rugged, physical film texture.

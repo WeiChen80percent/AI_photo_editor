@@ -1,0 +1,3 @@
+Best For:Historic architecture, travel photography, urban landscapes, and golden hour cityscapes.
+Style:Dramatic sunrise contrast, vibrant travel aesthetic, rich and dynamic.
+Technical Adjustments:Employs dynamic range recovery to lift shadow detail, enhances warm color luminance for golden hour glows, and applies targeted contrast for architectural detail extraction.

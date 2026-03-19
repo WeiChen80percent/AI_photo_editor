@@ -1,0 +1,3 @@
+Best For:Moody landscapes, waterfall photography, environmental portraits, and overcast natural light.
+Style:Muted film fade, desaturated earth tones, rugged and atmospheric.
+Technical Adjustments:Employs a custom tone curve to raise the black point, softens micro-contrast, and manages color luminance for a cohesive matte finish.
