@@ -1,0 +1,13 @@
+backend/.venv/
+__pycache__/
+*.pyc
+
+backend/uploads/
+backend/results/
+model/outputs/
+
+.vscode/
+.idea/
+
+.DS_Store
+Thumbs.db
