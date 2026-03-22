@@ -120,8 +120,10 @@ backend 目前主要檔案：
 
 ---
 
-下一步
+3/22更新
 
-- 把 frontend 的開始修圖按鈕真的串到 backend `/edit`
-- 前端直接顯示後端回傳的 result 圖
-- 之後再把 mock result 換成真正的模型
+- 前端和後端已經連通，可以直接在前端的結果圖片那裡看到現在的mock result，也可以自己打開backend / storage裡面的資料夾確認
+- 指令: 進 `frontend/` 裡面打 `flutter pub add http`
+- 完整使用方法: 先在 `backend/` 開server: `uvicorn app.main:app --reload` (記得要先開進虛擬環境 `.venv\Scripts\Activate` 跟確認pip `pip install -r requirements.txt`)
+- 然後在 `frontend/` 打 `flutter run -d chrome` 就可以測試功能了
+- 目前圖片處理在 `backend/services/image_processor.py`，之後正式模型的圖片處理就改那邊
