@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import 'api_service.dart';
+
 void main() {
   runApp(const MyApp());
 }
@@ -34,14 +36,13 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final ImagePicker _picker = ImagePicker();
 
-  XFile? _originalImageFile;
-  XFile? _referenceImageFile;
-
   Uint8List? _originalImageBytes;
   Uint8List? _referenceImageBytes;
-  Uint8List? _resultImageBytes;
+
+  String? _resultImageUrl;
 
   bool _isProcessing = false;
+  String? _errorMessage;
 
   Future<void> _pickImage({required bool isOriginal}) async {
     final XFile? pickedFile = await _picker.pickImage(
@@ -56,33 +57,47 @@ class _HomePageState extends State<HomePage> {
 
     setState(() {
       if (isOriginal) {
-        _originalImageFile = pickedFile;
         _originalImageBytes = bytes;
       } else {
-        _referenceImageFile = pickedFile;
         _referenceImageBytes = bytes;
       }
+      _errorMessage = null;
     });
   }
 
-  Future<void> _startMockEdit() async {
+  Future<void> _startEdit() async {
     if (_originalImageBytes == null || _referenceImageBytes == null) {
       return;
     }
 
     setState(() {
       _isProcessing = true;
-      _resultImageBytes = null;
+      _resultImageUrl = null;
+      _errorMessage = null;
     });
 
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      final result = await ApiService.uploadImages(
+        originalBytes: _originalImageBytes!,
+        referenceBytes: _referenceImageBytes!,
+      );
 
-    setState(() {
-      // 目前先用原圖當作「假結果」
-      // 之後接後端時，再改成真正 API 回傳的圖片
-      _resultImageBytes = _originalImageBytes;
-      _isProcessing = false;
-    });
+      final String resultUrl = ApiService.buildImageUrl(
+        result['result_url'] as String,
+      );
+
+      setState(() {
+        _resultImageUrl = resultUrl;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = '修圖失敗：$e';
+      });
+    } finally {
+      setState(() {
+        _isProcessing = false;
+      });
+    }
   }
 
   Widget _buildImageSection({
@@ -106,6 +121,7 @@ class _HomePageState extends State<HomePage> {
           width: double.infinity,
           height: 220,
           decoration: BoxDecoration(
+            color: Colors.black12,
             border: Border.all(color: Colors.grey),
             borderRadius: BorderRadius.circular(16),
           ),
@@ -174,7 +190,7 @@ class _HomePageState extends State<HomePage> {
             SizedBox(
               height: 52,
               child: ElevatedButton(
-                onPressed: canStartEdit ? _startMockEdit : null,
+                onPressed: canStartEdit ? _startEdit : null,
                 child: const Text(
                   '開始修圖',
                   style: TextStyle(fontSize: 18),
@@ -193,7 +209,17 @@ class _HomePageState extends State<HomePage> {
               ),
               const SizedBox(height: 24),
             ],
-            if (_resultImageBytes != null) ...[
+            if (_errorMessage != null) ...[
+              Text(
+                _errorMessage!,
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Colors.red,
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+            if (_resultImageUrl != null) ...[
               const Text(
                 '結果圖片',
                 style: TextStyle(
@@ -206,14 +232,23 @@ class _HomePageState extends State<HomePage> {
                 width: double.infinity,
                 height: 220,
                 decoration: BoxDecoration(
+                  color: Colors.black12,
                   border: Border.all(color: Colors.grey),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16),
-                  child: Image.memory(
-                    _resultImageBytes!,
+                  child: Image.network(
+                    _resultImageUrl!,
                     fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Center(
+                        child: Text(
+                          '結果圖片載入失敗',
+                          style: TextStyle(fontSize: 16),
+                        ), 
+                      );
+                    },
                   ),
                 ),
               ),
