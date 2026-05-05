@@ -144,10 +144,7 @@ def adjust_color_balance_rgb(shadow_hue: float=0.0, highlight_hue: float=0.0, sa
     
     print(f"Executing color balance rgb adjustment: Shadow hue={shadow_hue}, Hight hue={highlight_hue}, Saturation={saturation}, Hue shift={hue_shift}, Brilliance={brilliance}, Vibrance={vibrance}, Contrast={contrast}")
     return "Color balance rgb adjustment applied"
-    
-
-
-    
+       
 # @tool
 # def apply_LUTs_preset(preset_name: str, intensity: float = 1.0) -> str:
 #     """
@@ -179,8 +176,6 @@ def apply_xmp_and_export(image_path, output_path)-> str:
     xmp_path: The path to the XMP file containing the editing instructions (e.g., "sample1.jpg.xmp")
     output_path: The desired path for the exported photo (e.g., "result_brightened.jpg")
     """
-    abs_image_path = os.path.abspath(image_path)
-    abs_output_path = os.path.abspath(output_path)
     
     # Windows 通常在 C:/Program Files/darktable/bin/darktable-cli.exe
     # Linux/Mac 通常直接輸入 darktable-cli
@@ -189,19 +184,19 @@ def apply_xmp_and_export(image_path, output_path)-> str:
     
     cmd = [
         "C:/Program Files/darktable/bin/darktable-cli.exe",
-        abs_image_path,
+        image_path,
         xmp_path,
-        abs_output_path
+        output_path
     ]
     
     try:
-        print(f"正在匯出：{output_path}...")
+        print(f"Outputting: {output_path}...")
         subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        print("匯出成功！")
+        print("Export successful!")
     except subprocess.CalledProcessError as e:
-        print(f"匯出失敗，錯誤代碼：{e.stderr.decode('utf-8')}")
+        print(f"Export failed, error code: {e.stderr.decode('utf-8')}")
     except FileNotFoundError:
-        print("錯誤：找不到 darktable-cli，請確認是否已安裝並加入環境變數。")
+        print("Error: darktable-cli not found. Please ensure it is installed and added to the system PATH.")
     
     current_adjustments = base_layers.copy()
     return f"Applied XMP and exported to {output_path}"
