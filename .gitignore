@@ -10,6 +10,14 @@ backend/storage/eval_runs/
 backend/storage/sessions/
 model/outputs/
 
+# local test/eval helpers
+backend/app/services/prompt_eval_runner.py
+backend/run_opencv_demo.py
+backend/run_prompt_eval.py
+backend/test_photo/
+backend/tests/
+frontend/test/
+
 .vscode/
 .idea/
 
