@@ -127,3 +127,15 @@ backend 目前主要檔案：
 - 完整使用方法: 先在 `backend/` 開server: `uvicorn app.main:app --reload` (記得要先開進虛擬環境 `.venv\Scripts\Activate` 跟確認pip `pip install -r requirements.txt`)
 - 然後在 `frontend/` 打 `flutter run -d chrome` 就可以測試功能了
 - 目前圖片處理在 `backend/services/image_processor.py`，之後正式模型的圖片處理就改那邊
+
+---
+
+2026/5/25 更新
+
+- 目前前端畫面大致跟原本差不多，但後端已經不是單純 mock result，可以用 prompt 做一些基本修圖。
+- 測試方式一樣是先開 backend，再去 `frontend/` 跑 `flutter run -d chrome`。
+- 現在可以選一張原圖，然後輸入像 `亮一點`、`太亮了，暗一點`、`色彩更鮮豔`、`亮一點但不要過曝` 這類文字，前端會顯示修圖後的結果。
+- 也可以接著連續調整，例如先輸入 `亮一點`，結果出來後再輸入 `再自然一點`，後端會接著上一張結果繼續修。
+- 下方會有簡單的修圖歷史，可以點某一次結果，後面新的 prompt 就會基於那張圖繼續修。
+- 目前也有先做幾個比較常用的風格字，例如 `暗黃底片感`、`電影感`、`清新日系風格`。
+- 如果要用參考圖模式，就放原圖 + 參考圖，不要同時填 prompt；如果要文字修圖，就放原圖 + prompt，不要放參考圖。

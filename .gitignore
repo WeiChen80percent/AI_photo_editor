@@ -4,6 +4,10 @@ __pycache__/
 
 backend/uploads/
 backend/results/
+backend/storage/uploads/
+backend/storage/results/
+backend/storage/eval_runs/
+backend/storage/sessions/
 model/outputs/
 
 .vscode/
