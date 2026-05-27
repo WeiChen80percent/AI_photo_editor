@@ -2,11 +2,15 @@
 from typing import Any
 
 from app.services.edit_intent_templates import (
-    build_compound_template_parameters,
-    build_preset_parameters,
     limit_intent_strengths_for_prompt,
     normalize_preset_name,
     normalize_edit_strength,
+)
+from app.services.edit_engines import build_engine_parameters
+from app.services.edit_plan import (
+    build_compound_edit_plan,
+    build_preset_edit_plan,
+    build_raw_parameter_edit_plan,
 )
 
 
@@ -16,20 +20,24 @@ def parse_edit_prompt(prompt: str | None) -> dict[str, Any]:
     normalized = user_prompt.lower()
 
     if not normalized:
+        edit_plan = build_raw_parameter_edit_plan(prompt=user_prompt, parameters={})
         return _build_result(
             prompt=user_prompt,
             resolved_intent="default",
-            parameters={},
+            edit_plan=edit_plan,
+            parameters=build_engine_parameters("opencv", edit_plan),
             reason="No prompt was provided; using OpenCV defaults.",
         )
 
     strength = _detect_strength(normalized)
     preset_name = _detect_preset_name(normalized)
     if preset_name is not None:
+        edit_plan = build_preset_edit_plan(prompt=user_prompt, preset_name=preset_name)
         return _build_result(
             prompt=user_prompt,
             resolved_intent="apply_preset",
-            parameters=build_preset_parameters(preset_name),
+            edit_plan=edit_plan,
+            parameters=build_engine_parameters("opencv", edit_plan),
             reason=f"Parsed prompt as preset {preset_name}.",
             preset_name=preset_name,
         )
@@ -37,21 +45,27 @@ def parse_edit_prompt(prompt: str | None) -> dict[str, Any]:
     intent_strengths = _detect_intent_strengths(normalized, strength)
 
     if not intent_strengths:
+        edit_plan = build_raw_parameter_edit_plan(prompt=user_prompt, parameters={})
         return _build_result(
             prompt=user_prompt,
             resolved_intent="default",
-            parameters={},
+            edit_plan=edit_plan,
+            parameters=build_engine_parameters("opencv", edit_plan),
             reason="No supported edit intent was detected; using OpenCV defaults.",
         )
 
     intent_strengths = limit_intent_strengths_for_prompt(user_prompt, intent_strengths)
-    parameters = build_compound_template_parameters(intent_strengths)
+    edit_plan = build_compound_edit_plan(
+        prompt=user_prompt,
+        intent_strengths=intent_strengths,
+    )
     intents = [intent for intent, _ in intent_strengths]
     resolved_intent = intents[0] if len(intents) == 1 else "compound"
     return _build_result(
         prompt=user_prompt,
         resolved_intent=resolved_intent,
-        parameters=parameters,
+        edit_plan=edit_plan,
+        parameters=build_engine_parameters("opencv", edit_plan),
         reason=f"Parsed prompt as {resolved_intent} with {strength} strength.",
     )
 
@@ -142,6 +156,7 @@ def _build_result(
     *,
     prompt: str,
     resolved_intent: str,
+    edit_plan: dict[str, Any],
     parameters: dict[str, float],
     reason: str,
     preset_name: str | None = None,
@@ -152,6 +167,7 @@ def _build_result(
         "prompt": prompt,
         "resolved_intent": resolved_intent,
         "preset_name": preset_name,
+        "edit_plan": edit_plan,
         "parameters": parameters,
         "explanation": explanation,
     }

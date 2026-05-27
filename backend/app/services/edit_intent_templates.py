@@ -1,89 +1,24 @@
 # -*- coding: utf-8 -*-
 from collections.abc import Iterable
 
-from app.services.edit_schema import validate_edit_parameters
-
 
 EditIntentStrength = tuple[str, str]
 
-NEUTRAL_PARAMETERS: dict[str, float] = {
-    "brightness": 0.0,
-    "contrast": 1.0,
-    "saturation": 1.0,
-    "temperature": 0.0,
-    "sharpen": 0.0,
-    "vignette": 0.0,
-    "reference_tint": 0.0,
+_SUPPORTED_INTENTS = {
+    "brighten",
+    "darken",
+    "warm",
+    "cool",
+    "vivid",
+    "natural",
+    "sharpen",
+    "soft",
 }
 
-_TEMPLATE_ADJUSTMENTS: dict[str, dict[str, dict[str, float]]] = {
-    "brighten": {
-        "subtle": {"brightness": 10.0, "contrast": 1.03},
-        "normal": {"brightness": 18.0, "contrast": 1.05},
-        "strong": {"brightness": 28.0, "contrast": 1.08},
-    },
-    "darken": {
-        "subtle": {"brightness": -10.0, "contrast": 1.02},
-        "normal": {"brightness": -18.0, "contrast": 1.04},
-        "strong": {"brightness": -28.0, "contrast": 1.06},
-    },
-    "warm": {
-        "subtle": {"temperature": 8.0, "saturation": 1.02},
-        "normal": {"temperature": 16.0, "saturation": 1.04},
-        "strong": {"temperature": 26.0, "saturation": 1.06},
-    },
-    "cool": {
-        "subtle": {"temperature": -8.0, "saturation": 1.0},
-        "normal": {"temperature": -16.0, "saturation": 1.0},
-        "strong": {"temperature": -26.0, "saturation": 0.98},
-    },
-    "vivid": {
-        "subtle": {"saturation": 1.12, "contrast": 1.04},
-        "normal": {"saturation": 1.22, "contrast": 1.07},
-        "strong": {"saturation": 1.28, "contrast": 1.08},
-    },
-    "natural": {
-        "subtle": {"saturation": 0.96, "contrast": 0.99},
-        "normal": {"saturation": 0.94, "contrast": 0.98},
-        "strong": {"saturation": 0.9, "contrast": 0.96},
-    },
-    "sharpen": {
-        "subtle": {"sharpen": 0.22},
-        "normal": {"sharpen": 0.35},
-        "strong": {"sharpen": 0.5, "contrast": 1.04},
-    },
-    "soft": {
-        "subtle": {"contrast": 0.98, "saturation": 0.98},
-        "normal": {"contrast": 0.96, "saturation": 0.96},
-        "strong": {"contrast": 0.94, "saturation": 0.94},
-    },
-}
-
-_PRESET_ADJUSTMENTS: dict[str, dict[str, float]] = {
-    "vintage_film": {
-        "brightness": -8.0,
-        "contrast": 0.92,
-        "saturation": 0.82,
-        "temperature": 18.0,
-        "sharpen": 0.08,
-        "vignette": 0.22,
-    },
-    "cinematic": {
-        "brightness": -6.0,
-        "contrast": 1.18,
-        "saturation": 0.98,
-        "temperature": -6.0,
-        "sharpen": 0.28,
-        "vignette": 0.18,
-    },
-    "fresh_japanese": {
-        "brightness": 12.0,
-        "contrast": 0.96,
-        "saturation": 0.9,
-        "temperature": -4.0,
-        "sharpen": 0.08,
-        "vignette": 0.0,
-    },
+_SUPPORTED_PRESETS = {
+    "vintage_film",
+    "cinematic",
+    "fresh_japanese",
 }
 
 _INTENT_ALIASES: dict[str, str] = {
@@ -152,7 +87,7 @@ def normalize_edit_intent(intent: str | None) -> str | None:
     if not normalized:
         return None
     normalized = _INTENT_ALIASES.get(normalized, normalized)
-    if normalized not in _TEMPLATE_ADJUSTMENTS:
+    if normalized not in _SUPPORTED_INTENTS:
         return None
     return normalized
 
@@ -171,43 +106,29 @@ def normalize_preset_name(preset_name: str | None) -> str | None:
     if not normalized:
         return None
     normalized = _PRESET_ALIASES.get(normalized, normalized)
-    if normalized not in _PRESET_ADJUSTMENTS:
+    if normalized not in _SUPPORTED_PRESETS:
         return None
     return normalized
 
 
 def build_template_parameters(intent: str, strength: str | None = None) -> dict[str, float]:
-    normalized_intent = normalize_edit_intent(intent)
-    if normalized_intent is None:
-        raise ValueError(f"Unsupported edit intent template: {intent}")
+    from app.services.opencv_parameter_mapper import build_opencv_template_parameters
 
-    normalized_strength = normalize_edit_strength(strength)
-    parameters = NEUTRAL_PARAMETERS.copy()
-    parameters.update(_TEMPLATE_ADJUSTMENTS[normalized_intent][normalized_strength])
-    return validate_edit_parameters(parameters)
+    return build_opencv_template_parameters(intent, strength)
 
 
 def build_preset_parameters(preset_name: str) -> dict[str, float]:
-    normalized_preset = normalize_preset_name(preset_name)
-    if normalized_preset is None:
-        raise ValueError(f"Unsupported edit preset: {preset_name}")
+    from app.services.opencv_parameter_mapper import build_opencv_preset_parameters
 
-    parameters = NEUTRAL_PARAMETERS.copy()
-    parameters.update(_PRESET_ADJUSTMENTS[normalized_preset])
-    return validate_edit_parameters(parameters)
+    return build_opencv_preset_parameters(preset_name)
 
 
 def build_compound_template_parameters(
     intent_strengths: Iterable[EditIntentStrength],
 ) -> dict[str, float]:
-    parameters = NEUTRAL_PARAMETERS.copy()
-    for intent, strength in intent_strengths:
-        normalized_intent = normalize_edit_intent(intent)
-        if normalized_intent is None:
-            continue
-        normalized_strength = normalize_edit_strength(strength)
-        parameters.update(_TEMPLATE_ADJUSTMENTS[normalized_intent][normalized_strength])
-    return validate_edit_parameters(parameters)
+    from app.services.opencv_parameter_mapper import build_opencv_compound_parameters
+
+    return build_opencv_compound_parameters(list(intent_strengths))
 
 
 def limit_intent_strengths_for_prompt(
@@ -219,8 +140,8 @@ def limit_intent_strengths_for_prompt(
 
 
 def format_template_catalog_for_prompt() -> str:
-    intent_names = ", ".join(sorted(_TEMPLATE_ADJUSTMENTS))
-    preset_names = ", ".join(sorted(_PRESET_ADJUSTMENTS))
+    intent_names = ", ".join(sorted(_SUPPORTED_INTENTS))
+    preset_names = ", ".join(sorted(_SUPPORTED_PRESETS))
     return (
         f"Allowed intents: {intent_names}\n"
         f"Allowed presets: {preset_names}\n"

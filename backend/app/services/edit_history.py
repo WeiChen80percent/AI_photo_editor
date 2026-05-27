@@ -80,6 +80,9 @@ class EditHistoryStore:
         fallback_reason: str | None,
         reference_image_path: str | None = None,
         preset_name: str | None = None,
+        engine: str | None = None,
+        edit_plan: dict[str, Any] | None = None,
+        engine_parameters: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         return {
             "session_id": session_id,
@@ -92,6 +95,9 @@ class EditHistoryStore:
             "reference_image_path": reference_image_path,
             "user_prompt": user_prompt,
             "resolved_intent": resolved_intent,
+            "engine": engine,
+            "edit_plan": edit_plan,
+            "engine_parameters": engine_parameters,
             "parameters": parameters,
             "preset_name": preset_name,
             "explanation": explanation,

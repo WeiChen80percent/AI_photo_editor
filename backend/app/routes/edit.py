@@ -2,9 +2,10 @@ from pathlib import Path
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
+from app.services.edit_engines import create_engine_result, normalize_engine_name
 from app.services.edit_history import EditHistoryNotFound, EditHistoryStore
 from app.services.edit_intent_resolver import resolve_edit_intent
-from app.services.opencv_processor import create_opencv_result
+from app.services.edit_plan import build_reference_edit_plan
 
 router = APIRouter()
 
@@ -22,11 +23,16 @@ async def upload_images(
     prompt: str = Form(""),
     session_id: str | None = Form(None),
     parent_edit_id: str | None = Form(None),
+    engine: str = Form("opencv"),
 ):
     prompt_text = prompt.strip()
     has_reference = reference_image is not None
     requested_session_id = session_id.strip() if session_id else None
     requested_parent_edit_id = parent_edit_id.strip() if parent_edit_id else None
+    try:
+        engine_name = normalize_engine_name(engine)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
     if prompt_text and has_reference:
         raise HTTPException(
@@ -111,6 +117,7 @@ async def upload_images(
             "prompt": "",
             "resolved_intent": "reference_style",
             "preset_name": None,
+            "edit_plan": build_reference_edit_plan(),
             "parameters": {},
             "explanation": "使用參考圖修圖模式，未套用文字 prompt。",
             "parser_source": "reference_mode",
@@ -118,16 +125,17 @@ async def upload_images(
         }
 
     try:
-        process_result = create_opencv_result(
+        process_result = create_engine_result(
+            engine_name=engine_name,
             original_path=base_path,
             reference_path=reference_path,
             result_path=result_path,
-            parameters=prompt_result["parameters"],
+            edit_plan=prompt_result["edit_plan"],
         )
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to create OpenCV result: {str(e)}",
+            detail=f"Failed to create {engine_name} result: {str(e)}",
         )
 
     result_saved_path = result_path.relative_to(BASE_DIR).as_posix()
@@ -151,6 +159,9 @@ async def upload_images(
         user_prompt=prompt_result["prompt"],
         resolved_intent=prompt_result["resolved_intent"],
         parameters=process_result["parameters"],
+        engine=process_result["engine"],
+        edit_plan=prompt_result["edit_plan"],
+        engine_parameters=process_result["parameters"],
         explanation=explanation,
         parser_source=prompt_result["parser_source"],
         fallback_reason=prompt_result["fallback_reason"],
@@ -173,6 +184,8 @@ async def upload_images(
         "result_url": f"/{result_saved_path}",
         "engine": process_result["engine"],
         "edit_mode": edit_mode,
+        "edit_plan": prompt_result["edit_plan"],
+        "engine_parameters": process_result["parameters"],
         "parameters": process_result["parameters"],
         "prompt": prompt_result["prompt"],
         "resolved_intent": prompt_result["resolved_intent"],

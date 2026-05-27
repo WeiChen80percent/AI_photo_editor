@@ -6,14 +6,18 @@ import os
 import urllib.request
 
 from app.services.edit_intent_templates import (
-    build_compound_template_parameters,
-    build_preset_parameters,
-    build_template_parameters,
     format_template_catalog_for_prompt,
     limit_intent_strengths_for_prompt,
     normalize_edit_intent,
     normalize_preset_name,
     normalize_edit_strength,
+)
+from app.services.edit_engines import build_engine_parameters
+from app.services.edit_plan import (
+    build_compound_edit_plan,
+    build_preset_edit_plan,
+    build_raw_parameter_edit_plan,
+    build_single_edit_plan,
 )
 from app.services.edit_schema import validate_edit_parameters
 from app.services.prompt_parser import parse_edit_prompt
@@ -61,6 +65,7 @@ def _parse_llm_response(prompt: str, response_text: str) -> dict[str, Any]:
     parameters = validate_edit_parameters(raw_parameters)
     if not parameters:
         raise ValueError("LLM did not provide any supported OpenCV parameters.")
+    edit_plan = build_raw_parameter_edit_plan(prompt=prompt, parameters=parameters)
 
     resolved_intent = str(data.get("resolved_intent") or "llm_parameters")
     explanation = str(
@@ -72,7 +77,8 @@ def _parse_llm_response(prompt: str, response_text: str) -> dict[str, Any]:
         "prompt": prompt,
         "resolved_intent": resolved_intent,
         "preset_name": None,
-        "parameters": parameters,
+        "edit_plan": edit_plan,
+        "parameters": build_engine_parameters("opencv", edit_plan),
         "explanation": explanation,
         "parser_source": "llm",
         "fallback_reason": None,
@@ -87,12 +93,14 @@ def _parse_preset_response(prompt: str, data: dict[str, Any]) -> dict[str, Any] 
     preset_name = normalize_preset_name(str(raw_preset_name))
     if preset_name is None:
         raise ValueError(f"LLM selected unsupported preset: {raw_preset_name}")
+    edit_plan = build_preset_edit_plan(prompt=prompt, preset_name=preset_name)
 
     return {
         "prompt": prompt,
         "resolved_intent": "apply_preset",
         "preset_name": preset_name,
-        "parameters": build_preset_parameters(preset_name),
+        "edit_plan": edit_plan,
+        "parameters": build_engine_parameters("opencv", edit_plan),
         "explanation": (
             str(data.get("explanation"))
             if data.get("explanation")
@@ -134,11 +142,11 @@ def _parse_compound_template_response(
         prompt,
         limited_intent_strengths,
     )
-    parameters = build_compound_template_parameters(limited_intent_strengths)
-    edits = [
-        {"intent": intent, "strength": strength}
-        for intent, strength in limited_intent_strengths
-    ]
+    edit_plan = build_compound_edit_plan(
+        prompt=prompt,
+        intent_strengths=limited_intent_strengths,
+    )
+    edits = edit_plan["edits"]
     resolved_intent = (
         limited_intent_strengths[0][0]
         if len(limited_intent_strengths) == 1
@@ -154,7 +162,8 @@ def _parse_compound_template_response(
         "resolved_intent": resolved_intent,
         "preset_name": None,
         "edits": edits,
-        "parameters": parameters,
+        "edit_plan": edit_plan,
+        "parameters": build_engine_parameters("opencv", edit_plan),
         "explanation": explanation,
         "parser_source": "llm",
         "fallback_reason": None,
@@ -223,7 +232,11 @@ def _parse_template_response(prompt: str, data: dict[str, Any]) -> dict[str, Any
         str(data.get("strength") or data.get("intensity") or "normal")
     )
     style = str(data.get("style") or "natural")
-    parameters = build_template_parameters(resolved_intent, strength)
+    edit_plan = build_single_edit_plan(
+        prompt=prompt,
+        intent=resolved_intent,
+        strength=strength,
+    )
     explanation = str(
         data.get("explanation")
         or f"LLM selected the {resolved_intent}/{strength} intent template."
@@ -235,7 +248,8 @@ def _parse_template_response(prompt: str, data: dict[str, Any]) -> dict[str, Any
         "preset_name": None,
         "strength": strength,
         "style": style,
-        "parameters": parameters,
+        "edit_plan": edit_plan,
+        "parameters": build_engine_parameters("opencv", edit_plan),
         "explanation": explanation,
         "parser_source": "llm",
         "fallback_reason": None,
@@ -263,7 +277,12 @@ def _load_json_object(response_text: str) -> dict[str, Any]:
 
 def _fallback_result(prompt: str, fallback_reason: str) -> dict[str, Any]:
     result = parse_edit_prompt(prompt)
-    result["parameters"] = validate_edit_parameters(result["parameters"])
+    if "edit_plan" not in result:
+        result["edit_plan"] = build_raw_parameter_edit_plan(
+            prompt=prompt,
+            parameters=result.get("parameters"),
+        )
+    result["parameters"] = build_engine_parameters("opencv", result["edit_plan"])
     result["parser_source"] = "rule_based_fallback"
     result["fallback_reason"] = fallback_reason
     return result

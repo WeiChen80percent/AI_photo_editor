@@ -139,3 +139,42 @@ backend 目前主要檔案：
 - 下方會有簡單的修圖歷史，可以點某一次結果，後面新的 prompt 就會基於那張圖繼續修。
 - 目前也有先做幾個比較常用的風格字，例如 `暗黃底片感`、`電影感`、`清新日系風格`。
 - 如果要用參考圖模式，就放原圖 + 參考圖，不要同時填 prompt；如果要文字修圖，就放原圖 + prompt，不要放參考圖。
+
+---
+
+2026/5/27 services 流程簡圖
+
+目前 `backend/app/services/` 可以先用這張圖理解：前半段負責理解需求並產生通用 `edit_plan`，後半段才由 engine 把 `edit_plan` 轉成實際修圖參數。
+
+```mermaid
+flowchart TD
+  A["routes/edit.py\n/edit API"] --> B{"輸入模式"}
+  B -->|"原圖 + prompt"| C["edit_intent_resolver.py\nLLM 解析"]
+  C -->|"失敗或未用 LLM"| D["prompt_parser.py\nrule-based fallback"]
+  C --> E["edit_plan.py\n通用 EditPlan"]
+  D --> E
+  B -->|"原圖 + 參考圖"| E
+  E --> F["edit_engines.py\n選擇 engine"]
+  F --> G["opencv_parameter_mapper.py\nEditPlan -> OpenCV parameters"]
+  G --> H["opencv_processor.py\nOpenCV 實際修圖與輸出"]
+  A --> I["edit_history.py\nsession / history 紀錄"]
+  J["edit_intent_templates.py\nintent / preset / strength 規則"] --> C
+  J --> D
+  K["edit_schema.py\n參數範圍與驗證"] --> G
+  L["prompt_eval_runner.py\n固定圖與 prompt 批次評估"] --> C
+  L --> F
+```
+
+簡單分工：
+
+- `edit_intent_resolver.py`：主要 LLM 入口，把文字 prompt 解析成通用修圖意圖。
+- `prompt_parser.py`：LLM 沒開或解析失敗時的 rule-based fallback。
+- `edit_plan.py`：engine-neutral 中間格式，之後 OpenCV / Darktable 都吃這層。
+- `edit_engines.py`：engine 切換入口，目前只正式支援 `opencv`。
+- `opencv_parameter_mapper.py`：把通用 `edit_plan` 翻成 OpenCV 參數。
+- `opencv_processor.py`：真正用 OpenCV 套亮度、對比、飽和度、色溫、銳化等效果並寫出結果圖。
+- `edit_history.py`：記錄 session、parent edit 與歷史版本。
+- `edit_intent_templates.py`：放 intent、preset、strength 與 prompt 保護規則。
+- `edit_schema.py`：限制和驗證修圖參數範圍。
+- `prompt_eval_runner.py`：本機 eval 輔助工具，用固定圖片和 prompt 批次比較效果。
+- `image_processor.py`：早期 mock result helper，目前不是主線 `/edit` 流程的核心。
