@@ -17,8 +17,11 @@ from app.services.semantic_mask_service import get_semantic_region_mask
 
 
 DEFAULT_OPENCV_PARAMETERS: dict[str, float] = {
+    "exposure": 0.0,
     "brightness": 12.0,
     "contrast": 1.08,
+    "highlights": 0.0,
+    "shadows": 0.0,
     "saturation": 1.12,
     "temperature": 6.0,
     "sharpen": 0.25,
@@ -51,10 +54,16 @@ def create_opencv_result(
     parameter_resolution_ms = _elapsed_ms(resolve_started)
 
     adjustments_started = time.perf_counter()
+    adjusted = _apply_exposure(original, resolved["exposure"])
     adjusted = _apply_brightness_contrast(
-        original,
+        adjusted,
         brightness=resolved["brightness"],
         contrast=resolved["contrast"],
+    )
+    adjusted = _apply_tonal_controls(
+        adjusted,
+        highlights=resolved["highlights"],
+        shadows=resolved["shadows"],
     )
     adjusted = _apply_saturation(adjusted, resolved["saturation"])
     adjusted = _apply_temperature(adjusted, resolved["temperature"])
@@ -131,17 +140,112 @@ def _resolve_parameters(parameters: dict[str, Any] | None) -> dict[str, Any]:
 
 def _apply_brightness_contrast(
     image: np.ndarray,
-    *,
     brightness: float,
     contrast: float,
 ) -> np.ndarray:
-    return cv2.convertScaleAbs(image, alpha=contrast, beta=brightness)
+    midpoint = 127.5
+    adjusted = (
+        (image.astype(np.float32) - midpoint) * contrast
+        + midpoint
+        + brightness
+    )
+    return np.clip(adjusted, 0, 255).astype(np.uint8)
+
+
+def _apply_exposure(image: np.ndarray, exposure: float) -> np.ndarray:
+    if exposure == 0:
+        return image
+
+    encoded = np.arange(256, dtype=np.float32) / 255.0
+    linear = np.where(
+        encoded <= 0.04045,
+        encoded / 12.92,
+        np.power((encoded + 0.055) / 1.055, 2.4),
+    )
+    adjusted_linear = np.clip(linear * (2.0 ** exposure), 0.0, 1.0)
+    adjusted_encoded = np.where(
+        adjusted_linear <= 0.0031308,
+        adjusted_linear * 12.92,
+        1.055 * np.power(adjusted_linear, 1.0 / 2.4) - 0.055,
+    )
+    lookup = np.round(np.clip(adjusted_encoded, 0.0, 1.0) * 255.0).astype(
+        np.uint8
+    )
+    return cv2.LUT(image, lookup)
+
+
+def _apply_tonal_controls(
+    image: np.ndarray,
+    *,
+    highlights: float,
+    shadows: float,
+) -> np.ndarray:
+    if highlights == 0 and shadows == 0:
+        return image
+
+    lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB).astype(np.float32)
+    luminance = lab[:, :, 0]
+    adjusted = luminance.copy()
+
+    if highlights != 0:
+        weight = _smoothstep(118.0, 235.0, luminance)
+        adjusted = _apply_weighted_luminance_delta(
+            adjusted,
+            weight=weight,
+            amount=highlights / 100.0,
+            positive_strength=0.55,
+            negative_strength=0.62,
+        )
+
+    if shadows != 0:
+        weight = 1.0 - _smoothstep(20.0, 145.0, luminance)
+        adjusted = _apply_weighted_luminance_delta(
+            adjusted,
+            weight=weight,
+            amount=shadows / 100.0,
+            positive_strength=0.62,
+            negative_strength=0.52,
+        )
+
+    lab[:, :, 0] = np.clip(adjusted, 0.0, 255.0)
+    return cv2.cvtColor(lab.astype(np.uint8), cv2.COLOR_LAB2BGR)
+
+
+def _apply_weighted_luminance_delta(
+    luminance: np.ndarray,
+    *,
+    weight: np.ndarray,
+    amount: float,
+    positive_strength: float,
+    negative_strength: float,
+) -> np.ndarray:
+    if amount > 0:
+        delta = amount * positive_strength * weight * (255.0 - luminance)
+    else:
+        delta = amount * negative_strength * weight * luminance
+    return np.clip(luminance + delta, 0.0, 255.0)
+
+
+def _smoothstep(edge0: float, edge1: float, values: np.ndarray) -> np.ndarray:
+    normalized = np.clip((values - edge0) / (edge1 - edge0), 0.0, 1.0)
+    return normalized * normalized * (3.0 - 2.0 * normalized)
 
 
 def _apply_saturation(image: np.ndarray, saturation: float) -> np.ndarray:
-    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV).astype(np.float32)
-    hsv[:, :, 1] = np.clip(hsv[:, :, 1] * saturation, 0, 255)
-    return cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2BGR)
+    if saturation == 1.0:
+        return image
+
+    image_float = image.astype(np.float32)
+    grayscale = (
+        image_float[:, :, 0] * 0.0722
+        + image_float[:, :, 1] * 0.7152
+        + image_float[:, :, 2] * 0.2126
+    )
+    grayscale_bgr = np.repeat(grayscale[:, :, np.newaxis], 3, axis=2)
+    adjusted = grayscale_bgr + saturation * (
+        image_float - grayscale_bgr
+    )
+    return np.clip(adjusted, 0, 255).astype(np.uint8)
 
 
 def _apply_temperature(image: np.ndarray, temperature: float) -> np.ndarray:
@@ -421,8 +525,11 @@ def _feather_mask(mask: np.ndarray) -> np.ndarray:
 def _build_explanation(parameters: dict[str, Any]) -> str:
     return (
         "OpenCV 已套用參數："
+        f"exposure={parameters['exposure']}, "
         f"brightness={parameters['brightness']}, "
         f"contrast={parameters['contrast']}, "
+        f"highlights={parameters['highlights']}, "
+        f"shadows={parameters['shadows']}, "
         f"saturation={parameters['saturation']}, "
         f"temperature={parameters['temperature']}, "
         f"sharpen={parameters['sharpen']}, "

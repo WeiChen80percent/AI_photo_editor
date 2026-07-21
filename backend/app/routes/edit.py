@@ -1,11 +1,15 @@
 from pathlib import Path
+from typing import Any
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.services.edit_engines import create_engine_result, normalize_engine_name
 from app.services.edit_history import EditHistoryNotFound, EditHistoryStore
 from app.services.edit_intent_resolver import resolve_edit_intent
 from app.services.edit_plan import build_reference_edit_plan
+from app.services.edit_schema import manual_parameter_schema
+from app.services.manual_edit_service import ManualEditError, ManualEditService
 from app.services.semantic_mask_service import SemanticTargetNotFoundError
 
 router = APIRouter()
@@ -14,7 +18,23 @@ BASE_DIR = Path(__file__).resolve().parents[2]
 UPLOAD_DIR = BASE_DIR / "storage" / "uploads"
 RESULTS_DIR = BASE_DIR / "storage" / "results"
 SESSIONS_DIR = BASE_DIR / "storage" / "sessions"
+MANUAL_PREVIEWS_DIR = BASE_DIR / "storage" / "manual_previews"
 HISTORY_STORE = EditHistoryStore(SESSIONS_DIR)
+MANUAL_EDIT_SERVICE = ManualEditService(
+    backend_dir=BASE_DIR,
+    history_store=HISTORY_STORE,
+    preview_root=MANUAL_PREVIEWS_DIR,
+    results_root=RESULTS_DIR,
+)
+
+
+class ManualEditRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    session_id: str = Field(min_length=1, max_length=80)
+    source_edit_id: str = Field(min_length=1, max_length=80)
+    parameter_overrides: dict[str, Any] = Field(default_factory=dict)
+    client_request_id: str | None = Field(default=None, max_length=128)
 
 
 @router.post("/edit")
@@ -216,3 +236,56 @@ def get_edit_session(session_id: str):
         return HISTORY_STORE.load_session(session_id)
     except EditHistoryNotFound as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.get("/edit/manual/schema")
+def get_manual_edit_schema():
+    return manual_parameter_schema()
+
+
+@router.post("/edit/manual/preview")
+def preview_manual_edit(request: ManualEditRequest):
+    try:
+        return MANUAL_EDIT_SERVICE.preview(
+            session_id=request.session_id,
+            source_edit_id=request.source_edit_id,
+            parameter_overrides=request.parameter_overrides,
+            client_request_id=request.client_request_id,
+        )
+    except SemanticTargetNotFoundError as exc:
+        raise _semantic_target_http_error(exc)
+    except ManualEditError as exc:
+        raise _manual_edit_http_error(exc)
+
+
+@router.post("/edit/manual/commit")
+def commit_manual_edit(request: ManualEditRequest):
+    try:
+        return MANUAL_EDIT_SERVICE.commit(
+            session_id=request.session_id,
+            source_edit_id=request.source_edit_id,
+            parameter_overrides=request.parameter_overrides,
+            client_request_id=request.client_request_id,
+        )
+    except SemanticTargetNotFoundError as exc:
+        raise _semantic_target_http_error(exc)
+    except ManualEditError as exc:
+        raise _manual_edit_http_error(exc)
+
+
+def _manual_edit_http_error(exc: ManualEditError) -> HTTPException:
+    return HTTPException(
+        status_code=exc.status_code,
+        detail={"code": exc.code, "message": str(exc)},
+    )
+
+
+def _semantic_target_http_error(exc: SemanticTargetNotFoundError) -> HTTPException:
+    return HTTPException(
+        status_code=422,
+        detail={
+            "code": "semantic_target_not_found",
+            "message": str(exc),
+            "mask_info": exc.mask_info,
+        },
+    )

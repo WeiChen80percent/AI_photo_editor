@@ -17,8 +17,11 @@ from app.services.edit_schema import (
 
 
 NEUTRAL_OPENCV_PARAMETERS: dict[str, float] = {
+    "exposure": 0.0,
     "brightness": 0.0,
     "contrast": 1.0,
+    "highlights": 0.0,
+    "shadows": 0.0,
     "saturation": 1.0,
     "temperature": 0.0,
     "sharpen": 0.0,

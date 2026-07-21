@@ -1,20 +1,147 @@
+import math
 from collections.abc import Mapping
 from typing import Any
-import math
 
 
-EDIT_PARAMETER_RANGES: dict[str, tuple[float, float]] = {
-    "brightness": (-80.0, 80.0),
-    "contrast": (0.5, 1.8),
-    "saturation": (0.0, 2.0),
-    "temperature": (-50.0, 50.0),
-    "sharpen": (0.0, 1.0),
-    "clarity": (0.0, 1.0),
-    "dehaze": (0.0, 1.0),
-    "vignette": (0.0, 0.8),
-    "reference_tint": (0.0, 0.5),
+EDIT_PARAMETER_SPECS: dict[str, dict[str, Any]] = {
+    "exposure": {
+        "label": "曝光",
+        "group": "light",
+        "minimum": -2.0,
+        "maximum": 2.0,
+        "step": 0.05,
+        "neutral": 0.0,
+        "unit": "EV",
+        "default_visible": True,
+    },
+    "brightness": {
+        "label": "亮度",
+        "group": "light",
+        "minimum": -80.0,
+        "maximum": 80.0,
+        "step": 0.25,
+        "neutral": 0.0,
+        "unit": "",
+        "default_visible": True,
+    },
+    "contrast": {
+        "label": "對比",
+        "group": "light",
+        "minimum": 0.5,
+        "maximum": 1.8,
+        "step": 0.01,
+        "neutral": 1.0,
+        "unit": "x",
+        "default_visible": True,
+    },
+    "highlights": {
+        "label": "亮部",
+        "group": "light",
+        "minimum": -100.0,
+        "maximum": 100.0,
+        "step": 1.0,
+        "neutral": 0.0,
+        "unit": "",
+        "default_visible": True,
+    },
+    "shadows": {
+        "label": "暗部",
+        "group": "light",
+        "minimum": -100.0,
+        "maximum": 100.0,
+        "step": 1.0,
+        "neutral": 0.0,
+        "unit": "",
+        "default_visible": True,
+    },
+    "saturation": {
+        "label": "飽和度",
+        "group": "color",
+        "minimum": 0.0,
+        "maximum": 2.0,
+        "step": 0.01,
+        "neutral": 1.0,
+        "unit": "x",
+        "default_visible": True,
+    },
+    "temperature": {
+        "label": "色溫",
+        "group": "color",
+        "minimum": -50.0,
+        "maximum": 50.0,
+        "step": 1.0,
+        "neutral": 0.0,
+        "unit": "",
+        "default_visible": True,
+    },
+    "sharpen": {
+        "label": "銳化",
+        "group": "detail",
+        "minimum": 0.0,
+        "maximum": 1.0,
+        "step": 0.01,
+        "neutral": 0.0,
+        "unit": "",
+        "default_visible": False,
+    },
+    "clarity": {
+        "label": "清晰度",
+        "group": "detail",
+        "minimum": 0.0,
+        "maximum": 1.0,
+        "step": 0.01,
+        "neutral": 0.0,
+        "unit": "",
+        "default_visible": False,
+    },
+    "dehaze": {
+        "label": "去霧",
+        "group": "detail",
+        "minimum": 0.0,
+        "maximum": 1.0,
+        "step": 0.01,
+        "neutral": 0.0,
+        "unit": "",
+        "default_visible": False,
+    },
+    "vignette": {
+        "label": "暗角",
+        "group": "effects",
+        "minimum": 0.0,
+        "maximum": 0.8,
+        "step": 0.01,
+        "neutral": 0.0,
+        "unit": "",
+        "default_visible": False,
+    },
+    "reference_tint": {
+        "label": "參考圖色調混合",
+        "group": "internal",
+        "minimum": 0.0,
+        "maximum": 0.5,
+        "step": 0.01,
+        "neutral": 0.0,
+        "unit": "",
+        "default_visible": False,
+    },
 }
 
+EDIT_PARAMETER_RANGES: dict[str, tuple[float, float]] = {
+    key: (float(spec["minimum"]), float(spec["maximum"]))
+    for key, spec in EDIT_PARAMETER_SPECS.items()
+}
+
+MANUAL_PARAMETER_KEYS = tuple(
+    key for key in EDIT_PARAMETER_SPECS if key != "reference_tint"
+)
+
+
+class ManualParameterValidationError(ValueError):
+    def __init__(self, field: str | None, reason: str):
+        self.field = field
+        self.reason = reason
+        prefix = f"Manual parameter '{field}'" if field else "Manual parameters"
+        super().__init__(f"{prefix}: {reason}")
 
 EDIT_REGIONS = {
     "all",
@@ -70,6 +197,77 @@ def validate_edit_parameters(parameters: Mapping[str, Any] | None) -> dict[str, 
     return validated
 
 
+def validate_manual_parameter_overrides(
+    parameters: Mapping[str, Any] | None,
+) -> dict[str, float]:
+    """Strict validation for user-visible manual controls.
+
+    Unlike LLM validation, this path never drops or clamps a value silently.
+    """
+    if parameters is None:
+        return {}
+    if not isinstance(parameters, Mapping):
+        raise ManualParameterValidationError(None, "must be a JSON object")
+
+    validated: dict[str, float] = {}
+    for key, value in parameters.items():
+        if key not in MANUAL_PARAMETER_KEYS:
+            raise ManualParameterValidationError(str(key), "is not user-adjustable")
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            raise ManualParameterValidationError(key, "must be a finite JSON number")
+
+        numeric_value = float(value)
+        if not math.isfinite(numeric_value):
+            raise ManualParameterValidationError(key, "must be finite")
+
+        spec = EDIT_PARAMETER_SPECS[key]
+        minimum = float(spec["minimum"])
+        maximum = float(spec["maximum"])
+        step = float(spec["step"])
+        if numeric_value < minimum or numeric_value > maximum:
+            raise ManualParameterValidationError(
+                key,
+                f"must be between {minimum:g} and {maximum:g}",
+            )
+
+        step_position = (numeric_value - minimum) / step
+        if not math.isclose(step_position, round(step_position), abs_tol=1e-7):
+            raise ManualParameterValidationError(
+                key,
+                f"must align to step {step:g}",
+            )
+        validated[key] = _round_for_step(numeric_value, step)
+
+    return validated
+
+
+def manual_parameter_schema() -> dict[str, Any]:
+    parameters = []
+    for order, key in enumerate(MANUAL_PARAMETER_KEYS):
+        spec = EDIT_PARAMETER_SPECS[key]
+        parameters.append(
+            {
+                "key": key,
+                "label": spec["label"],
+                "group": spec["group"],
+                "minimum": spec["minimum"],
+                "maximum": spec["maximum"],
+                "step": spec["step"],
+                "neutral": spec["neutral"],
+                "unit": spec["unit"],
+                "supports_negative": float(spec["minimum"]) < 0.0,
+                "can_reset": True,
+                "default_visible": bool(spec["default_visible"]),
+                "order": order,
+            }
+        )
+    return {
+        "schema_version": "manual_opencv_v1",
+        "engine": "opencv",
+        "parameters": parameters,
+    }
+
+
 def validate_edit_region(region: Any) -> str:
     normalized = str(region or "all").strip().lower()
     if normalized in EDIT_REGIONS:
@@ -105,3 +303,9 @@ def _coerce_float(value: Any) -> float | None:
         return None
 
     return numeric_value
+
+
+def _round_for_step(value: float, step: float) -> float:
+    text = f"{step:.12f}".rstrip("0")
+    decimals = len(text.split(".", 1)[1]) if "." in text else 0
+    return round(value, decimals)

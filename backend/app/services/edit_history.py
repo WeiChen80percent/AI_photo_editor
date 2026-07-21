@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import threading
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -18,6 +19,8 @@ class EditHistoryNotFound(EditHistoryError):
 class EditHistoryStore:
     def __init__(self, storage_dir: Path):
         self.storage_dir = storage_dir
+        self._locks_guard = threading.Lock()
+        self._session_locks: dict[str, threading.Lock] = {}
 
     def new_session_id(self) -> str:
         return f"session_{uuid4().hex}"
@@ -35,23 +38,25 @@ class EditHistoryStore:
 
     def save_edit(self, record: dict[str, Any]) -> dict[str, Any]:
         session_id = record["session_id"]
-        try:
-            session = self.load_session(session_id)
-        except EditHistoryNotFound:
-            session = {
-                "session_id": session_id,
-                "created_at": record["created_at"],
-                "edits": [],
-            }
+        with self._session_lock(session_id):
+            try:
+                session = self.load_session(session_id)
+            except EditHistoryNotFound:
+                session = {
+                    "session_id": session_id,
+                    "created_at": record["created_at"],
+                    "edits": [],
+                }
 
-        session["updated_at"] = record["created_at"]
-        session["edits"].append(record)
-        self.storage_dir.mkdir(parents=True, exist_ok=True)
-
-        with open(self._session_path(session_id), "w", encoding="utf-8") as f:
-            json.dump(session, f, ensure_ascii=False, indent=2)
-
-        return session
+            session["updated_at"] = record["created_at"]
+            session["edits"].append(record)
+            self.storage_dir.mkdir(parents=True, exist_ok=True)
+            session_path = self._session_path(session_id)
+            temp_path = session_path.with_suffix(".json.tmp")
+            with open(temp_path, "w", encoding="utf-8") as f:
+                json.dump(session, f, ensure_ascii=False, indent=2)
+            temp_path.replace(session_path)
+            return session
 
     def find_edit(self, session_id: str, edit_id: str) -> dict[str, Any]:
         session = self.load_session(session_id)
@@ -84,6 +89,8 @@ class EditHistoryStore:
         edit_plan: dict[str, Any] | None = None,
         engine_parameters: dict[str, Any] | None = None,
         mask_info: dict[str, Any] | None = None,
+        manual_source_edit_id: str | None = None,
+        parameter_overrides: dict[str, Any] | None = None,
         processing_timings: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         return {
@@ -101,6 +108,8 @@ class EditHistoryStore:
             "edit_plan": edit_plan,
             "engine_parameters": engine_parameters,
             "mask_info": mask_info,
+            "manual_source_edit_id": manual_source_edit_id,
+            "parameter_overrides": parameter_overrides,
             "processing_timings": processing_timings,
             "parameters": parameters,
             "preset_name": preset_name,
@@ -112,3 +121,7 @@ class EditHistoryStore:
 
     def _session_path(self, session_id: str) -> Path:
         return self.storage_dir / f"{session_id}.json"
+
+    def _session_lock(self, session_id: str) -> threading.Lock:
+        with self._locks_guard:
+            return self._session_locks.setdefault(session_id, threading.Lock())
