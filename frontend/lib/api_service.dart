@@ -3,40 +3,101 @@ import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
-class ApiService {
-  static const String baseUrl = String.fromEnvironment(
+import 'edit_models.dart';
+
+abstract class EditorApi {
+  String buildImageUrl(String path);
+
+  Future<EditHistoryItem> submitEdit({
+    required Uint8List? originalBytes,
+    required Uint8List? referenceBytes,
+    required String prompt,
+    String? sessionId,
+    String? parentEditId,
+  });
+
+  Future<EditSession> fetchSession(String sessionId);
+
+  Future<ManualSchema> fetchManualSchema();
+
+  Future<ManualEditResponse> previewManual({
+    required String sessionId,
+    required String sourceEditId,
+    required Map<String, double> parameterOverrides,
+    required String clientRequestId,
+    http.Client? requestClient,
+  });
+
+  Future<ManualEditResponse> commitManual({
+    required String sessionId,
+    required String sourceEditId,
+    required Map<String, double> parameterOverrides,
+    required String clientRequestId,
+  });
+}
+
+class ApiException implements Exception {
+  const ApiException({
+    required this.statusCode,
+    required this.code,
+    required this.message,
+  });
+
+  final int statusCode;
+  final String? code;
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
+class ApiService implements EditorApi {
+  ApiService({String? baseUrl, http.Client? client})
+    : baseUrl = (baseUrl ?? environmentBaseUrl).replaceFirst(RegExp(r'/$'), ''),
+      _client = client ?? http.Client(),
+      _ownsClient = client == null;
+
+  static const String environmentBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
     defaultValue: 'http://127.0.0.1:8000',
   );
 
-  static Future<Map<String, dynamic>> uploadImages({
+  final String baseUrl;
+  final http.Client _client;
+  final bool _ownsClient;
+
+  @override
+  Future<EditHistoryItem> submitEdit({
     required Uint8List? originalBytes,
     required Uint8List? referenceBytes,
     required String prompt,
     String? sessionId,
     String? parentEditId,
   }) async {
-    final request = buildEditRequest(
+    final request = createEditRequest(
       originalBytes: originalBytes,
       referenceBytes: referenceBytes,
       prompt: prompt,
       sessionId: sessionId,
       parentEditId: parentEditId,
     );
-    final streamedResponse = await request.send();
-    final response = await http.Response.fromStream(streamedResponse);
-
-    if (response.statusCode != 200) {
-      throw Exception(
-        'Upload failed: ${response.statusCode}, body: ${response.body}',
+    try {
+      final streamedResponse = await _client.send(request);
+      final response = await http.Response.fromStream(streamedResponse);
+      final data = _decodeResponse(response);
+      return EditHistoryItem.fromJson(data, buildImageUrl: buildImageUrl);
+    } on ApiException {
+      rethrow;
+    } catch (error) {
+      throw ApiException(
+        statusCode: 0,
+        code: 'network_error',
+        message: '無法連線到修圖後端：$error',
       );
     }
-
-    final Map<String, dynamic> data = jsonDecode(response.body);
-    return data;
   }
 
-  static http.MultipartRequest buildEditRequest({
+  http.MultipartRequest createEditRequest({
     required Uint8List? originalBytes,
     required Uint8List? referenceBytes,
     required String prompt,
@@ -74,10 +135,135 @@ class ApiService {
     return request;
   }
 
-  static String buildImageUrl(String path) {
+  @override
+  Future<EditSession> fetchSession(String sessionId) async {
+    final response = await _get('/edit/sessions/$sessionId');
+    return EditSession.fromJson(response, buildImageUrl: buildImageUrl);
+  }
+
+  @override
+  Future<ManualSchema> fetchManualSchema() async {
+    final response = await _get('/edit/manual/schema');
+    return ManualSchema.fromJson(response);
+  }
+
+  @override
+  Future<ManualEditResponse> previewManual({
+    required String sessionId,
+    required String sourceEditId,
+    required Map<String, double> parameterOverrides,
+    required String clientRequestId,
+    http.Client? requestClient,
+  }) async {
+    final response = await _postJson('/edit/manual/preview', {
+      'session_id': sessionId,
+      'source_edit_id': sourceEditId,
+      'parameter_overrides': parameterOverrides,
+      'client_request_id': clientRequestId,
+    }, requestClient: requestClient);
+    return ManualEditResponse.fromJson(response, buildImageUrl: buildImageUrl);
+  }
+
+  @override
+  Future<ManualEditResponse> commitManual({
+    required String sessionId,
+    required String sourceEditId,
+    required Map<String, double> parameterOverrides,
+    required String clientRequestId,
+  }) async {
+    final response = await _postJson('/edit/manual/commit', {
+      'session_id': sessionId,
+      'source_edit_id': sourceEditId,
+      'parameter_overrides': parameterOverrides,
+      'client_request_id': clientRequestId,
+    });
+    return ManualEditResponse.fromJson(response, buildImageUrl: buildImageUrl);
+  }
+
+  @override
+  String buildImageUrl(String path) {
     if (path.startsWith('http://') || path.startsWith('https://')) {
       return path;
     }
-    return '$baseUrl$path';
+    final separator = path.startsWith('/') ? '' : '/';
+    return '$baseUrl$separator$path';
+  }
+
+  Future<Map<String, dynamic>> _get(String path) async {
+    try {
+      final response = await _client.get(Uri.parse('$baseUrl$path'));
+      return _decodeResponse(response);
+    } on ApiException {
+      rethrow;
+    } catch (error) {
+      throw ApiException(
+        statusCode: 0,
+        code: 'network_error',
+        message: '無法連線到修圖後端：$error',
+      );
+    }
+  }
+
+  Future<Map<String, dynamic>> _postJson(
+    String path,
+    Map<String, dynamic> body, {
+    http.Client? requestClient,
+  }) async {
+    try {
+      final response = await (requestClient ?? _client).post(
+        Uri.parse('$baseUrl$path'),
+        headers: const {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
+      return _decodeResponse(response);
+    } on ApiException {
+      rethrow;
+    } catch (error) {
+      throw ApiException(
+        statusCode: 0,
+        code: 'network_error',
+        message: '無法連線到修圖後端：$error',
+      );
+    }
+  }
+
+  Map<String, dynamic> _decodeResponse(http.Response response) {
+    dynamic decoded;
+    try {
+      decoded = jsonDecode(utf8.decode(response.bodyBytes));
+    } catch (_) {
+      decoded = null;
+    }
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      final detail = decoded is Map ? decoded['detail'] : null;
+      final detailMap = detail is Map
+          ? Map<String, dynamic>.from(detail)
+          : const <String, dynamic>{};
+      final message =
+          detailMap['message']?.toString() ??
+          (detail is String ? detail : null) ??
+          '後端請求失敗（HTTP ${response.statusCode}）';
+      throw ApiException(
+        statusCode: response.statusCode,
+        code: detailMap['code']?.toString(),
+        message: message,
+      );
+    }
+
+    if (decoded is! Map) {
+      throw const ApiException(
+        statusCode: 200,
+        code: 'invalid_response',
+        message: '後端回傳了無法辨識的資料格式。',
+      );
+    }
+    return Map<String, dynamic>.from(decoded);
+  }
+
+  void close() {
+    if (_ownsClient) {
+      _client.close();
+    }
   }
 }
