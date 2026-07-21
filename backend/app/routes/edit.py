@@ -6,6 +6,7 @@ from app.services.edit_engines import create_engine_result, normalize_engine_nam
 from app.services.edit_history import EditHistoryNotFound, EditHistoryStore
 from app.services.edit_intent_resolver import resolve_edit_intent
 from app.services.edit_plan import build_reference_edit_plan
+from app.services.semantic_mask_service import SemanticTargetNotFoundError
 
 router = APIRouter()
 
@@ -131,6 +132,16 @@ async def upload_images(
             reference_path=reference_path,
             result_path=result_path,
             edit_plan=prompt_result["edit_plan"],
+            mask_source_path=original_path,
+        )
+    except SemanticTargetNotFoundError as e:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "semantic_target_not_found",
+                "message": str(e),
+                "mask_info": e.mask_info,
+            },
         )
     except Exception as e:
         raise HTTPException(
@@ -162,6 +173,8 @@ async def upload_images(
         engine=process_result["engine"],
         edit_plan=prompt_result["edit_plan"],
         engine_parameters=process_result["parameters"],
+        mask_info=process_result.get("mask_info"),
+        processing_timings=process_result.get("timings_ms"),
         explanation=explanation,
         parser_source=prompt_result["parser_source"],
         fallback_reason=prompt_result["fallback_reason"],
@@ -187,6 +200,7 @@ async def upload_images(
         "edit_plan": prompt_result["edit_plan"],
         "engine_parameters": process_result["parameters"],
         "parameters": process_result["parameters"],
+        "mask_info": process_result.get("mask_info"),
         "prompt": prompt_result["prompt"],
         "resolved_intent": prompt_result["resolved_intent"],
         "preset_name": prompt_result.get("preset_name"),

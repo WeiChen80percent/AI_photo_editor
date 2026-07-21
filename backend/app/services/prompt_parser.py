@@ -31,8 +31,14 @@ def parse_edit_prompt(prompt: str | None) -> dict[str, Any]:
 
     strength = _detect_strength(normalized)
     preset_name = _detect_preset_name(normalized)
+    region, mask_type = _detect_region_mask(normalized)
     if preset_name is not None:
-        edit_plan = build_preset_edit_plan(prompt=user_prompt, preset_name=preset_name)
+        edit_plan = build_preset_edit_plan(
+            prompt=user_prompt,
+            preset_name=preset_name,
+            region=region,
+            mask_type=mask_type,
+        )
         return _build_result(
             prompt=user_prompt,
             resolved_intent="apply_preset",
@@ -45,7 +51,12 @@ def parse_edit_prompt(prompt: str | None) -> dict[str, Any]:
     intent_strengths = _detect_intent_strengths(normalized, strength)
 
     if not intent_strengths:
-        edit_plan = build_raw_parameter_edit_plan(prompt=user_prompt, parameters={})
+        edit_plan = build_raw_parameter_edit_plan(
+            prompt=user_prompt,
+            parameters={},
+            region=region,
+            mask_type=mask_type,
+        )
         return _build_result(
             prompt=user_prompt,
             resolved_intent="default",
@@ -58,6 +69,8 @@ def parse_edit_prompt(prompt: str | None) -> dict[str, Any]:
     edit_plan = build_compound_edit_plan(
         prompt=user_prompt,
         intent_strengths=intent_strengths,
+        region=region,
+        mask_type=mask_type,
     )
     intents = [intent for intent, _ in intent_strengths]
     resolved_intent = intents[0] if len(intents) == 1 else "compound"
@@ -71,9 +84,87 @@ def parse_edit_prompt(prompt: str | None) -> dict[str, Any]:
 
 
 def _detect_intent_strengths(text: str, strength: str) -> list[tuple[str, str]]:
-    if _contains(text, ["悶", "沉悶", "灰灰", "flat"]):
-        return [("brighten", strength), ("vivid", strength)]
+    if _contains(text, ["不要那麼銳", "不要太銳", "太銳利", "太清晰", "oversharp"]):
+        return [("soft", "subtle")]
 
+    if _contains(text, ["霧霧", "霧霾", "有霧", "hazy", "haze", "foggy"]):
+        return [("dehaze", strength)]
+
+    if _contains(text, ["悶", "沉悶", "灰灰", "髒髒", "dirty", "flat", "dull"]):
+        return [("dehaze", strength), ("vivid", "subtle")]
+
+    if _contains(text, ["臉", "人", "人物", "人像", "主體"]) and _contains(
+        text,
+        ["太暗", "有點暗", "暗", "不夠亮"],
+    ):
+        return [("brighten", strength)]
+
+    if _contains(text, ["天空", "sky"]) and _contains(
+        text,
+        ["太亮", "過亮", "刺眼", "過曝", "壓"],
+    ):
+        return [("darken", strength)]
+
+    if _contains(text, ["背景", "background"]) and _contains(
+        text,
+        ["搶", "太搶", "淡", "弱一點", "不要那麼明顯", "distracting"],
+    ):
+        return [("natural", strength)]
+
+    if _contains(text, ["too blue", "less blue", "偏藍", "太藍", "藍藍"]):
+        return [("warm", "subtle")]
+
+    if _contains(text, ["色彩太淡", "顏色太淡", "不夠鮮豔", "不夠飽和", "washed out"]):
+        return [("vivid", strength)]
+
+    if _contains(text, ["膚色不要太紅", "不要太紅", "別太紅", "太紅潤"]):
+        return [("natural", "subtle")]
+
+    if _contains(
+        text,
+        [
+            "not too saturated",
+            "too saturated",
+            "less saturated",
+            "less vivid",
+            "too colorful",
+            "不要太飽和",
+            "不要太鮮豔",
+            "太鮮豔",
+            "顏色太重",
+        ],
+    ):
+        return [("natural", "subtle")]
+
+    if _contains(
+        text,
+        ["too yellow", "less yellow", "not so yellow", "不要那麼黃", "太黃", "偏黃"],
+    ):
+        return [("cool", "subtle")]
+
+    if _contains(text, ["shadow", "shadows", "暗部", "陰影"]) and _contains(
+        text,
+        ["brighten", "brighter", "lighten", "lift", "亮", "拉"],
+    ):
+        return [("brighten", "subtle")]
+
+    if _contains(text, ["highlight", "highlights", "高光", "亮部"]) and _contains(
+        text,
+        ["protect", "overexposure", "overexposed", "too bright", "壓", "過曝"],
+    ):
+        return [("darken", "subtle")]
+
+    if _contains(text, ["center", "middle", "subject", "主體", "中間", "中心"]) and _contains(
+        text,
+        ["bright", "brighter", "brighten", "clear", "亮", "清楚"],
+    ):
+        return [("brighten", "subtle")]
+
+    if _contains(text, ["edge", "edges", "border", "background", "邊緣", "背景"]) and _contains(
+        text,
+        ["dark", "darken", "less", "darker", "暗", "淡"],
+    ):
+        return [("darken", "subtle")]
     if _contains(text, ["清爽", "通透", "fresh", "airy"]):
         return [("brighten", strength), ("cool", strength)]
 
@@ -100,7 +191,22 @@ def _detect_intent_strengths(text: str, strength: str) -> list[tuple[str, str]]:
         "過曝" in text and not overexposure_guard
     ):
         intent_strengths.append(("darken", strength))
-    elif _contains(text, ["亮", "明亮", "調亮", "bright", "brighter", "lighten"]):
+    elif _contains(
+        text,
+        [
+            "太暗",
+            "有點暗",
+            "曝光不足",
+            "不夠亮",
+            "亮",
+            "明亮",
+            "調亮",
+            "bright",
+            "brighter",
+            "lighten",
+            "underexposed",
+        ],
+    ):
         intent_strengths.append(("brighten", strength))
 
     if _contains(text, ["暖", "暖色", "偏黃", "warm", "warmer"]):
@@ -111,7 +217,7 @@ def _detect_intent_strengths(text: str, strength: str) -> list[tuple[str, str]]:
     if _contains(text, ["鮮豔", "飽和", "色彩", "顏色", "vivid", "saturated", "colorful"]):
         intent_strengths.append(("vivid", strength))
 
-    if _contains(text, ["清楚", "清晰", "銳利", "sharp", "sharpen"]):
+    if _contains(text, ["清楚", "清晰", "銳利", "細節", "有點糊", "糊", "sharp", "sharpen"]):
         intent_strengths.append(("sharpen", strength))
 
     if _contains(text, ["柔焦", "柔一點", "soft", "softer"]):
@@ -136,7 +242,45 @@ def _detect_preset_name(text: str) -> str | None:
     return None
 
 
+def _detect_region_mask(text: str) -> tuple[str, str | None]:
+    if _contains(text, ["shadow", "shadows", "暗部", "陰影"]):
+        return "shadows", "luminance_shadows"
+    if _contains(
+        text,
+        [
+            "highlight",
+            "highlights",
+            "高光",
+            "亮部",
+        ],
+    ):
+        return "highlights", "luminance_highlights"
+    if _contains(text, ["sky", "天空"]):
+        return "sky", "semantic_sky"
+    if _contains(text, ["overexposure", "overexposed", "過曝"]) and not _contains(
+        text,
+        ["不要過曝", "避免過曝", "別過曝"],
+    ):
+        return "highlights", "luminance_highlights"
+    if _contains(text, ["face", "person", "portrait", "臉", "人", "人物", "人像"]):
+        return "person", "semantic_person"
+    if _contains(text, ["background", "背景"]):
+        return "background", "semantic_background"
+    if _contains(
+        text,
+        ["center", "middle", "subject", "主體", "中間", "中心"],
+    ):
+        return "center", "center_ellipse"
+    if _contains(text, ["edge", "edges", "border", "邊緣"]):
+        return "edges", "edge_vignette"
+    return "all", None
+
+
 def _detect_strength(text: str) -> str:
+    for keyword in ["again", "previous", "last one", "上一張", "剛剛", "再"]:
+        if keyword in text:
+            return normalize_edit_strength("subtle")
+
     for keyword in ["一點", "稍微", "微微", "有點", "小幅", "little", "slightly", "light"]:
         if keyword in text:
             return normalize_edit_strength("subtle")

@@ -19,7 +19,12 @@ from app.services.edit_plan import (
     build_raw_parameter_edit_plan,
     build_single_edit_plan,
 )
-from app.services.edit_schema import validate_edit_parameters
+from app.services.edit_schema import (
+    default_mask_type_for_region,
+    validate_edit_mask_type,
+    validate_edit_parameters,
+    validate_edit_region,
+)
 from app.services.prompt_parser import parse_edit_prompt
 
 
@@ -65,7 +70,13 @@ def _parse_llm_response(prompt: str, response_text: str) -> dict[str, Any]:
     parameters = validate_edit_parameters(raw_parameters)
     if not parameters:
         raise ValueError("LLM did not provide any supported OpenCV parameters.")
-    edit_plan = build_raw_parameter_edit_plan(prompt=prompt, parameters=parameters)
+    region, mask_type = _resolve_region_mask(prompt, data)
+    edit_plan = build_raw_parameter_edit_plan(
+        prompt=prompt,
+        parameters=parameters,
+        region=region,
+        mask_type=mask_type,
+    )
 
     resolved_intent = str(data.get("resolved_intent") or "llm_parameters")
     explanation = str(
@@ -93,7 +104,13 @@ def _parse_preset_response(prompt: str, data: dict[str, Any]) -> dict[str, Any] 
     preset_name = normalize_preset_name(str(raw_preset_name))
     if preset_name is None:
         raise ValueError(f"LLM selected unsupported preset: {raw_preset_name}")
-    edit_plan = build_preset_edit_plan(prompt=prompt, preset_name=preset_name)
+    region, mask_type = _resolve_region_mask(prompt, data)
+    edit_plan = build_preset_edit_plan(
+        prompt=prompt,
+        preset_name=preset_name,
+        region=region,
+        mask_type=mask_type,
+    )
 
     return {
         "prompt": prompt,
@@ -142,9 +159,12 @@ def _parse_compound_template_response(
         prompt,
         limited_intent_strengths,
     )
+    region, mask_type = _resolve_region_mask(prompt, data)
     edit_plan = build_compound_edit_plan(
         prompt=prompt,
         intent_strengths=limited_intent_strengths,
+        region=region,
+        mask_type=mask_type,
     )
     edits = edit_plan["edits"]
     resolved_intent = (
@@ -232,10 +252,13 @@ def _parse_template_response(prompt: str, data: dict[str, Any]) -> dict[str, Any
         str(data.get("strength") or data.get("intensity") or "normal")
     )
     style = str(data.get("style") or "natural")
+    region, mask_type = _resolve_region_mask(prompt, data)
     edit_plan = build_single_edit_plan(
         prompt=prompt,
         intent=resolved_intent,
         strength=strength,
+        region=region,
+        mask_type=mask_type,
     )
     explanation = str(
         data.get("explanation")
@@ -288,6 +311,54 @@ def _fallback_result(prompt: str, fallback_reason: str) -> dict[str, Any]:
     return result
 
 
+def _resolve_region_mask(prompt: str, data: Mapping[str, Any]) -> tuple[str, str]:
+    region = validate_edit_region(data.get("region"))
+    if region == "all":
+        region = _infer_region_from_prompt(prompt)
+
+    mask_type = validate_edit_mask_type(data.get("mask_type"))
+    if mask_type == "none":
+        mask_type = default_mask_type_for_region(region)
+    return region, mask_type
+
+
+def _infer_region_from_prompt(prompt: str) -> str:
+    text = (prompt or "").strip().lower()
+    if _contains(text, ["shadow", "shadows", "暗部", "陰影"]):
+        return "shadows"
+    if _contains(
+        text,
+        ["highlight", "highlights", "高光", "亮部"],
+    ):
+        return "highlights"
+    if _contains(text, ["sky", "天空"]):
+        return "sky"
+    if _contains(text, ["overexposure", "overexposed", "過曝"]) and not _contains(
+        text,
+        ["不要過曝", "避免過曝", "別過曝"],
+    ):
+        return "highlights"
+    if _contains(
+        text,
+        [
+            "center",
+            "middle",
+            "subject",
+            "主體",
+            "中間",
+            "中心",
+        ],
+    ):
+        return "center"
+    if _contains(text, ["face", "person", "portrait", "臉", "人", "人物", "人像"]):
+        return "person"
+    if _contains(text, ["background", "背景"]):
+        return "background"
+    if _contains(text, ["edge", "edges", "border", "邊緣"]):
+        return "edges"
+    return "all"
+
+
 def _get_default_llm_client() -> LLMClient | None:
     enabled = os.getenv("AI_PHOTO_USE_LLM", "1").strip().lower()
     if enabled in {"0", "false", "no", "off"}:
@@ -333,6 +404,8 @@ Use 3 edits only when the user explicitly lists three operations.
 Treat "a little" or "一點" continuation requests as subtle strength.
 Treat "not too vivid/saturated" constraints as natural, not as a vivid edit.
 Treat skin redness constraints as a strength guard, not as a separate natural edit.
+For local edits, use region sky, person, background, highlights, or shadows.
+Do not replace sky/person/background with geometric center or edge regions.
 
 Intent template catalog:
 {format_template_catalog_for_prompt()}
@@ -362,6 +435,10 @@ Examples:
 - "色彩鮮豔一點但膚色不要太紅" -> {{"edits":[{{"intent":"vivid","strength":"subtle"}}]}}
 - "照片太悶了" -> {{"edits":[{{"intent":"brighten","strength":"normal"}},{{"intent":"vivid","strength":"normal"}}]}}
 - "看起來清爽一點" -> {{"edits":[{{"intent":"brighten","strength":"subtle"}},{{"intent":"cool","strength":"subtle"}}]}}
+- "霧霧的" -> {{"edits":[{{"intent":"dehaze","strength":"subtle"}}]}}
+- "臉太暗" -> {{"region":"person","edits":[{{"intent":"brighten","strength":"subtle"}}]}}
+- "天空太亮" -> {{"region":"sky","edits":[{{"intent":"darken","strength":"subtle"}}]}}
+- "背景有點搶" -> {{"region":"background","edits":[{{"intent":"natural","strength":"subtle"}}]}}
 - "亮一點、冷一點、清晰一點" -> {{"edits":[{{"intent":"brighten","strength":"subtle"}},{{"intent":"cool","strength":"subtle"}},{{"intent":"sharpen","strength":"subtle"}}]}}
 - "暗黃底片感" -> {{"preset":"vintage_film"}}
 - "電影感" -> {{"preset":"cinematic"}}

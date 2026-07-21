@@ -9,8 +9,44 @@ EDIT_PARAMETER_RANGES: dict[str, tuple[float, float]] = {
     "saturation": (0.0, 2.0),
     "temperature": (-50.0, 50.0),
     "sharpen": (0.0, 1.0),
+    "clarity": (0.0, 1.0),
+    "dehaze": (0.0, 1.0),
     "vignette": (0.0, 0.8),
     "reference_tint": (0.0, 0.5),
+}
+
+
+EDIT_REGIONS = {
+    "all",
+    "sky",
+    "person",
+    "background",
+    "shadows",
+    "highlights",
+    "center",
+    "edges",
+}
+
+EDIT_MASK_TYPES = {
+    "none",
+    "semantic_sky",
+    "semantic_person",
+    "semantic_background",
+    "luminance_shadows",
+    "luminance_highlights",
+    "center_ellipse",
+    "edge_vignette",
+}
+
+_DEFAULT_MASK_BY_REGION = {
+    "all": "none",
+    "sky": "semantic_sky",
+    "person": "semantic_person",
+    "background": "semantic_background",
+    "shadows": "luminance_shadows",
+    "highlights": "luminance_highlights",
+    "center": "center_ellipse",
+    "edges": "edge_vignette",
 }
 
 
@@ -32,6 +68,24 @@ def validate_edit_parameters(parameters: Mapping[str, Any] | None) -> dict[str, 
         validated[key] = round(min(max(numeric_value, low), high), 4)
 
     return validated
+
+
+def validate_edit_region(region: Any) -> str:
+    normalized = str(region or "all").strip().lower()
+    if normalized in EDIT_REGIONS:
+        return normalized
+    return "all"
+
+
+def validate_edit_mask_type(mask_type: Any) -> str:
+    normalized = str(mask_type or "none").strip().lower()
+    if normalized in EDIT_MASK_TYPES:
+        return normalized
+    return "none"
+
+
+def default_mask_type_for_region(region: Any) -> str:
+    return _DEFAULT_MASK_BY_REGION[validate_edit_region(region)]
 
 
 def format_edit_schema_for_prompt() -> str:

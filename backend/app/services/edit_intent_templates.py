@@ -12,6 +12,7 @@ _SUPPORTED_INTENTS = {
     "vivid",
     "natural",
     "sharpen",
+    "dehaze",
     "soft",
 }
 
@@ -41,6 +42,12 @@ _INTENT_ALIASES: dict[str, str] = {
     "balanced": "natural",
     "clear": "sharpen",
     "sharp": "sharpen",
+    "clarity": "sharpen",
+    "detail": "sharpen",
+    "hazy": "dehaze",
+    "haze": "dehaze",
+    "dehazed": "dehaze",
+    "foggy": "dehaze",
     "softer": "soft",
 }
 
@@ -167,6 +174,7 @@ def _prompt_explicitly_lists_three_operations(prompt: str) -> bool:
         ["鮮豔", "飽和", "色彩", "顏色", "vivid", "saturated", "colorful"],
         ["自然", "柔和", "natural", "balanced"],
         ["清楚", "清晰", "銳利", "sharp", "sharpen"],
+        ["霧", "霧霧", "灰灰", "通透", "悶", "dehaze", "hazy", "foggy"],
         ["柔焦", "柔一點", "soft", "softer"],
     ]
     matched_group_count = sum(

@@ -83,6 +83,8 @@ class EditHistoryStore:
         engine: str | None = None,
         edit_plan: dict[str, Any] | None = None,
         engine_parameters: dict[str, Any] | None = None,
+        mask_info: dict[str, Any] | None = None,
+        processing_timings: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         return {
             "session_id": session_id,
@@ -98,6 +100,8 @@ class EditHistoryStore:
             "engine": engine,
             "edit_plan": edit_plan,
             "engine_parameters": engine_parameters,
+            "mask_info": mask_info,
+            "processing_timings": processing_timings,
             "parameters": parameters,
             "preset_name": preset_name,
             "explanation": explanation,

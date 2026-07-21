@@ -1,3 +1,7 @@
+import asyncio
+import logging
+import os
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -6,8 +10,29 @@ from fastapi.staticfiles import StaticFiles
 
 from app.routes.edit import router as edit_router
 from app.routes.health import router as health_router
+from app.services.semantic_mask_service import get_default_semantic_mask_service
 
-app = FastAPI(title="AI Photo Editor Backend")
+
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    preload = os.getenv("AI_PHOTO_PRELOAD_SEGMENTATION", "1").strip().lower()
+    if preload not in {"0", "false", "no", "off"}:
+        try:
+            info = await asyncio.to_thread(
+                get_default_semantic_mask_service().warmup
+            )
+            logger.info("Semantic segmentation model is ready: %s", info)
+        except Exception:
+            logger.exception(
+                "Semantic segmentation preload failed; non-semantic edits remain available."
+            )
+    yield
+
+
+app = FastAPI(title="AI Photo Editor Backend", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

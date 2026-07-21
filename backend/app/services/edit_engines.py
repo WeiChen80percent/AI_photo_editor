@@ -37,6 +37,7 @@ def create_engine_result(
     reference_path: Path | None,
     result_path: Path,
     edit_plan: dict[str, Any],
+    mask_source_path: Path | None = None,
 ) -> dict[str, Any]:
     normalized = normalize_engine_name(engine_name)
     parameters = build_engine_parameters(normalized, edit_plan)
@@ -46,5 +47,6 @@ def create_engine_result(
             reference_path=reference_path,
             result_path=result_path,
             parameters=parameters,
+            mask_source_path=mask_source_path,
         )
     raise ValueError(f"Unsupported edit engine: {engine_name}")
