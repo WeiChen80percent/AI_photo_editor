@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from collections.abc import Iterable
 
+from app.services.prompt_text import normalize_prompt_text
+
 
 EditIntentStrength = tuple[str, str]
 
@@ -162,7 +164,7 @@ def _all_strengths() -> set[str]:
 
 
 def _prompt_explicitly_lists_three_operations(prompt: str) -> bool:
-    text = (prompt or "").strip().lower()
+    text = normalize_prompt_text(prompt)
     if not text:
         return False
 

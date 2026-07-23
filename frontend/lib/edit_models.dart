@@ -1,5 +1,19 @@
 typedef ImageUrlBuilder = String Function(String path);
 
+const Set<String> _adaptivePublicAxes = <String>{
+  'exposure',
+  'brightness',
+  'contrast',
+  'highlights',
+  'shadows',
+  'saturation',
+  'temperature',
+  'sharpen',
+  'clarity',
+  'dehaze',
+  'vignette',
+};
+
 Map<String, dynamic> _mapValue(dynamic value) {
   if (value is Map) {
     return Map<String, dynamic>.from(value);
@@ -17,6 +31,131 @@ double _doubleValue(dynamic value, {double fallback = 0}) {
     return value.toDouble();
   }
   return double.tryParse(value?.toString() ?? '') ?? fallback;
+}
+
+double? _nullableDoubleValue(dynamic value) {
+  if (value is num) {
+    return value.toDouble();
+  }
+  return double.tryParse(value?.toString() ?? '');
+}
+
+bool? _nullableBoolValue(dynamic value) {
+  if (value is bool) {
+    return value;
+  }
+  switch (value?.toString().trim().toLowerCase()) {
+    case 'true':
+    case '1':
+      return true;
+    case 'false':
+    case '0':
+      return false;
+    default:
+      return null;
+  }
+}
+
+int? _nullableIntValue(dynamic value) {
+  if (value is num) {
+    return value.toInt();
+  }
+  return int.tryParse(value?.toString() ?? '');
+}
+
+class AdaptiveOperation {
+  const AdaptiveOperation({
+    required this.axis,
+    required this.region,
+    required this.relation,
+    required this.reason,
+    required this.currentValue,
+    required this.nextValue,
+    required this.deltaFromParent,
+    required this.lowerBound,
+    required this.upperBound,
+    required this.stepBefore,
+    required this.stepAfter,
+    required this.direction,
+    required this.applied,
+    required this.converged,
+    this.operationId,
+    this.groupId,
+  });
+
+  final String? operationId;
+  final String? groupId;
+  final String axis;
+  final String region;
+  final String? relation;
+  final String? reason;
+  final double? currentValue;
+  final double? nextValue;
+  final double? deltaFromParent;
+  final double? lowerBound;
+  final double? upperBound;
+  final double? stepBefore;
+  final double? stepAfter;
+  final int? direction;
+  final bool? applied;
+  final bool? converged;
+
+  static AdaptiveOperation? tryParse(
+    dynamic value, {
+    String defaultRegion = 'all',
+  }) {
+    if (value is! Map) {
+      return null;
+    }
+    final json = Map<String, dynamic>.from(value);
+    final axis = _stringValue(json['axis'] ?? json['primary_parameter']);
+    if (axis == null || !_adaptivePublicAxes.contains(axis)) {
+      return null;
+    }
+    final hasMeaningfulState = <dynamic>[
+      json['relation'],
+      json['reason'],
+      json['current_value'],
+      json['next_value'],
+      json['delta_from_parent'],
+      json['lower_bound'],
+      json['upper_bound'],
+      json['step_before'],
+      json['step_after'],
+      json['direction'],
+      json['applied'],
+      json['converged'],
+      json['bounds_before'],
+      json['bounds_after'],
+    ].any((field) => field != null);
+    if (!hasMeaningfulState) {
+      return null;
+    }
+    final boundsBefore = _mapValue(json['bounds_before']);
+    final boundsAfter = _mapValue(json['bounds_after']);
+    return AdaptiveOperation(
+      operationId: _stringValue(json['operation_id']),
+      groupId: _stringValue(json['group_id']),
+      axis: axis,
+      region: _stringValue(json['region']) ?? defaultRegion,
+      relation: _stringValue(json['relation']),
+      reason: _stringValue(json['reason']),
+      currentValue: _nullableDoubleValue(json['current_value']),
+      nextValue: _nullableDoubleValue(json['next_value']),
+      deltaFromParent: _nullableDoubleValue(json['delta_from_parent']),
+      lowerBound: _nullableDoubleValue(
+        json['lower_bound'] ?? boundsAfter['lower'] ?? boundsBefore['lower'],
+      ),
+      upperBound: _nullableDoubleValue(
+        json['upper_bound'] ?? boundsAfter['upper'] ?? boundsBefore['upper'],
+      ),
+      stepBefore: _nullableDoubleValue(json['step_before']),
+      stepAfter: _nullableDoubleValue(json['step_after']),
+      direction: _nullableIntValue(json['direction']),
+      applied: _nullableBoolValue(json['applied']),
+      converged: _nullableBoolValue(json['converged']),
+    );
+  }
 }
 
 class ManualParameterSpec {
@@ -139,6 +278,7 @@ class EditHistoryItem {
     required this.maskInfo,
     required this.createdAt,
     required this.presetName,
+    this.adaptive = const <String, dynamic>{},
   });
 
   final String sessionId;
@@ -157,6 +297,7 @@ class EditHistoryItem {
   final Map<String, dynamic> maskInfo;
   final DateTime? createdAt;
   final String? presetName;
+  final Map<String, dynamic> adaptive;
 
   factory EditHistoryItem.fromJson(
     Map<String, dynamic> json, {
@@ -196,7 +337,121 @@ class EditHistoryItem {
           ? null
           : DateTime.tryParse(createdAtText),
       presetName: _stringValue(json['preset_name']),
+      adaptive: _mapValue(json['adaptive']),
     );
+  }
+
+  dynamic _adaptiveValue(String key) {
+    final topLevelValue = adaptive[key];
+    if (topLevelValue != null) {
+      return topLevelValue;
+    }
+    return _mapValue(adaptive['state'])[key];
+  }
+
+  bool get hasAdaptiveInfo => adaptiveOperations.isNotEmpty;
+
+  String? get adaptiveSchemaVersion =>
+      _stringValue(_adaptiveValue('schema_version'));
+
+  bool? get adaptiveApplied => _nullableBoolValue(_adaptiveValue('applied'));
+
+  String? get adaptivePolicyVersion =>
+      _stringValue(_adaptiveValue('policy_version')) ??
+      _stringValue(_adaptiveValue('policy'));
+
+  String? get adaptiveReason => _stringValue(_adaptiveValue('reason'));
+
+  String? get adaptiveAxis =>
+      _stringValue(_adaptiveValue('axis')) ??
+      _stringValue(_adaptiveValue('primary_parameter'));
+
+  double? get adaptiveDeltaFromParent =>
+      _nullableDoubleValue(_adaptiveValue('delta_from_parent'));
+
+  double? get adaptiveCurrentValue =>
+      _nullableDoubleValue(_adaptiveValue('current_value'));
+
+  double? get adaptiveNextValue =>
+      _nullableDoubleValue(_adaptiveValue('next_value'));
+
+  double? get adaptiveLowerBound =>
+      _nullableDoubleValue(_adaptiveValue('lower_bound'));
+
+  double? get adaptiveUpperBound =>
+      _nullableDoubleValue(_adaptiveValue('upper_bound'));
+
+  double? get adaptiveStepBefore =>
+      _nullableDoubleValue(_adaptiveValue('step_before'));
+
+  double? get adaptiveStepAfter =>
+      _nullableDoubleValue(_adaptiveValue('step_after'));
+
+  bool? get adaptiveConverged =>
+      _nullableBoolValue(_adaptiveValue('converged'));
+
+  List<AdaptiveOperation> get adaptiveOperations {
+    final schema = adaptiveSchemaVersion;
+    if (schema != null &&
+        schema != 'adaptive_prompt_v1' &&
+        schema != 'adaptive_prompt_v2') {
+      return const <AdaptiveOperation>[];
+    }
+    final defaultRegion =
+        _stringValue(_adaptiveValue('region')) ?? region;
+    final rawOperations = adaptive['operations'];
+    if (rawOperations is List) {
+      final parsed = rawOperations
+          .map(
+            (value) => AdaptiveOperation.tryParse(
+              value,
+              defaultRegion: defaultRegion,
+            ),
+          )
+          .whereType<AdaptiveOperation>()
+          .toList(growable: false);
+      if (parsed.isNotEmpty) {
+        return parsed;
+      }
+    }
+
+    final axis = adaptiveAxis;
+    if (axis == null || !_adaptivePublicAxes.contains(axis)) {
+      return const <AdaptiveOperation>[];
+    }
+    final hasMeaningfulState = adaptiveReason != null ||
+        _stringValue(_adaptiveValue('relation')) != null ||
+        adaptiveCurrentValue != null ||
+        adaptiveNextValue != null ||
+        adaptiveDeltaFromParent != null ||
+        adaptiveLowerBound != null ||
+        adaptiveUpperBound != null ||
+        adaptiveStepBefore != null ||
+        adaptiveStepAfter != null ||
+        _nullableIntValue(_adaptiveValue('direction')) != null ||
+        adaptiveApplied != null ||
+        adaptiveConverged != null;
+    if (!hasMeaningfulState) {
+      return const <AdaptiveOperation>[];
+    }
+    return <AdaptiveOperation>[
+      AdaptiveOperation(
+        axis: axis,
+        region: defaultRegion,
+        relation: _stringValue(_adaptiveValue('relation')),
+        reason: adaptiveReason,
+        currentValue: adaptiveCurrentValue,
+        nextValue: adaptiveNextValue,
+        deltaFromParent: adaptiveDeltaFromParent,
+        lowerBound: adaptiveLowerBound,
+        upperBound: adaptiveUpperBound,
+        stepBefore: adaptiveStepBefore,
+        stepAfter: adaptiveStepAfter,
+        direction: _nullableIntValue(_adaptiveValue('direction')),
+        applied: adaptiveApplied,
+        converged: adaptiveConverged,
+      ),
+    ];
   }
 
   String get region {

@@ -20,6 +20,31 @@ backend/test_photo/
 backend/tests/
 frontend/test/
 
+# local adaptive/manual test and evaluation helpers
+backend/app/static/manual_test.html
+backend/app/services/adaptive_sequence_eval_runner.py
+backend/app/services/adaptive_v2_eval_runner.py
+backend/app/services/adaptive_v2_performance.py
+backend/app/services/local_edit_eval_runner.py
+backend/app/services/manual_edit_eval_runner.py
+backend/run_adaptive_sequence_eval.py
+backend/run_adaptive_v2_eval.py
+backend/run_adaptive_v2_performance.py
+backend/run_adaptive_v2_property_audit.py
+backend/run_local_edit_eval.py
+backend/run_manual_edit_eval.py
+backend/run_semantic_model_benchmark.py
+
+# local validation reports, browser evidence, and design snapshots
+backend/storage/report_runs/
+backend/storage/semantic_model_benchmarks/
+output/playwright/
+frontend/design/concepts/
+frontend/design/legacy_main_before_mobile_first.txt
+docs/2026-07-15_mobile_first_regression.md
+docs/2026-07-22_adaptive_v2_regression.md
+docs/2026-07-23_adaptive_prompt_robustness.md
+
 .vscode/
 .idea/
 

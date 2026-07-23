@@ -24,10 +24,15 @@ class PromptPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return PanelScaffold(
       title: '指令修圖',
-      subtitle: controller.selectedEdit == null ? '從原圖建立第一個版本' : '從目前選中的版本繼續調整',
+      subtitle: controller.selectedEdit == null
+          ? controller.isOriginalBaseSelected && controller.history.isNotEmpty
+                ? '從原圖建立新的歷史分支'
+                : '從原圖建立第一個版本'
+          : '從目前選中的版本繼續調整',
       icon: Icons.auto_awesome_outlined,
       onClose: onClose,
-      message: controller.errorMessage,
+      message: controller.errorMessage ?? controller.statusMessage,
+      messageIsError: controller.errorMessage != null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -298,12 +303,14 @@ class HistoryPanel extends StatelessWidget {
     required this.controller,
     required this.onClose,
     required this.onSelect,
+    required this.onSelectOriginal,
     this.scrollController,
   });
 
   final EditorController controller;
   final VoidCallback onClose;
   final Future<void> Function(EditHistoryItem item) onSelect;
+  final Future<void> Function() onSelectOriginal;
   final ScrollController? scrollController;
 
   @override
@@ -328,6 +335,25 @@ class HistoryPanel extends StatelessWidget {
         ),
         if (controller.errorMessage != null)
           PanelMessage(message: controller.errorMessage!, isError: true),
+        if (items.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.sm,
+              AppSpacing.md,
+              0,
+            ),
+            child: OutlinedButton.icon(
+              key: const Key('history_original_branch'),
+              onPressed: onSelectOriginal,
+              icon: const Icon(Icons.account_tree_outlined, size: 18),
+              label: Text(
+                controller.isOriginalBaseSelected
+                    ? '已選原圖 · 下一次建立新分支'
+                    : '從原圖建立新分支',
+              ),
+            ),
+          ),
         Expanded(
           child: items.isEmpty
               ? const _UnavailablePanel(
@@ -350,10 +376,16 @@ class HistoryPanel extends StatelessWidget {
                     final originalIndex = controller.history.indexWhere(
                       (entry) => entry.editId == item.editId,
                     );
+                    final parentIndex = item.parentEditId == null
+                        ? -1
+                        : controller.history.indexWhere(
+                            (entry) => entry.editId == item.parentEditId,
+                          );
                     return HistoryTile(
                       key: Key('history_${item.editId}'),
                       item: item,
                       version: originalIndex + 1,
+                      parentVersion: parentIndex < 0 ? null : parentIndex + 1,
                       selected: item.editId == controller.selectedEditId,
                       onTap: () => onSelect(item),
                     );
@@ -399,6 +431,10 @@ class EditDetailsPanel extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.md),
           ],
+          if (edit.hasAdaptiveInfo) ...[
+            _AdaptiveDetails(edit: edit),
+            const SizedBox(height: AppSpacing.md),
+          ],
           for (final entry in parameters)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 7),
@@ -431,6 +467,368 @@ class EditDetailsPanel extends StatelessWidget {
   }
 }
 
+class _AdaptiveDetails extends StatelessWidget {
+  const _AdaptiveDetails({required this.edit});
+
+  final EditHistoryItem edit;
+
+  @override
+  Widget build(BuildContext context) {
+    final operations = edit.adaptiveOperations;
+    final policy = edit.adaptivePolicyVersion;
+    final converged = operations.isNotEmpty
+        ? operations.every((operation) => operation.converged == true)
+        : edit.adaptiveConverged == true;
+    final status = operations.length > 1
+        ? '${operations.length} 項微調'
+        : edit.adaptiveApplied == false
+        ? '已重設區間'
+        : converged
+        ? '已收斂'
+        : '持續微調';
+
+    return Container(
+      key: const Key('adaptive_details'),
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: AppColors.accentSoft,
+        borderRadius: BorderRadius.circular(AppRadii.small),
+        border: Border.all(color: AppColors.accent.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.tune, size: 18, color: AppColors.accentBright),
+              const SizedBox(width: AppSpacing.xs),
+              const Expanded(
+                child: Text(
+                  '自適應微調',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
+              Text(
+                status,
+                key: const Key('adaptive_converged'),
+                style: TextStyle(
+                  color: converged == true
+                      ? AppColors.success
+                      : AppColors.textSecondary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          if (policy != null || edit.adaptiveSchemaVersion != null) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Wrap(
+              spacing: AppSpacing.xs,
+              runSpacing: 4,
+              children: [
+                if (policy != null)
+                  _AdaptiveTag(key: const Key('adaptive_policy'), text: policy),
+                if (edit.adaptiveSchemaVersion != null)
+                  _AdaptiveTag(
+                    key: const Key('adaptive_schema'),
+                    text: edit.adaptiveSchemaVersion!,
+                  ),
+              ],
+            ),
+          ],
+          for (var index = 0; index < operations.length; index++) ...[
+            const SizedBox(height: AppSpacing.xs),
+            _AdaptiveOperationDetails(
+              operation: operations[index],
+              index: index,
+              singleOperation: operations.length == 1,
+            ),
+          ],
+          if (operations.isEmpty && edit.adaptiveReason != null) ...[
+            const SizedBox(height: AppSpacing.xs),
+            _AdaptiveTag(
+              key: const Key('adaptive_reason'),
+              text: _adaptiveReasonLabel(edit.adaptiveReason!),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _AdaptiveOperationDetails extends StatelessWidget {
+  const _AdaptiveOperationDetails({
+    required this.operation,
+    required this.index,
+    required this.singleOperation,
+  });
+
+  final AdaptiveOperation operation;
+  final int index;
+  final bool singleOperation;
+
+  Key _key(String name) => Key(
+    singleOperation ? 'adaptive_$name' : 'adaptive_${name}_${index + 1}',
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final axis = operation.axis;
+    return DecoratedBox(
+      key: Key('adaptive_operation_${index + 1}_$axis'),
+      decoration: BoxDecoration(
+        color: AppColors.surface.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(AppRadii.small),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xs),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Wrap(
+              spacing: AppSpacing.xs,
+              runSpacing: 4,
+              children: [
+                _AdaptiveTag(
+                  key: _key('axis'),
+                  text: _adaptiveAxisLabel(axis),
+                ),
+                _AdaptiveTag(
+                  key: _key('region'),
+                  text: regionLabel(operation.region),
+                ),
+                if (operation.reason != null)
+                  _AdaptiveTag(
+                    key: _key('reason'),
+                    text: _adaptiveReasonLabel(operation.reason!),
+                  ),
+              ],
+            ),
+            if (operation.deltaFromParent != null)
+              _AdaptiveValueRow(
+                key: _key('delta'),
+                label: '本次相對調整',
+                value:
+                    _formatAdaptiveAxisNumber(
+                      axis,
+                      operation.deltaFromParent!,
+                      signed: true,
+                    ),
+              ),
+            if (operation.currentValue != null || operation.nextValue != null)
+              _AdaptiveValueRow(
+                key: _key('current_next'),
+                label: '候選值',
+                value:
+                    '${_formatAdaptiveAxisOptional(axis, operation.currentValue)} → '
+                    '${_formatAdaptiveAxisOptional(axis, operation.nextValue)}',
+              ),
+            if (operation.lowerBound != null || operation.upperBound != null)
+              _AdaptiveValueRow(
+                key: _key('bounds'),
+                label: '目前界線',
+                value:
+                    '${operation.lowerBound == null ? '−∞' : _formatAdaptiveAxisNumber(axis, operation.lowerBound!)} ～ '
+                    '${operation.upperBound == null ? '+∞' : _formatAdaptiveAxisNumber(axis, operation.upperBound!)}',
+              ),
+            if (operation.stepBefore != null || operation.stepAfter != null)
+              _AdaptiveValueRow(
+                key: _key('steps'),
+                label: _adaptiveAxisUsesLogStep(axis) ? '步幅（log）' : '步幅',
+                value:
+                    '${_formatAdaptiveStep(axis, operation.stepBefore)} → '
+                    '${_formatAdaptiveStep(axis, operation.stepAfter)}',
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AdaptiveTag extends StatelessWidget {
+  const _AdaptiveTag({super.key, required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surface.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(AppRadii.small),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+        child: Text(
+          text,
+          style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+        ),
+      ),
+    );
+  }
+}
+
+class _AdaptiveValueRow extends StatelessWidget {
+  const _AdaptiveValueRow({
+    super.key,
+    required this.label,
+    required this.value,
+  });
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 7),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 12,
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.xs),
+          Flexible(
+            flex: 2,
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              softWrap: true,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+                fontFeatures: [FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+String _adaptiveAxisLabel(String axis) {
+  switch (axis) {
+    case 'exposure':
+      return '曝光';
+    case 'brightness':
+      return '亮度';
+    case 'contrast':
+      return '對比';
+    case 'highlights':
+      return '高光';
+    case 'shadows':
+      return '陰影';
+    case 'temperature':
+      return '色溫';
+    case 'saturation':
+      return '飽和度';
+    case 'sharpen':
+      return '銳利度';
+    case 'clarity':
+      return '清晰度';
+    case 'dehaze':
+      return '去霧';
+    case 'vignette':
+      return '暗角';
+    default:
+      return axis;
+  }
+}
+
+String _adaptiveReasonLabel(String reason) {
+  switch (reason) {
+    case 'initial_step':
+    case 'initial_anchor_step':
+    case 'initial_template':
+      return '建立初始步幅';
+    case 'initial_negative_bracket':
+      return '從目前效果往回收斂';
+    case 'companion_takeover':
+      return '接手相關參數調整';
+    case 'bracket_midpoint':
+    case 'bounded_midpoint':
+      return '依回饋取區間中點';
+    case 'unbounded_same_direction':
+    case 'same_direction_unbounded':
+    case 'unbounded_template_step':
+      return '延續同方向探索';
+    case 'direction_reversal':
+    case 'reverse_direction':
+      return '依反向回饋縮小';
+    case 'state_reset':
+    case 'explicit_strength_reset':
+      return '重新建立調整基準';
+    case 'absolute_value_reset':
+      return '採用明確數值並重設區間';
+    case 'relative_numeric_reset':
+      return '依相對數值調整';
+    case 'axis_reset':
+      return '重設單一參數';
+    case 'global_reset':
+      return '回到原圖';
+    default:
+      return reason;
+  }
+}
+
+String _formatAdaptiveAxisOptional(String? axis, double? value) {
+  return value == null ? '—' : _formatAdaptiveAxisNumber(axis, value);
+}
+
+String _formatAdaptiveAxisNumber(
+  String? axis,
+  double value, {
+  bool signed = false,
+}) {
+  final formatted = _formatAdaptiveNumber(value, signed: signed);
+  switch (axis) {
+    case 'exposure':
+      return '$formatted EV';
+    case 'contrast':
+    case 'saturation':
+      return '${formatted}x';
+    default:
+      return formatted;
+  }
+}
+
+bool _adaptiveAxisUsesLogStep(String? axis) {
+  return axis == 'contrast' || axis == 'saturation';
+}
+
+String _formatAdaptiveStep(String? axis, double? value) {
+  if (value == null) {
+    return '—';
+  }
+  final formatted = _formatAdaptiveNumber(value);
+  return axis == 'exposure' ? '$formatted EV' : formatted;
+}
+
+String _formatAdaptiveNumber(double value, {bool signed = false}) {
+  final rounded = value == value.roundToDouble()
+      ? value.toInt().toString()
+      : value
+            .toStringAsFixed(3)
+            .replaceFirst(RegExp(r'0+$'), '')
+            .replaceFirst(RegExp(r'\.$'), '');
+  if (signed && value > 0) {
+    return '+$rounded';
+  }
+  return rounded;
+}
+
 class PanelScaffold extends StatelessWidget {
   const PanelScaffold({
     super.key,
@@ -440,6 +838,7 @@ class PanelScaffold extends StatelessWidget {
     required this.child,
     this.subtitle,
     this.message,
+    this.messageIsError = true,
   });
 
   final String title;
@@ -448,6 +847,7 @@ class PanelScaffold extends StatelessWidget {
   final VoidCallback onClose;
   final Widget child;
   final String? message;
+  final bool messageIsError;
 
   @override
   Widget build(BuildContext context) {
@@ -460,7 +860,8 @@ class PanelScaffold extends StatelessWidget {
           icon: icon,
           onClose: onClose,
         ),
-        if (message != null) PanelMessage(message: message!, isError: true),
+        if (message != null)
+          PanelMessage(message: message!, isError: messageIsError),
         Expanded(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(
@@ -662,12 +1063,14 @@ class HistoryTile extends StatelessWidget {
     super.key,
     required this.item,
     required this.version,
+    required this.parentVersion,
     required this.selected,
     required this.onTap,
   });
 
   final EditHistoryItem item;
   final int version;
+  final int? parentVersion;
   final bool selected;
   final VoidCallback onTap;
 
@@ -735,6 +1138,15 @@ class HistoryTile extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 4),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: _HistoryBranchBadge(
+                        key: Key('history_branch_badge_${item.editId}'),
+                        isRoot: item.parentEditId == null,
+                        parentVersion: parentVersion,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
                     Text(
                       item.displayTitle,
                       maxLines: 1,
@@ -759,6 +1171,41 @@ class HistoryTile extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HistoryBranchBadge extends StatelessWidget {
+  const _HistoryBranchBadge({
+    super.key,
+    required this.isRoot,
+    required this.parentVersion,
+  });
+
+  final bool isRoot;
+  final int? parentVersion;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = isRoot
+        ? '根分支'
+        : parentVersion == null
+        ? '接續父版本'
+        : '接續版本 $parentVersion';
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceSoft,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+        child: Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(color: AppColors.textMuted, fontSize: 10),
         ),
       ),
     );

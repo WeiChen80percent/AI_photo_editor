@@ -88,6 +88,11 @@ class _EditorScreenState extends State<EditorScreen> {
                   isExpanded || (!isCompact && isLandscape && width >= 760);
               return Column(
                 children: [
+                  if (_controller.statusMessage != null)
+                    PanelMessage(
+                      message: _controller.statusMessage!,
+                      isError: false,
+                    ),
                   Expanded(
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -271,6 +276,7 @@ class _EditorScreenState extends State<EditorScreen> {
           onClose: close,
           scrollController: scrollController,
           onSelect: _selectHistoryItem,
+          onSelectOriginal: _selectOriginalBase,
         );
     }
   }
@@ -343,6 +349,34 @@ class _EditorScreenState extends State<EditorScreen> {
     );
     if (discard == true) {
       _controller.selectHistoryItem(item, discardDraft: true);
+    }
+  }
+
+  Future<void> _selectOriginalBase() async {
+    if (_controller.selectOriginalAsBase()) {
+      return;
+    }
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('捨棄尚未套用的調整？'),
+          content: const Text('回到原圖建立新分支會捨棄目前手動調整草稿。'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('返回'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('捨棄並切換'),
+            ),
+          ],
+        );
+      },
+    );
+    if (discard == true) {
+      _controller.selectOriginalAsBase(discardDraft: true);
     }
   }
 

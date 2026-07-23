@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
@@ -14,6 +15,14 @@ class EditHistoryError(ValueError):
 
 class EditHistoryNotFound(EditHistoryError):
     pass
+
+
+class EditHistoryInvalidIdentifier(EditHistoryError):
+    pass
+
+
+_SESSION_ID_PATTERN = re.compile(r"^session_[0-9a-f]{32}$")
+_EDIT_ID_PATTERN = re.compile(r"^edit_[0-9a-f]{32}$")
 
 
 class EditHistoryStore:
@@ -37,7 +46,11 @@ class EditHistoryStore:
             return json.load(f)
 
     def save_edit(self, record: dict[str, Any]) -> dict[str, Any]:
-        session_id = record["session_id"]
+        session_id = self._validate_session_id(record.get("session_id"))
+        self._validate_edit_id(record.get("edit_id"))
+        parent_edit_id = record.get("parent_edit_id")
+        if parent_edit_id is not None:
+            self._validate_edit_id(parent_edit_id)
         with self._session_lock(session_id):
             try:
                 session = self.load_session(session_id)
@@ -59,6 +72,7 @@ class EditHistoryStore:
             return session
 
     def find_edit(self, session_id: str, edit_id: str) -> dict[str, Any]:
+        edit_id = self._validate_edit_id(edit_id)
         session = self.load_session(session_id)
         for edit in session["edits"]:
             if edit["edit_id"] == edit_id:
@@ -92,6 +106,7 @@ class EditHistoryStore:
         manual_source_edit_id: str | None = None,
         parameter_overrides: dict[str, Any] | None = None,
         processing_timings: dict[str, Any] | None = None,
+        adaptive: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         return {
             "session_id": session_id,
@@ -111,6 +126,7 @@ class EditHistoryStore:
             "manual_source_edit_id": manual_source_edit_id,
             "parameter_overrides": parameter_overrides,
             "processing_timings": processing_timings,
+            "adaptive": adaptive,
             "parameters": parameters,
             "preset_name": preset_name,
             "explanation": explanation,
@@ -120,7 +136,22 @@ class EditHistoryStore:
         }
 
     def _session_path(self, session_id: str) -> Path:
-        return self.storage_dir / f"{session_id}.json"
+        normalized = self._validate_session_id(session_id)
+        return self.storage_dir / f"{normalized}.json"
+
+    @staticmethod
+    def _validate_session_id(session_id: Any) -> str:
+        normalized = str(session_id or "").strip()
+        if _SESSION_ID_PATTERN.fullmatch(normalized) is None:
+            raise EditHistoryInvalidIdentifier("Invalid edit session_id format")
+        return normalized
+
+    @staticmethod
+    def _validate_edit_id(edit_id: Any) -> str:
+        normalized = str(edit_id or "").strip()
+        if _EDIT_ID_PATTERN.fullmatch(normalized) is None:
+            raise EditHistoryInvalidIdentifier("Invalid edit_id format")
+        return normalized
 
     def _session_lock(self, session_id: str) -> threading.Lock:
         with self._locks_guard:

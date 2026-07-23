@@ -12,12 +12,13 @@ from app.services.edit_plan import (
     build_preset_edit_plan,
     build_raw_parameter_edit_plan,
 )
+from app.services.prompt_text import normalize_prompt_text
 
 
 def parse_edit_prompt(prompt: str | None) -> dict[str, Any]:
     """Map deterministic fallback prompts to the same templates used by LLM intent parsing."""
     user_prompt = (prompt or "").strip()
-    normalized = user_prompt.lower()
+    normalized = normalize_prompt_text(user_prompt)
 
     if not normalized:
         edit_plan = build_raw_parameter_edit_plan(prompt=user_prompt, parameters={})

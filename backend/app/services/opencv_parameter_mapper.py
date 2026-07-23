@@ -108,6 +108,15 @@ _OPENCV_PRESET_ADJUSTMENTS: dict[str, dict[str, float]] = {
 
 
 def build_opencv_parameters_from_plan(edit_plan: Mapping[str, Any]) -> dict[str, float]:
+    adaptation = edit_plan.get("adaptation")
+    if isinstance(adaptation, Mapping):
+        adaptive_parameters = adaptation.get("render_parameters")
+        if isinstance(adaptive_parameters, Mapping):
+            return _with_region_metadata(
+                validate_edit_parameters(adaptive_parameters),
+                edit_plan,
+            )
+
     plan_type = str(edit_plan.get("type") or "raw_parameters")
 
     if plan_type == "reference":
@@ -160,6 +169,24 @@ def build_opencv_template_parameters(
     parameters = NEUTRAL_OPENCV_PARAMETERS.copy()
     parameters.update(_OPENCV_TEMPLATE_ADJUSTMENTS[normalized_intent][normalized_strength])
     return _with_region_metadata(validate_edit_parameters(parameters), {})
+
+
+def get_opencv_template_adjustments(
+    intent: str,
+    strength: str | None = None,
+) -> dict[str, float]:
+    """Return only the parameters contributed by one intent template.
+
+    Adaptive v2 uses this small, side-effect-free view to build an auditable
+    contribution ledger.  Keeping the values here prevents the controller and
+    the legacy mapper from drifting apart.
+    """
+
+    normalized_intent = normalize_edit_intent(intent)
+    if normalized_intent is None:
+        raise ValueError(f"Unsupported edit intent template: {intent}")
+    normalized_strength = normalize_edit_strength(strength)
+    return dict(_OPENCV_TEMPLATE_ADJUSTMENTS[normalized_intent][normalized_strength])
 
 
 def build_opencv_compound_parameters(

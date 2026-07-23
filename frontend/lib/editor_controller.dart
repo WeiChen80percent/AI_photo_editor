@@ -11,6 +11,8 @@ enum EditorTool { prompt, reference, manual, history }
 enum ComparisonView { original, result }
 
 class EditorController extends ChangeNotifier {
+  static const String originalParentSentinel = 'original';
+
   EditorController({
     required EditorApi api,
     this.previewDebounce = const Duration(milliseconds: 250),
@@ -56,6 +58,9 @@ class EditorController extends ChangeNotifier {
 
   String? get currentResultUrl =>
       manualPreview?.resultUrl ?? selectedEdit?.resultUrl;
+
+  bool get isOriginalBaseSelected =>
+      selectedEdit == null && selectedEditId == originalParentSentinel;
 
   Map<String, dynamic> get currentParameters =>
       manualPreview?.parameters ?? selectedEdit?.parameters ?? const {};
@@ -109,6 +114,9 @@ class EditorController extends ChangeNotifier {
   String get currentSummary {
     final edit = selectedEdit;
     if (edit == null) {
+      if (isOriginalBaseSelected) {
+        return '原圖 · 下一次修圖會建立新分支';
+      }
       return '選擇圖片後，使用指令或參考圖開始修圖';
     }
     final target = regionLabel(
@@ -239,8 +247,17 @@ class EditorController extends ChangeNotifier {
       comparisonView = ComparisonView.result;
       return true;
     } on ApiException catch (error) {
-      errorMessage = _friendlyApiMessage(error);
-      statusMessage = null;
+      final isExpectedAdaptiveStop =
+          error.statusCode == 409 &&
+          (error.code == 'adaptive_feedback_satisfied' ||
+              error.code == 'adaptive_step_converged');
+      if (isExpectedAdaptiveStop) {
+        errorMessage = null;
+        statusMessage = _friendlyApiMessage(error);
+      } else {
+        errorMessage = _friendlyApiMessage(error);
+        statusMessage = null;
+      }
       return false;
     } catch (error) {
       errorMessage = '修圖失敗：$error';
@@ -268,8 +285,13 @@ class EditorController extends ChangeNotifier {
           selectedEditId ??
           (history.isEmpty ? null : history.last.editId);
       if (targetId != null) {
-        selectedEdit = _findEdit(targetId) ?? selectedEdit;
-        selectedEditId = selectedEdit?.editId;
+        if (targetId == originalParentSentinel) {
+          selectedEdit = null;
+          selectedEditId = originalParentSentinel;
+        } else {
+          selectedEdit = _findEdit(targetId) ?? selectedEdit;
+          selectedEditId = selectedEdit?.editId;
+        }
       }
       originalImageUrl =
           selectedEdit?.originalUrl ??
@@ -301,6 +323,20 @@ class EditorController extends ChangeNotifier {
     comparisonView = ComparisonView.result;
     errorMessage = null;
     statusMessage = '已切換到歷史版本';
+    _notify();
+    return true;
+  }
+
+  bool selectOriginalAsBase({bool discardDraft = false}) {
+    if (manualIsDirty && !discardDraft) {
+      return false;
+    }
+    _cancelPreview(clearDraft: true);
+    selectedEdit = null;
+    selectedEditId = originalParentSentinel;
+    comparisonView = ComparisonView.original;
+    errorMessage = null;
+    statusMessage = '已切換到原圖，可建立新的歷史分支';
     _notify();
     return true;
   }
@@ -546,13 +582,70 @@ class EditorController extends ChangeNotifier {
     switch (error.code) {
       case 'semantic_target_not_found':
         return '照片中找不到指定的局部範圍。請換一張圖片，或改用全圖調整。';
+      case 'adaptive_clarification_required':
+        return _structuredAdaptiveMessage(
+          error,
+          fallback: '我不確定要微調哪一項，請補充參數或指定區域。',
+        );
+      case 'adaptive_step_converged':
+        return _structuredAdaptiveMessage(
+          error,
+          fallback: '這個方向的調整已接近目前最小步長；可改用手動參數做最後微調。',
+          preferFallback: true,
+        );
+      case 'adaptive_feedback_satisfied':
+        return _structuredAdaptiveMessage(
+          error,
+          fallback: '已保留目前結果，沒有新增重複的歷史版本。',
+          preferFallback: true,
+        );
       case 'manual_source_mode_unsupported':
         return '參考圖結果目前不能手動調整，請選擇指令或手動版本。';
       case 'network_error':
         return '無法連線到修圖後端，請確認後端已啟動。';
       default:
+        if (error.statusCode == 422 && error.details.isNotEmpty) {
+          return _structuredAdaptiveMessage(error);
+        }
         return error.message;
     }
+  }
+
+  String _structuredAdaptiveMessage(
+    ApiException error, {
+    String? fallback,
+    bool preferFallback = false,
+  }) {
+    final backendMessage = error.message.trim();
+    final base = preferFallback && fallback != null
+        ? fallback
+        : backendMessage.isEmpty
+        ? (fallback ?? '請確認修圖指令後再試一次。')
+        : backendMessage;
+    final rawIssues = error.details['issues'];
+    if (rawIssues is! List) {
+      return base;
+    }
+    final contexts = <String>[];
+    for (final value in rawIssues) {
+      if (value is! Map) {
+        continue;
+      }
+      final issue = Map<String, dynamic>.from(value);
+      final axis = issue['axis']?.toString();
+      final region = issue['region']?.toString();
+      final sourceClause = issue['source_clause']?.toString().trim();
+      final parts = <String>[
+        if (axis != null && axis.isNotEmpty) parameterLabels[axis] ?? axis,
+        if (region != null && region.isNotEmpty) regionLabel(region),
+        if (sourceClause != null && sourceClause.isNotEmpty) '「$sourceClause」',
+      ];
+      final context = parts.join(' ');
+      if (context.isNotEmpty && !contexts.contains(context)) {
+        contexts.add(context);
+      }
+    }
+    return contexts.isEmpty ? base : '$base（涉及：${contexts.join('、')}）';
   }
 
   void _cancelPreview({required bool clearDraft}) {

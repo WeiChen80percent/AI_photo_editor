@@ -41,11 +41,13 @@ class ApiException implements Exception {
     required this.statusCode,
     required this.code,
     required this.message,
+    this.details = const <String, dynamic>{},
   });
 
   final int statusCode;
   final String? code;
   final String message;
+  final Map<String, dynamic> details;
 
   @override
   String toString() => message;
@@ -248,6 +250,7 @@ class ApiService implements EditorApi {
         statusCode: response.statusCode,
         code: detailMap['code']?.toString(),
         message: message,
+        details: detailMap,
       );
     }
 

@@ -26,6 +26,7 @@ from app.services.edit_schema import (
     validate_edit_region,
 )
 from app.services.prompt_parser import parse_edit_prompt
+from app.services.prompt_text import normalize_prompt_text
 
 
 LLMClient = Callable[[str], str]
@@ -194,7 +195,7 @@ def _apply_prompt_specific_compound_guards(
     prompt: str,
     intent_strengths: list[tuple[str, str]],
 ) -> list[tuple[str, str]]:
-    text = (prompt or "").strip().lower()
+    text = normalize_prompt_text(prompt)
     if not intent_strengths:
         return intent_strengths
 
@@ -323,7 +324,7 @@ def _resolve_region_mask(prompt: str, data: Mapping[str, Any]) -> tuple[str, str
 
 
 def _infer_region_from_prompt(prompt: str) -> str:
-    text = (prompt or "").strip().lower()
+    text = normalize_prompt_text(prompt)
     if _contains(text, ["shadow", "shadows", "暗部", "陰影"]):
         return "shadows"
     if _contains(
