@@ -7,17 +7,39 @@ from app.services.edit_intent_templates import (
     normalize_edit_strength,
 )
 from app.services.edit_engines import build_engine_parameters
+from app.services.english_prompt_contract import (
+    EnglishPromptContractError,
+    MAX_ENGLISH_PROMPT_LENGTH,
+    analyze_english_prompt,
+)
 from app.services.edit_plan import (
     build_compound_edit_plan,
     build_preset_edit_plan,
     build_raw_parameter_edit_plan,
 )
-from app.services.prompt_text import normalize_prompt_text
+from app.services.prompt_text import (
+    is_allowlisted_mixed_prompt,
+    is_english_prompt,
+    is_mixed_english_cjk_prompt,
+    normalize_prompt_text,
+)
 
 
 def parse_edit_prompt(prompt: str | None) -> dict[str, Any]:
     """Map deterministic fallback prompts to the same templates used by LLM intent parsing."""
     user_prompt = (prompt or "").strip()
+    if len(user_prompt) > MAX_ENGLISH_PROMPT_LENGTH:
+        return _build_contract_rejection(
+            prompt=user_prompt,
+            code="adaptive_prompt_too_long",
+            issues=(
+                {
+                    "source_clause": user_prompt[:160],
+                    "reason": "prompt_length_limit",
+                    "maximum": MAX_ENGLISH_PROMPT_LENGTH,
+                },
+            ),
+        )
     normalized = normalize_prompt_text(user_prompt)
 
     if not normalized:
@@ -29,6 +51,31 @@ def parse_edit_prompt(prompt: str | None) -> dict[str, Any]:
             parameters=build_engine_parameters("opencv", edit_plan),
             reason="No prompt was provided; using OpenCV defaults.",
         )
+
+    if (
+        is_mixed_english_cjk_prompt(user_prompt)
+        and not is_allowlisted_mixed_prompt(user_prompt)
+    ):
+        return _build_contract_rejection(
+            prompt=user_prompt,
+            code="adaptive_mixed_language_not_supported",
+            issues=(
+                {
+                    "source_clause": user_prompt,
+                    "reason": "mixed_english_cjk_prompt",
+                },
+            ),
+        )
+
+    if is_english_prompt(user_prompt):
+        try:
+            return _parse_english_prompt(user_prompt)
+        except EnglishPromptContractError as exc:
+            return _build_contract_rejection(
+                prompt=user_prompt,
+                code=exc.code,
+                issues=exc.issues,
+            )
 
     strength = _detect_strength(normalized)
     preset_name = _detect_preset_name(normalized)
@@ -82,6 +129,96 @@ def parse_edit_prompt(prompt: str | None) -> dict[str, Any]:
         parameters=build_engine_parameters("opencv", edit_plan),
         reason=f"Parsed prompt as {resolved_intent} with {strength} strength.",
     )
+
+
+def _parse_english_prompt(prompt: str) -> dict[str, Any]:
+    analysis = analyze_english_prompt(prompt)
+
+    if analysis.kind == "preset" and analysis.preset_name is not None:
+        edit_plan = build_preset_edit_plan(
+            prompt=prompt,
+            preset_name=analysis.preset_name,
+            region="all",
+        )
+        return _build_result(
+            prompt=prompt,
+            resolved_intent="apply_preset",
+            edit_plan=edit_plan,
+            parameters=build_engine_parameters("opencv", edit_plan),
+            reason=f"Parsed exact English preset {analysis.preset_name}.",
+            preset_name=analysis.preset_name,
+        )
+
+    region = analysis.region or "all"
+    semantic_operations = [
+        operation
+        for operation in analysis.operations
+        if operation.relation not in {"absolute", "relative_numeric", "reset"}
+    ]
+    if semantic_operations and len(semantic_operations) == len(analysis.operations):
+        intent_strengths = [
+            (operation.source_intent, operation.strength)
+            for operation in semantic_operations
+        ]
+        edit_plan = build_compound_edit_plan(
+            prompt=prompt,
+            intent_strengths=intent_strengths,
+            region=region,
+        )
+        resolved_intent = (
+            intent_strengths[0][0]
+            if len(intent_strengths) == 1
+            else "compound"
+        )
+    else:
+        edit_plan = build_raw_parameter_edit_plan(
+            prompt=prompt,
+            parameters={},
+            region=region,
+        )
+        relations = {
+            operation.relation for operation in analysis.operations
+        }
+        if analysis.kind == "global_reset":
+            resolved_intent = "global_reset"
+        elif analysis.kind == "satisfied":
+            resolved_intent = "satisfied"
+        elif analysis.kind == "context_feedback":
+            resolved_intent = "context_feedback"
+        elif relations == {"reset"}:
+            resolved_intent = "axis_reset"
+        else:
+            resolved_intent = "explicit_numeric"
+
+    return _build_result(
+        prompt=prompt,
+        resolved_intent=resolved_intent,
+        edit_plan=edit_plan,
+        parameters=build_engine_parameters("opencv", edit_plan),
+        reason=f"Parsed English prompt contract as {analysis.kind}.",
+    )
+
+
+def _build_contract_rejection(
+    *,
+    prompt: str,
+    code: str,
+    issues: tuple[dict[str, Any], ...],
+) -> dict[str, Any]:
+    edit_plan = build_raw_parameter_edit_plan(
+        prompt=prompt,
+        parameters={},
+    )
+    result = _build_result(
+        prompt=prompt,
+        resolved_intent="default",
+        edit_plan=edit_plan,
+        parameters=build_engine_parameters("opencv", edit_plan),
+        reason=f"Prompt contract rejected the request: {code}.",
+    )
+    result["contract_error_code"] = code
+    result["contract_issues"] = [dict(issue) for issue in issues]
+    return result
 
 
 def _detect_intent_strengths(text: str, strength: str) -> list[tuple[str, str]]:

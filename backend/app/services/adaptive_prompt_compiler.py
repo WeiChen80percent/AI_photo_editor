@@ -5,6 +5,7 @@ import hashlib
 import re
 import unicodedata
 from dataclasses import dataclass
+from functools import lru_cache
 from typing import Any, Iterable, Mapping
 
 from app.services.adaptive_policy import (
@@ -13,8 +14,31 @@ from app.services.adaptive_policy import (
     INTENT_TO_AXIS_DIRECTION,
 )
 from app.services.edit_intent_templates import normalize_preset_name
-from app.services.edit_schema import default_mask_type_for_region
-from app.services.prompt_text import normalize_prompt_text
+from app.services.edit_schema import (
+    default_mask_type_for_region,
+    require_region_mask_pair,
+)
+from app.services.english_prompt_contract import (
+    EnglishOperation,
+    EnglishPromptAnalysis,
+    EnglishPromptContractError,
+    MAX_ENGLISH_PROMPT_LENGTH,
+    analyze_english_prompt,
+)
+from app.services.prompt_text import (
+    is_allowlisted_mixed_prompt,
+    is_english_prompt,
+    is_mixed_english_cjk_prompt,
+    normalize_prompt_text,
+)
+from app.services.semantic_adaptive_adapter import (
+    semantic_ir_to_adaptive_draft,
+)
+from app.services.semantic_ir import SemanticIR
+from app.services.semantic_parser import (
+    SemanticParseAttempt,
+    parse_semantic_prompt,
+)
 
 
 MAX_PRIMARY_OPERATIONS = 3
@@ -114,8 +138,17 @@ _AXIS_LABELS: dict[str, tuple[str, ...]] = {
     "contrast": ("對比度", "對比", "反差", "contrast"),
     "highlights": ("高光參數", "高光值", "高光", "highlights value", "highlights"),
     "shadows": ("陰影參數", "陰影值", "陰影", "shadows value", "shadows"),
+    "whites": ("白位", "白色色階", "white point", "whites"),
+    "blacks": ("黑位", "黑色色階", "black point", "blacks"),
     "saturation": ("飽和度", "鮮豔度", "飽和", "saturation"),
+    "vibrance": ("自然飽和度", "色彩活力", "vibrance"),
     "temperature": ("色溫", "color temperature", "temperature", "warmth"),
+    "white_balance_tint": (
+        "白平衡色偏",
+        "綠洋紅平衡",
+        "white balance tint",
+        "green magenta balance",
+    ),
     "sharpen": ("銳化強度", "銳化", "銳利度", "sharpening", "sharpness", "sharpen"),
     "clarity": ("清晰度", "clarity"),
     "dehaze": ("去霧強度", "去霧", "除霧", "去霾", "haze removal", "dehaze"),
@@ -248,6 +281,30 @@ _AXIS_FEEDBACK: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
             "shadows too bright",
         ),
     ),
+    "whites": (
+        (
+            "白位太低",
+            "白色不夠亮",
+            "whites too low",
+        ),
+        (
+            "白位太高",
+            "白色爆掉",
+            "whites too high",
+        ),
+    ),
+    "blacks": (
+        (
+            "黑位太低",
+            "黑色太死",
+            "blacks too low",
+        ),
+        (
+            "黑位太高",
+            "黑色浮起來",
+            "blacks too high",
+        ),
+    ),
     "saturation": (
         (
             "不夠鮮豔",
@@ -277,6 +334,18 @@ _AXIS_FEEDBACK: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
             "not too saturated",
         ),
     ),
+    "vibrance": (
+        (
+            "自然飽和度太低",
+            "色彩活力不夠",
+            "not enough vibrance",
+        ),
+        (
+            "自然飽和度太高",
+            "色彩活力太強",
+            "too much vibrance",
+        ),
+    ),
     "temperature": (
         (
             "太冷",
@@ -300,6 +369,18 @@ _AXIS_FEEDBACK: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
             "too warm already",
             "too warm",
             "too yellow",
+        ),
+    ),
+    "white_balance_tint": (
+        (
+            "太綠",
+            "偏綠",
+            "too green",
+        ),
+        (
+            "太洋紅",
+            "偏洋紅",
+            "too magenta",
         ),
     ),
     "sharpen": (
@@ -544,6 +625,38 @@ _EXPLICIT_DIRECTION_PATTERNS: dict[str, tuple[tuple[str, ...], tuple[str, ...]]]
             "deepen shadows",
         ),
     ),
+    "whites": (
+        (
+            "提高白位",
+            "拉高白位",
+            "白位高一點",
+            "raise whites",
+            "increase whites",
+        ),
+        (
+            "降低白位",
+            "壓低白位",
+            "白位低一點",
+            "lower whites",
+            "reduce whites",
+        ),
+    ),
+    "blacks": (
+        (
+            "抬高黑位",
+            "提高黑位",
+            "黑位高一點",
+            "raise blacks",
+            "lift blacks",
+        ),
+        (
+            "壓低黑位",
+            "降低黑位",
+            "黑位低一點",
+            "lower blacks",
+            "deepen blacks",
+        ),
+    ),
     "saturation": (
         (
             "提高飽和",
@@ -565,6 +678,22 @@ _EXPLICIT_DIRECTION_PATTERNS: dict[str, tuple[tuple[str, ...], tuple[str, ...]]]
             "decrease saturation",
             "less saturation",
             "desaturate",
+        ),
+    ),
+    "vibrance": (
+        (
+            "增加自然飽和度",
+            "提高自然飽和度",
+            "增加色彩活力",
+            "increase vibrance",
+            "more vibrance",
+        ),
+        (
+            "降低自然飽和度",
+            "減少自然飽和度",
+            "降低色彩活力",
+            "reduce vibrance",
+            "less vibrance",
         ),
     ),
     "temperature": (
@@ -589,6 +718,20 @@ _EXPLICIT_DIRECTION_PATTERNS: dict[str, tuple[tuple[str, ...], tuple[str, ...]]]
             "色溫往冷調一點",
             "decrease temperature",
             "lower temperature",
+        ),
+    ),
+    "white_balance_tint": (
+        (
+            "往洋紅調整",
+            "增加洋紅色偏",
+            "shift tint magenta",
+            "more magenta tint",
+        ),
+        (
+            "往綠色調整",
+            "增加綠色色偏",
+            "shift tint green",
+            "more green tint",
         ),
     ),
     "sharpen": (
@@ -762,161 +905,135 @@ def compile_adaptive_request(
     prompt: str,
     deterministic_result: Mapping[str, Any],
     parent_snapshot: Mapping[str, Any] | None,
+    semantic_attempt: SemanticParseAttempt | None = None,
 ) -> dict[str, Any]:
     original = str(prompt or "").strip()
-    text = _normalize(original)
-    clauses = _clauses(original)
+    attempt = semantic_attempt
+    if attempt is None and original and len(original) <= MAX_ENGLISH_PROMPT_LENGTH:
+        attempt = parse_semantic_prompt(original)
 
-    _validate_numeric_syntax(text)
-
-    if re.search(r"[+-]?(?:\d+(?:\.\d+)?|\.\d+)\s*%", text):
-        _raise(
-            "adaptive_unsupported_numeric_unit",
-            "百分比在倍率與線性參數上語意不同，請改用參數 schema 的絕對數值。",
-            reason="percentage_not_supported",
+    if (
+        attempt is not None
+        and attempt.disposition == "accepted"
+        and attempt.accepted_ir is not None
+        and _semantic_release_eligible(attempt.accepted_ir)
+    ):
+        return _compile_semantic_ir(
+            attempt.accepted_ir,
+            parent_snapshot=parent_snapshot,
         )
 
     if (
-        _contains(text, ("過曝", "overexposed", "overexposure"))
-        and not _contains(text, ("不要過曝", "避免過曝", "別過曝", "avoid overexposure", "without overexposure"))
-        and not _contains(text, ("曝光值", "曝光參數", "高光", "亮部", "天空", "sky"))
+        attempt is not None
+        and semantic_attempt_is_authoritative_rejection(attempt)
+    ):
+        _raise_semantic_parse_error(attempt)
+
+    return _compile_legacy_adaptive_request(
+        prompt=prompt,
+        deterministic_result=deterministic_result,
+        parent_snapshot=parent_snapshot,
+    )
+
+
+def semantic_attempt_is_released(
+    attempt: SemanticParseAttempt | None,
+) -> bool:
+    return bool(
+        attempt is not None
+        and attempt.disposition == "accepted"
+        and attempt.accepted_ir is not None
+        and _semantic_release_eligible(attempt.accepted_ir)
+    )
+
+
+def semantic_attempt_is_authoritative_rejection(
+    attempt: SemanticParseAttempt | None,
+) -> bool:
+    """Treat every deterministic semantic rejection as authoritative."""
+
+    return bool(
+        attempt is not None
+        and attempt.disposition == "rejected"
+    )
+
+
+def _compile_legacy_adaptive_request(
+    *,
+    prompt: str,
+    deterministic_result: Mapping[str, Any],
+    parent_snapshot: Mapping[str, Any] | None,
+) -> dict[str, Any]:
+    original = str(prompt or "").strip()
+    if len(original) > MAX_ENGLISH_PROMPT_LENGTH:
+        _raise(
+            "adaptive_prompt_too_long",
+            "Prompt 長度超過安全解析上限，整句未套用。",
+            source_clause=original[:160],
+            reason="prompt_length_limit",
+            maximum=MAX_ENGLISH_PROMPT_LENGTH,
+        )
+    text = _normalize(original)
+    clauses = _clauses(original)
+    if (
+        is_mixed_english_cjk_prompt(original)
+        and not is_allowlisted_mixed_prompt(original)
     ):
         _raise(
-            "adaptive_axis_region_ambiguous",
-            "單獨的「過曝」可能指曝光、亮度或高光，請明確指定參數。",
-            reason="overexposure_axis_ambiguity",
-            candidates=["exposure", "brightness", "highlights"],
+            "adaptive_mixed_language_not_supported",
+            "目前不保證中英文混合句可完整解析；為避免忽略部分語意，整句未套用。",
+            source_clause=original,
+            reason="mixed_english_cjk_prompt",
         )
+    english_analysis: EnglishPromptAnalysis | None = None
+    if is_english_prompt(original):
+        try:
+            english_analysis = analyze_english_prompt(original)
+        except EnglishPromptContractError as exc:
+            raise AdaptiveCompileError(
+                code=exc.code,
+                message=exc.message,
+                issues=exc.issues,
+                status_code=exc.status_code,
+            ) from exc
 
-    unsupported = _detect_unsupported(text)
-    if unsupported:
-        axis, marker = unsupported
-        _raise(
-            "adaptive_unsupported_direction",
-            f"{AXIS_POLICIES[axis].label}不支援「{marker}」這個反向效果。",
-            axis=axis,
-            source_clause=_source_clause(clauses, marker),
-            reason="unsupported_direction",
-        )
-
-    unsupported_action = _detect_unsupported_edit_action(text)
-    if unsupported_action:
-        action, marker = unsupported_action
-        _raise(
-            "adaptive_unsupported_operation",
-            f"目前的 OpenCV 自適應微調不支援「{marker}」；整句未套用任何調整。",
-            source_clause=_source_clause(clauses, marker),
-            reason="unsupported_edit_operation",
-            operation=action,
-        )
-
-    global_reset = _first_unnegated(text, _GLOBAL_RESET_MARKERS)
-    satisfied = _first_unnegated(text, _SATISFIED_MARKERS)
-
-    operations: list[dict[str, Any]] = []
-    operations.extend(_numeric_operations(text, clauses))
-    operations.extend(_reset_operations(text, clauses))
-    operations.extend(_directional_operations(text, clauses))
-    operations = _resolve_tonal_feedback_shadowing(operations)
-    operations = _resolve_guard_operations(operations)
-    operations = _dedupe_operations(operations)
-    operations = _merge_same_axis_relative_numeric(operations)
-
-    _validate_numeric_or_reset_remainder(text, operations)
-
-    ambiguous_marker = _first_unnegated(text, _AMBIGUOUS_MARKERS)
-    if ambiguous_marker:
-        _raise(
-            "adaptive_clarification_required",
-            "描述中仍有未指向明確參數的模糊要求；為避免只套用部分 prompt，請拆開或指定參數。",
-            source_clause=_source_clause(clauses, ambiguous_marker),
-            reason=(
-                "unconsumed_ambiguous_clause"
-                if operations
-                else "low_confidence_feedback"
-            ),
-        )
-
-    negated_axes = _negated_action_axes(text, clauses)
-    requested_before_fallback = {
-        str(operation["axis"]) for operation in operations
-    }
-    contradictory_axes = negated_axes & requested_before_fallback
-    if contradictory_axes:
-        axis = sorted(contradictory_axes, key=ADAPTIVE_AXIS_ORDER.index)[0]
-        _raise(
-            "adaptive_operation_conflict",
-            f"同一句同時要求並禁止調整{AXIS_POLICIES[axis].label}，整句未套用。",
-            axis=axis,
-            reason="negated_requested_axis_conflict",
-        )
-    if not operations and negated_axes:
-        _raise(
-            "adaptive_clarification_required",
-            "這句只包含不要執行的調整，因此未建立新版本；請說明實際要改哪個參數。",
-            reason="negated_action_noop",
-            candidates=sorted(negated_axes, key=ADAPTIVE_AXIS_ORDER.index),
-        )
-
-    # Deterministic terminal intents must be resolved before the generic
-    # unconsumed-action guard and before any LLM/template fallback.  Otherwise
-    # valid phrases such as "reset all" are mistaken for an unsupported reset
-    # clause, or a hallucinated fallback edit can override "這樣剛好".
-    if global_reset:
-        if operations:
-            _raise(
-                "adaptive_operation_conflict",
-                "回到原圖必須單獨執行，不能同時再套用其他調整。",
-                source_clause=_source_clause(clauses, global_reset),
-                reason="global_reset_with_operation",
-            )
-        return {"kind": "global_reset", "operations": []}
-
-    if satisfied and not operations:
-        return {"kind": "satisfied", "operations": []}
-
-    _validate_unconsumed_axis_labels(
-        text=text,
-        operations=operations,
-        negated_axes=negated_axes,
-    )
-
-    _validate_unconsumed_action_clauses(
-        clauses=clauses,
-        operations=operations,
-    )
-
-    if not operations:
-        operations.extend(
-            _fallback_template_operations(
-                deterministic_result=deterministic_result,
-                text=text,
-                clauses=clauses,
-            )
-        )
-        operations = _dedupe_operations(operations)
-        if operations:
-            _validate_unconsumed_action_clauses(
-                clauses=clauses,
-                operations=operations,
-            )
-
-    if not operations:
-        if parent_snapshot is not None and _first_unnegated(
-            text, _VAGUE_OPPOSITE_MARKERS
-        ):
+    operations: list[dict[str, Any]]
+    negated_axes: set[str]
+    if english_analysis is not None and english_analysis.handled:
+        if english_analysis.kind == "global_reset":
+            return {"kind": "global_reset", "operations": []}
+        if english_analysis.kind == "satisfied":
+            return {"kind": "satisfied", "operations": []}
+        if english_analysis.kind == "preset":
+            # The exact English allowlist is the canonical contract. The
+            # controller reparses the prompt and replaces any LLM fields with
+            # that deterministic result before the bypass is rendered.
+            return {
+                "kind": "bypass",
+                "operations": [],
+                "preset_name": english_analysis.preset_name,
+            }
+        if english_analysis.kind == "context_feedback":
+            if parent_snapshot is None:
+                _raise(
+                    "adaptive_clarification_required",
+                    "This feedback needs one active adjustment to refer to.",
+                    source_clause=original,
+                    reason="context_feedback_without_parent",
+                )
             active_axes = _active_parent_axes(parent_snapshot)
             if len(active_axes) != 1:
                 _raise(
                     "adaptive_clarification_required",
-                    "目前有多個可調參數，請指出要退回哪一項。",
+                    "Please name the parameter to reduce because the current branch does not have exactly one active adjustment.",
+                    source_clause=original,
                     reason="ambiguous_multi_axis_feedback",
                     candidates=active_axes,
                 )
             axis = active_axes[0]
             previous = _parent_axis_state(parent_snapshot, axis)
             direction = -int((previous or {}).get("previous_direction") or 1)
-            operations.append(
+            operations = [
                 _operation(
                     axis=axis,
                     direction=direction,
@@ -927,25 +1044,198 @@ def compile_adaptive_request(
                     explicitness="feedback",
                     confidence="medium",
                 )
-            )
+            ]
         else:
-            if _is_safe_deterministic_preset(deterministic_result):
-                return {"kind": "bypass", "operations": []}
+            operations = [
+                _operation_from_english(operation)
+                for operation in english_analysis.operations
+            ]
+        negated_axes = set()
+    else:
+        _validate_numeric_syntax(text)
+
+        if re.search(r"[+-]?(?:\d+(?:\.\d+)?|\.\d+)\s*%", text):
+            _raise(
+                "adaptive_unsupported_numeric_unit",
+                "百分比在倍率與線性參數上語意不同，請改用參數 schema 的絕對數值。",
+                reason="percentage_not_supported",
+            )
+
+        if (
+            _contains(text, ("過曝", "overexposed", "overexposure"))
+            and not _contains(text, ("不要過曝", "避免過曝", "別過曝", "avoid overexposure", "without overexposure"))
+            and not _contains(text, ("曝光值", "曝光參數", "高光", "亮部", "天空", "sky"))
+        ):
+            _raise(
+                "adaptive_axis_region_ambiguous",
+                "單獨的「過曝」可能指曝光、亮度或高光，請明確指定參數。",
+                reason="overexposure_axis_ambiguity",
+                candidates=["exposure", "brightness", "highlights"],
+            )
+
+        unsupported = _detect_unsupported(text)
+        if unsupported:
+            axis, marker = unsupported
+            _raise(
+                "adaptive_unsupported_direction",
+                f"{AXIS_POLICIES[axis].label}不支援「{marker}」這個反向效果。",
+                axis=axis,
+                source_clause=_source_clause(clauses, marker),
+                reason="unsupported_direction",
+            )
+
+        unsupported_action = _detect_unsupported_edit_action(text)
+        if unsupported_action:
+            action, marker = unsupported_action
+            _raise(
+                "adaptive_unsupported_operation",
+                f"目前的 OpenCV 自適應微調不支援「{marker}」；整句未套用任何調整。",
+                source_clause=_source_clause(clauses, marker),
+                reason="unsupported_edit_operation",
+                operation=action,
+            )
+
+        global_reset = _first_unnegated(text, _GLOBAL_RESET_MARKERS)
+        satisfied = _first_unnegated(text, _SATISFIED_MARKERS)
+
+        operations = []
+        operations.extend(_numeric_operations(text, clauses))
+        operations.extend(_reset_operations(text, clauses))
+        operations.extend(_directional_operations(text, clauses))
+        operations = _resolve_tonal_feedback_shadowing(operations)
+        operations = _resolve_guard_operations(operations)
+        operations = _dedupe_operations(operations)
+        operations = _merge_same_axis_relative_numeric(operations)
+
+        _validate_numeric_or_reset_remainder(text, operations)
+
+        ambiguous_marker = _first_unnegated(text, _AMBIGUOUS_MARKERS)
+        if ambiguous_marker:
             _raise(
                 "adaptive_clarification_required",
-                "無法安全辨識要調整的參數或方向，請明確指定參數。",
-                source_clause=original,
-                reason="no_supported_operation",
+                "描述中仍有未指向明確參數的模糊要求；為避免只套用部分 prompt，請拆開或指定參數。",
+                source_clause=_source_clause(clauses, ambiguous_marker),
+                reason=(
+                    "unconsumed_ambiguous_clause"
+                    if operations
+                    else "low_confidence_feedback"
+                ),
             )
 
-    if satisfied:
-        _raise(
-            "adaptive_operation_conflict",
-            "「這樣剛好」不能和新的調整放在同一個請求。",
-            reason="satisfied_with_operation",
+        negated_axes = _negated_action_axes(text, clauses)
+        requested_before_fallback = {
+            str(operation["axis"]) for operation in operations
+        }
+        contradictory_axes = negated_axes & requested_before_fallback
+        if contradictory_axes:
+            axis = sorted(contradictory_axes, key=ADAPTIVE_AXIS_ORDER.index)[0]
+            _raise(
+                "adaptive_operation_conflict",
+                f"同一句同時要求並禁止調整{AXIS_POLICIES[axis].label}，整句未套用。",
+                axis=axis,
+                reason="negated_requested_axis_conflict",
+            )
+        if not operations and negated_axes:
+            _raise(
+                "adaptive_clarification_required",
+                "這句只包含不要執行的調整，因此未建立新版本；請說明實際要改哪個參數。",
+                reason="negated_action_noop",
+                candidates=sorted(negated_axes, key=ADAPTIVE_AXIS_ORDER.index),
+            )
+
+        # Deterministic terminal intents must be resolved before the generic
+        # unconsumed-action guard and before any LLM/template fallback.
+        if global_reset:
+            if operations:
+                _raise(
+                    "adaptive_operation_conflict",
+                    "回到原圖必須單獨執行，不能同時再套用其他調整。",
+                    source_clause=_source_clause(clauses, global_reset),
+                    reason="global_reset_with_operation",
+                )
+            return {"kind": "global_reset", "operations": []}
+
+        if satisfied and not operations:
+            return {"kind": "satisfied", "operations": []}
+
+        _validate_unconsumed_axis_labels(
+            text=text,
+            operations=operations,
+            negated_axes=negated_axes,
         )
 
-    regions = _detect_regions(text, operations)
+        _validate_unconsumed_action_clauses(
+            clauses=clauses,
+            operations=operations,
+        )
+
+        if not operations:
+            operations.extend(
+                _fallback_template_operations(
+                    deterministic_result=deterministic_result,
+                    text=text,
+                    clauses=clauses,
+                )
+            )
+            operations = _dedupe_operations(operations)
+            if operations:
+                _validate_unconsumed_action_clauses(
+                    clauses=clauses,
+                    operations=operations,
+                )
+
+        if not operations:
+            if parent_snapshot is not None and _first_unnegated(
+                text, _VAGUE_OPPOSITE_MARKERS
+            ):
+                active_axes = _active_parent_axes(parent_snapshot)
+                if len(active_axes) != 1:
+                    _raise(
+                        "adaptive_clarification_required",
+                        "目前有多個可調參數，請指出要退回哪一項。",
+                        reason="ambiguous_multi_axis_feedback",
+                        candidates=active_axes,
+                    )
+                axis = active_axes[0]
+                previous = _parent_axis_state(parent_snapshot, axis)
+                direction = -int((previous or {}).get("previous_direction") or 1)
+                operations.append(
+                    _operation(
+                        axis=axis,
+                        direction=direction,
+                        relation="correct",
+                        strength="subtle",
+                        source_clause=original,
+                        source_intent="context_feedback",
+                        explicitness="feedback",
+                        confidence="medium",
+                    )
+                )
+            else:
+                if _is_safe_deterministic_preset(deterministic_result):
+                    return {"kind": "bypass", "operations": []}
+                _raise(
+                    "adaptive_clarification_required",
+                    "無法安全辨識要調整的參數或方向，請明確指定參數。",
+                    source_clause=original,
+                    reason="no_supported_operation",
+                )
+
+        if satisfied:
+            _raise(
+                "adaptive_operation_conflict",
+                "「這樣剛好」不能和新的調整放在同一個請求。",
+                reason="satisfied_with_operation",
+            )
+
+    if (
+        english_analysis is not None
+        and english_analysis.handled
+        and english_analysis.region is not None
+    ):
+        regions = [english_analysis.region]
+    else:
+        regions = _detect_regions(text, operations)
     if len(regions) > 1:
         raise AdaptiveCompileError(
             code="adaptive_multi_region_not_supported",
@@ -958,35 +1248,137 @@ def compile_adaptive_request(
                 for region in regions
             ),
         )
-    region = regions[0] if regions else _inherited_region(parent_snapshot)
-    region_source = "explicit" if regions else "inherited" if region != "all" else "default"
-    mask_type = default_mask_type_for_region(region)
-
-    _validate_axis_region_ambiguity(text, operations, region)
-    _validate_cross_axis_guards(text, operations)
-    _validate_operation_conflicts(operations)
-
-    suppressed_companion_axes = sorted(
-        negated_axes - {str(operation["axis"]) for operation in operations},
-        key=ADAPTIVE_AXIS_ORDER.index,
+    region, mask_type, region_source = _resolve_region_context(
+        explicit_region=regions[0] if regions else None,
+        contextual_all=bool(
+            regions
+            and regions[0] == "all"
+            and english_analysis is not None
+            and english_analysis.handled
+            and english_analysis.contextual_all
+        ),
+        parent_snapshot=parent_snapshot,
     )
 
-    if len(operations) > MAX_PRIMARY_OPERATIONS:
+    if english_analysis is None or not english_analysis.handled:
+        _validate_axis_region_ambiguity(text, operations, region)
+        _validate_cross_axis_guards(text, operations)
+    return _finalize_adaptive_operations(
+        operations=operations,
+        region=region,
+        mask_type=mask_type,
+        region_source=region_source,
+        negated_axes=negated_axes,
+    )
+
+
+def _compile_semantic_ir(
+    semantic_ir: SemanticIR,
+    *,
+    parent_snapshot: Mapping[str, Any] | None,
+) -> dict[str, Any]:
+    draft = semantic_ir_to_adaptive_draft(
+        semantic_ir,
+        parent_snapshot=parent_snapshot,
+    )
+    if draft.kind in {"global_reset", "satisfied"}:
+        return {"kind": draft.kind, "operations": []}
+    region, mask_type, region_source = _resolve_region_context(
+        explicit_region=draft.explicit_region,
+        explicit_mask_type=draft.explicit_mask_type,
+        contextual_all=draft.contextual_all,
+        parent_snapshot=parent_snapshot,
+    )
+    return _finalize_adaptive_operations(
+        operations=draft.operations,
+        region=region,
+        mask_type=mask_type,
+        region_source=region_source,
+        negated_axes=set(draft.negated_axes),
+        semantic_ir=semantic_ir,
+    )
+
+
+def _semantic_release_eligible(semantic_ir: SemanticIR) -> bool:
+    """Release every fully resolved deterministic registry interpretation."""
+
+    return bool(
+        semantic_ir.is_fully_resolved
+        and semantic_ir.decision_source == "semantic_registry"
+    )
+
+
+def _resolve_region_context(
+    *,
+    explicit_region: str | None,
+    explicit_mask_type: str | None = None,
+    contextual_all: bool,
+    parent_snapshot: Mapping[str, Any] | None,
+) -> tuple[str, str, str]:
+    inherited_region = _inherited_region(parent_snapshot)
+    region = explicit_region or inherited_region
+    contextual_default_all = bool(
+        explicit_region == "all"
+        and contextual_all
+        and inherited_region == "all"
+    )
+    region_source = (
+        "default"
+        if contextual_default_all
+        else "explicit"
+        if explicit_region is not None
+        else "inherited"
+        if region != "all"
+        else "default"
+    )
+    if explicit_region is not None:
+        region, mask_type = require_region_mask_pair(
+            explicit_region,
+            explicit_mask_type,
+        )
+    else:
+        mask_type = default_mask_type_for_region(region)
+    return region, mask_type, region_source
+
+
+def _finalize_adaptive_operations(
+    *,
+    operations: Iterable[Mapping[str, Any]],
+    region: str,
+    mask_type: str,
+    region_source: str,
+    negated_axes: set[str],
+    semantic_ir: SemanticIR | None = None,
+) -> dict[str, Any]:
+    finalized = [copy.deepcopy(dict(operation)) for operation in operations]
+    _validate_operation_conflicts(finalized)
+
+    requested_axes = {str(operation["axis"]) for operation in finalized}
+    suppressed_companion_axes = sorted(
+        negated_axes - requested_axes,
+        key=ADAPTIVE_AXIS_ORDER.index,
+    )
+    if len(finalized) > MAX_PRIMARY_OPERATIONS:
         raise AdaptiveCompileError(
             code="adaptive_operation_limit_exceeded",
-            message=f"單次最多支援 {MAX_PRIMARY_OPERATIONS} 個明確參數，請拆成兩次調整。",
+            message=(
+                f"單次最多支援 {MAX_PRIMARY_OPERATIONS} 個明確參數，"
+                "請拆成兩次調整。"
+            ),
             issues=tuple(
                 {
                     "axis": operation["axis"],
                     "source_clause": operation["source_clause"],
                     "reason": "operation_limit",
                 }
-                for operation in operations
+                for operation in finalized
             ),
         )
 
-    operations.sort(key=lambda item: ADAPTIVE_AXIS_ORDER.index(str(item["axis"])))
-    for operation in operations:
+    finalized.sort(
+        key=lambda item: ADAPTIVE_AXIS_ORDER.index(str(item["axis"]))
+    )
+    for operation in finalized:
         operation["region"] = region
         operation["mask_type"] = mask_type
         operation["group_id"] = _stable_id(
@@ -996,7 +1388,9 @@ def compile_adaptive_request(
             region,
             mask_type,
         )
-        operation["suppressed_companion_axes"] = list(suppressed_companion_axes)
+        operation["suppressed_companion_axes"] = list(
+            suppressed_companion_axes
+        )
         operation["operation_id"] = _stable_id(
             "operation",
             str(operation["axis"]),
@@ -1009,13 +1403,164 @@ def compile_adaptive_request(
             mask_type,
         )
 
-    return {
+    payload: dict[str, Any] = {
         "kind": "adaptive",
-        "operations": operations,
+        "operations": finalized,
         "region": region,
         "mask_type": mask_type,
         "region_source": region_source,
     }
+    if semantic_ir is not None:
+        payload["semantic_ir"] = semantic_ir.as_dict()
+        payload["semantic_parser_version"] = semantic_ir.parser_version
+        payload["semantic_decision_source"] = semantic_ir.decision_source
+    return payload
+
+
+def _raise_semantic_parse_error(
+    attempt: SemanticParseAttempt,
+) -> None:
+    error = attempt.error
+    if error is None:
+        _raise(
+            "adaptive_clarification_required",
+            "語意解析結果不完整，整句未套用。",
+            reason="semantic_parse_missing_error",
+        )
+    assert error is not None
+    issue_rows = tuple(
+        {
+            "semantic_error_code": error.code,
+            **dict(issue),
+        }
+        for issue in error.issues
+    ) or (
+        {
+            "semantic_error_code": error.code,
+            "reason": "semantic_parse_rejected",
+        },
+    )
+    scope_codes = {
+        str(issue.get("scope_code") or "")
+        for issue in error.issues
+    }
+    guard_kinds = {
+        str(issue.get("guard") or "")
+        for issue in error.issues
+    }
+    if error.code == "assembler_operation_limit_exceeded":
+        code = "adaptive_operation_limit_exceeded"
+        message = "單次最多支援三個明確參數，請拆成兩次調整。"
+        public_issues = _semantic_operation_limit_issue_rows(
+            attempt,
+            semantic_error_code=error.code,
+        )
+        if public_issues:
+            issue_rows = public_issues
+    elif (
+        error.code == "assembler_multiple_regions"
+        or "multiple_regions" in scope_codes
+    ):
+        code = "adaptive_multi_region_not_supported"
+        message = "同一句目前只能調整一個區域，請分成兩次操作。"
+        public_issues = _semantic_multi_region_issue_rows(
+            attempt,
+            semantic_error_code=error.code,
+        )
+        if public_issues:
+            issue_rows = public_issues
+    elif error.code == "assembler_numeric_out_of_range":
+        code = "adaptive_numeric_out_of_range"
+        message = "數值超出參數允許範圍，整句未套用。"
+    elif (
+        error.code == "assembler_invalid_numeric"
+        or _semantic_rejection_contains_fraction(attempt)
+    ):
+        code = "adaptive_invalid_numeric"
+        message = "數值要求不符合參數範圍或語意契約，整句未套用。"
+    elif "disjunction" in guard_kinds:
+        code = "adaptive_disjunction_not_supported"
+        message = "含有替代選項的要求無法安全決定，請拆成單一指令。"
+    elif "exclusion" in guard_kinds:
+        code = "adaptive_exclusion_not_supported"
+        message = "排除條件的作用範圍不明確，請拆開並指定參數。"
+    elif error.code in {
+        "assembler_duplicate_axis",
+        "assembler_operation_conflict",
+    } or any("conflict" in value for value in scope_codes):
+        code = "adaptive_operation_conflict"
+        message = "同一句中的修圖要求互相衝突，整句未套用。"
+    else:
+        code = "adaptive_clarification_required"
+        message = "無法安全且完整地組合這句修圖要求，請再明確一點。"
+    raise AdaptiveCompileError(
+        code=code,
+        message=message,
+        issues=issue_rows,
+        status_code=error.status_code,
+    )
+
+
+def _semantic_operation_limit_issue_rows(
+    attempt: SemanticParseAttempt,
+    *,
+    semantic_error_code: str,
+) -> tuple[dict[str, Any], ...]:
+    """Restore the public one-row-per-requested-operation issue contract."""
+
+    return tuple(
+        {
+            "semantic_error_code": semantic_error_code,
+            "axis": group.axis_id,
+            "source_clause": group.clause.raw_text,
+            "reason": "operation_limit",
+        }
+        for group in attempt.resolution.operation_groups
+    )
+
+
+def _semantic_multi_region_issue_rows(
+    attempt: SemanticParseAttempt,
+    *,
+    semantic_error_code: str,
+) -> tuple[dict[str, Any], ...]:
+    """Restore the public one-row-per-region issue contract."""
+
+    rows: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    ordered_slots = sorted(
+        attempt.resolution.region_slots,
+        key=lambda slot: (slot.evidence.start, slot.evidence.end),
+    )
+    for slot in ordered_slots:
+        region = str(slot.value or slot.concept_id).strip()
+        if not region or region in seen:
+            continue
+        seen.add(region)
+        rows.append(
+            {
+                "semantic_error_code": semantic_error_code,
+                "region": region,
+                "source_clause": slot.evidence.raw_text,
+                "reason": "multiple_regions",
+            }
+        )
+    return tuple(rows)
+
+
+def _semantic_rejection_contains_fraction(
+    attempt: SemanticParseAttempt,
+) -> bool:
+    """Classify decimal-only grammar violations without sentence templates."""
+
+    raw_prompt = attempt.extraction.normalized.raw_text
+    return bool(
+        re.search(
+            r"(?<![\w.])(?:\d+(?:\.\d+)?|\.\d+)\s*[/／]\s*"
+            r"(?:\d+(?:\.\d+)?|\.\d+)(?![\w.])",
+            raw_prompt,
+        )
+    )
 
 
 def _numeric_operations(text: str, clauses: list[str]) -> list[dict[str, Any]]:
@@ -2029,6 +2574,26 @@ def _operation(
     }
 
 
+def _operation_from_english(contract: EnglishOperation) -> dict[str, Any]:
+    operation = _operation(
+        axis=contract.axis,
+        direction=contract.direction,
+        relation=contract.relation,
+        strength=contract.strength,
+        source_clause=contract.source_clause,
+        source_intent=contract.source_intent,
+        explicitness=contract.explicitness,
+        confidence=contract.confidence,
+        numeric_value=contract.numeric_value,
+        relative_delta=contract.relative_delta,
+        include_companions=contract.include_companions,
+        group_feedback=contract.group_feedback,
+    )
+    operation["source_marker"] = contract.source_marker
+    operation["consumed_texts"] = [contract.source_marker]
+    return operation
+
+
 def _detect_unsupported(text: str) -> tuple[str, str] | None:
     for axis, markers in _UNSUPPORTED_PATTERNS:
         marker = _first_unnegated(text, markers)
@@ -2426,7 +2991,10 @@ def _span_is_negated(text: str, start: int, end: int) -> bool:
     )
 
 
+@lru_cache(maxsize=4096)
 def _normalize(value: str) -> str:
+    if not isinstance(value, str):
+        raise TypeError("adaptive compiler normalization requires str input")
     return normalize_prompt_text(value)
 
 

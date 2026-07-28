@@ -31,6 +31,103 @@ class AxisPolicy:
     minimum_visible_step: float | None = None
     policy_version: str = AXIS_POLICY_VERSION
 
+    def __post_init__(self) -> None:
+        identifier_fields = (
+            "axis",
+            "label",
+            "family",
+            "transform",
+            "positive_intent",
+            "negative_intent",
+            "policy_version",
+        )
+        for field_name in identifier_fields:
+            value = str(getattr(self, field_name)).strip()
+            if not value:
+                raise ValueError(f"AxisPolicy {field_name} must not be empty")
+            object.__setattr__(self, field_name, value)
+        object.__setattr__(self, "unit", str(self.unit))
+        if self.family not in {"signed", "ratio", "one_sided_amount"}:
+            raise ValueError(f"Unsupported AxisPolicy family: {self.family!r}")
+        if self.transform not in {"linear", "log"}:
+            raise ValueError(
+                f"Unsupported AxisPolicy transform: {self.transform!r}"
+            )
+        if self.positive_intent == self.negative_intent:
+            raise ValueError("AxisPolicy positive/negative intents must differ")
+
+        numeric_fields = ("neutral", "minimum", "maximum", "quantum")
+        numeric: dict[str, float] = {}
+        for field_name in numeric_fields:
+            value = float(getattr(self, field_name))
+            if not math.isfinite(value):
+                raise ValueError(f"AxisPolicy {field_name} must be finite")
+            numeric[field_name] = value
+            object.__setattr__(self, field_name, value)
+        if numeric["minimum"] >= numeric["maximum"]:
+            raise ValueError("AxisPolicy minimum must be below maximum")
+        if not numeric["minimum"] <= numeric["neutral"] <= numeric["maximum"]:
+            raise ValueError("AxisPolicy neutral must lie inside its range")
+        if numeric["quantum"] <= 0:
+            raise ValueError("AxisPolicy quantum must be positive")
+
+        minimum_active = self.minimum_active
+        if minimum_active is not None:
+            minimum_active = float(minimum_active)
+            if (
+                not math.isfinite(minimum_active)
+                or minimum_active <= 0
+                or not numeric["minimum"]
+                <= minimum_active
+                <= numeric["maximum"]
+            ):
+                raise ValueError(
+                    "AxisPolicy minimum_active must be finite, positive, "
+                    "and inside the parameter range"
+                )
+            object.__setattr__(self, "minimum_active", minimum_active)
+        if self.transform == "log" and (
+            minimum_active is None and numeric["minimum"] <= 0
+        ):
+            raise ValueError(
+                "Log AxisPolicy with a non-positive minimum needs "
+                "minimum_active"
+            )
+
+        visible_step = self.minimum_visible_step
+        if visible_step is not None:
+            visible_step = float(visible_step)
+            if not math.isfinite(visible_step) or visible_step <= 0:
+                raise ValueError(
+                    "AxisPolicy minimum_visible_step must be positive"
+                )
+            object.__setattr__(
+                self,
+                "minimum_visible_step",
+                visible_step,
+            )
+
+        positive = _validate_seed_table(
+            self.positive_seeds,
+            axis=self.axis,
+            direction=1,
+            minimum=numeric["minimum"],
+            maximum=numeric["maximum"],
+            neutral=numeric["neutral"],
+            one_sided=self.one_sided,
+        )
+        negative = _validate_seed_table(
+            self.negative_seeds,
+            axis=self.axis,
+            direction=-1,
+            minimum=numeric["minimum"],
+            maximum=numeric["maximum"],
+            neutral=numeric["neutral"],
+            one_sided=self.one_sided,
+        )
+        object.__setattr__(self, "positive_seeds", MappingProxyType(positive))
+        object.__setattr__(self, "negative_seeds", MappingProxyType(negative))
+
     @property
     def one_sided(self) -> bool:
         return self.family == "one_sided_amount"
@@ -69,6 +166,51 @@ class AxisPolicy:
 
 def _frozen(values: Mapping[str, float]) -> Mapping[str, float]:
     return MappingProxyType({key: float(value) for key, value in values.items()})
+
+
+def _validate_seed_table(
+    values: Mapping[str, float],
+    *,
+    axis: str,
+    direction: int,
+    minimum: float,
+    maximum: float,
+    neutral: float,
+    one_sided: bool,
+) -> dict[str, float]:
+    required = {"subtle", "normal", "strong"}
+    if set(values) != required:
+        raise ValueError(
+            f"AxisPolicy {axis!r} seed keys must be exactly "
+            f"{sorted(required)!r}"
+        )
+    result: dict[str, float] = {}
+    for strength in ("subtle", "normal", "strong"):
+        value = float(values[strength])
+        if not math.isfinite(value) or not minimum <= value <= maximum:
+            raise ValueError(
+                f"AxisPolicy {axis!r} {strength} seed is outside its range"
+            )
+        if one_sided:
+            if value <= neutral:
+                raise ValueError(
+                    f"AxisPolicy {axis!r} one-sided seed must exceed neutral"
+                )
+        elif direction > 0 and value <= neutral:
+            raise ValueError(
+                f"AxisPolicy {axis!r} positive seed must exceed neutral"
+            )
+        elif direction < 0 and value >= neutral:
+            raise ValueError(
+                f"AxisPolicy {axis!r} negative seed must be below neutral"
+            )
+        result[strength] = value
+    distances = [abs(result[key] - neutral) for key in ("subtle", "normal", "strong")]
+    if not distances[0] < distances[1] < distances[2]:
+        raise ValueError(
+            f"AxisPolicy {axis!r} seed strengths must be strictly monotonic"
+        )
+    return result
 
 
 def _policy(
@@ -149,6 +291,24 @@ AXIS_POLICIES: Mapping[str, AxisPolicy] = MappingProxyType(
             positive_seeds={"subtle": 15.0, "normal": 30.0, "strong": 50.0},
             negative_seeds={"subtle": -15.0, "normal": -30.0, "strong": -50.0},
         ),
+        "whites": _policy(
+            "whites",
+            family="signed",
+            transform="linear",
+            positive_intent="raise_whites",
+            negative_intent="lower_whites",
+            positive_seeds={"subtle": 12.0, "normal": 25.0, "strong": 45.0},
+            negative_seeds={"subtle": -12.0, "normal": -25.0, "strong": -45.0},
+        ),
+        "blacks": _policy(
+            "blacks",
+            family="signed",
+            transform="linear",
+            positive_intent="raise_blacks",
+            negative_intent="lower_blacks",
+            positive_seeds={"subtle": 12.0, "normal": 25.0, "strong": 45.0},
+            negative_seeds={"subtle": -12.0, "normal": -25.0, "strong": -45.0},
+        ),
         "saturation": _policy(
             "saturation",
             family="ratio",
@@ -159,6 +319,15 @@ AXIS_POLICIES: Mapping[str, AxisPolicy] = MappingProxyType(
             negative_seeds={"subtle": 0.94, "normal": 0.88, "strong": 0.8},
             minimum_active=0.01,
         ),
+        "vibrance": _policy(
+            "vibrance",
+            family="signed",
+            transform="linear",
+            positive_intent="increase_vibrance",
+            negative_intent="reduce_vibrance",
+            positive_seeds={"subtle": 0.12, "normal": 0.25, "strong": 0.45},
+            negative_seeds={"subtle": -0.12, "normal": -0.25, "strong": -0.45},
+        ),
         "temperature": _policy(
             "temperature",
             family="signed",
@@ -167,6 +336,15 @@ AXIS_POLICIES: Mapping[str, AxisPolicy] = MappingProxyType(
             negative_intent="cool",
             positive_seeds={"subtle": 8.0, "normal": 15.0, "strong": 25.0},
             negative_seeds={"subtle": -8.0, "normal": -15.0, "strong": -25.0},
+        ),
+        "white_balance_tint": _policy(
+            "white_balance_tint",
+            family="signed",
+            transform="linear",
+            positive_intent="shift_tint_magenta",
+            negative_intent="shift_tint_green",
+            positive_seeds={"subtle": 6.0, "normal": 12.0, "strong": 22.0},
+            negative_seeds={"subtle": -6.0, "normal": -12.0, "strong": -22.0},
         ),
         "sharpen": _policy(
             "sharpen",
@@ -213,6 +391,14 @@ if tuple(AXIS_POLICIES) != ADAPTIVE_AXIS_ORDER:
         "Adaptive policy keys must exactly match the public manual parameter schema"
     )
 
+_DECLARED_INTENTS = tuple(
+    intent
+    for policy in AXIS_POLICIES.values()
+    for intent in (policy.positive_intent, policy.negative_intent)
+)
+if len(_DECLARED_INTENTS) != len(set(_DECLARED_INTENTS)):
+    raise RuntimeError("Adaptive policy intents must be globally unique")
+
 
 INTENT_TO_AXIS_DIRECTION: Mapping[str, tuple[str, int]] = MappingProxyType(
     {
@@ -229,7 +415,20 @@ INTENT_TO_AXIS_DIRECTION: Mapping[str, tuple[str, int]] = MappingProxyType(
 
 
 def policy_registry_payload() -> dict[str, dict[str, object]]:
-    return {axis: policy.as_dict() for axis, policy in AXIS_POLICIES.items()}
+    payload: dict[str, dict[str, object]] = {}
+    for axis, policy in AXIS_POLICIES.items():
+        spec = EDIT_PARAMETER_SPECS[axis]
+        payload[axis] = {
+            **policy.as_dict(),
+            "label_en": str(spec["label_en"]),
+            "labels": {
+                "zh": str(spec["label"]),
+                "en": str(spec["label_en"]),
+            },
+            "group": str(spec["group"]),
+            "default_visible": bool(spec["default_visible"]),
+        }
+    return payload
 
 
 def coordinate(policy: AxisPolicy, value: float) -> float:

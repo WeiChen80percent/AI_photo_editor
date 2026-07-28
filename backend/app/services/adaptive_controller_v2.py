@@ -24,6 +24,8 @@ from app.services.adaptive_policy import (
 from app.services.adaptive_prompt_compiler import (
     AdaptiveCompileError,
     compile_adaptive_request,
+    semantic_attempt_is_authoritative_rejection,
+    semantic_attempt_is_released,
 )
 from app.services.edit_engines import build_engine_parameters
 from app.services.edit_plan import (
@@ -33,12 +35,17 @@ from app.services.edit_plan import (
 from app.services.edit_schema import (
     MANUAL_PARAMETER_KEYS,
     default_mask_type_for_region,
+    require_region_mask_pair,
     validate_edit_mask_type,
     validate_edit_parameters,
     validate_edit_region,
 )
 from app.services.opencv_parameter_mapper import get_opencv_template_adjustments
 from app.services.prompt_parser import parse_edit_prompt
+from app.services.semantic_parser import (
+    SemanticParseAttempt,
+    parse_semantic_prompt,
+)
 
 
 ADAPTIVE_SCHEMA_VERSION_V2 = "adaptive_prompt_v2"
@@ -54,6 +61,13 @@ class AdaptiveV2Resolution:
     adaptive: dict[str, Any] | None
     render_base_image_path: str
     explanation: str | None = None
+
+
+@dataclass(frozen=True)
+class AdaptiveSemanticPreflight:
+    semantic_attempt: SemanticParseAttempt | None
+    prompt_result: dict[str, Any] | None
+    bypass_intent_resolver: bool
 
 
 @dataclass
@@ -74,6 +88,7 @@ def resolve_adaptive_v2(
     parent_record: Mapping[str, Any] | None,
     default_base_image_path: str,
     engine_name: str,
+    semantic_attempt: SemanticParseAttempt | None = None,
 ) -> AdaptiveV2Resolution:
     result = copy.deepcopy(dict(prompt_result))
     default_base = str(default_base_image_path or "")
@@ -81,12 +96,22 @@ def resolve_adaptive_v2(
         return AdaptiveV2Resolution(result, None, default_base)
 
     parent_snapshot = read_parent_snapshot(parent_record)
-    deterministic_result = parse_edit_prompt(prompt)
+    attempt = semantic_attempt
+    released_semantic = semantic_attempt_is_released(attempt)
+    authoritative_rejection = semantic_attempt_is_authoritative_rejection(
+        attempt
+    )
+    deterministic_result = (
+        {}
+        if released_semantic or authoritative_rejection
+        else parse_edit_prompt(prompt)
+    )
     try:
         compiled = compile_adaptive_request(
             prompt=prompt,
             deterministic_result=deterministic_result,
             parent_snapshot=parent_snapshot,
+            semantic_attempt=attempt,
         )
     except AdaptiveCompileError as exc:
         raise AdaptiveV2Error(
@@ -95,6 +120,18 @@ def resolve_adaptive_v2(
             status_code=exc.status_code,
             issues=exc.issues,
         ) from exc
+
+    semantic_ir = compiled.get("semantic_ir")
+    if isinstance(semantic_ir, Mapping):
+        result["parser_source"] = "semantic_registry"
+        result["fallback_reason"] = None
+        result["semantic_ir"] = copy.deepcopy(dict(semantic_ir))
+        result["semantic_parser_version"] = compiled.get(
+            "semantic_parser_version"
+        )
+        result["semantic_decision_source"] = compiled.get(
+            "semantic_decision_source"
+        )
 
     kind = str(compiled.get("kind") or "bypass")
     if kind == "satisfied":
@@ -118,10 +155,26 @@ def resolve_adaptive_v2(
         )
 
     operations = copy.deepcopy(list(compiled.get("operations") or []))
-    region = validate_edit_region(compiled.get("region"))
-    mask_type = validate_edit_mask_type(compiled.get("mask_type"))
-    if mask_type == "none":
-        mask_type = default_mask_type_for_region(region)
+    try:
+        region, mask_type = require_region_mask_pair(
+            compiled.get("region"),
+            compiled.get("mask_type"),
+        )
+    except ValueError as exc:
+        raise AdaptiveV2Error(
+            code="adaptive_region_contract_invalid",
+            message=(
+                "Compiled edit region/mask metadata is invalid; no edit was "
+                "rendered."
+            ),
+            status_code=422,
+            issues=(
+                {
+                    "reason": "invalid_region_mask_contract",
+                    "detail": str(exc),
+                },
+            ),
+        ) from exc
     region_source = str(compiled.get("region_source") or "default")
 
     vector = _prepare_parent_vector(
@@ -215,6 +268,14 @@ def resolve_adaptive_v2(
         region_source=region_source,
         migration=vector.get("migration"),
     )
+    if isinstance(semantic_ir, Mapping):
+        adaptive["semantic_ir"] = copy.deepcopy(dict(semantic_ir))
+        adaptive["semantic_parser_version"] = compiled.get(
+            "semantic_parser_version"
+        )
+        adaptive["semantic_decision_source"] = compiled.get(
+            "semantic_decision_source"
+        )
     prepared = _prepare_prompt_result(
         result=result,
         deterministic_result=deterministic_result,
@@ -231,6 +292,63 @@ def resolve_adaptive_v2(
         render_base_image_path=anchor_path,
         explanation=_adaptive_explanation(adaptive),
     )
+
+
+def preflight_adaptive_semantic_prompt(
+    *,
+    prompt: str,
+    engine_name: str,
+) -> AdaptiveSemanticPreflight:
+    """Classify one prompt before any legacy intent resolver can run."""
+
+    if str(engine_name or "").strip().lower() != "opencv":
+        return AdaptiveSemanticPreflight(
+            semantic_attempt=None,
+            prompt_result=None,
+            bypass_intent_resolver=False,
+        )
+    attempt = parse_semantic_prompt(str(prompt or "").strip())
+    bypass = (
+        semantic_attempt_is_released(attempt)
+        or semantic_attempt_is_authoritative_rejection(attempt)
+    )
+    if not bypass:
+        return AdaptiveSemanticPreflight(
+            semantic_attempt=attempt,
+            prompt_result=None,
+            bypass_intent_resolver=False,
+        )
+    semantic_ir = attempt.accepted_ir
+    prompt_result: dict[str, Any] = {
+        "prompt": str(prompt or "").strip(),
+        "parser_source": "semantic_registry",
+        "fallback_reason": None,
+    }
+    if semantic_ir is not None:
+        prompt_result["semantic_ir"] = semantic_ir.as_dict()
+        prompt_result["semantic_parser_version"] = semantic_ir.parser_version
+        prompt_result["semantic_decision_source"] = semantic_ir.decision_source
+    return AdaptiveSemanticPreflight(
+        semantic_attempt=attempt,
+        prompt_result=prompt_result,
+        bypass_intent_resolver=True,
+    )
+
+
+def build_released_semantic_prompt_seed(
+    *,
+    prompt: str,
+    parent_record: Mapping[str, Any] | None,
+    engine_name: str,
+) -> dict[str, Any] | None:
+    """Backward-compatible seed helper for callers not passing the attempt."""
+
+    del parent_record
+    preflight = preflight_adaptive_semantic_prompt(
+        prompt=prompt,
+        engine_name=engine_name,
+    )
+    return preflight.prompt_result if preflight.bypass_intent_resolver else None
 
 
 def read_parent_snapshot(
@@ -1194,6 +1312,17 @@ def _operation_metadata(
         "mask_type": state.get("mask_type"),
         "relation": state.get("relation"),
         "strength_hint": operation.get("strength_hint"),
+        "include_companions": bool(operation.get("include_companions")),
+        "group_feedback": bool(operation.get("group_feedback")),
+        "semantic_operation_kind": operation.get(
+            "semantic_operation_kind"
+        ),
+        "semantic_decision_source": operation.get(
+            "semantic_decision_source"
+        ),
+        "semantic_evidence": copy.deepcopy(
+            operation.get("semantic_evidence") or []
+        ),
         "suppressed_companion_axes": copy.deepcopy(
             operation.get("suppressed_companion_axes") or []
         ),
@@ -1766,6 +1895,15 @@ def _prepare_prompt_result(
         plan["deterministic_edit_plan"] = copy.deepcopy(dict(rule_plan))
     plan["normalized_operations"] = copy.deepcopy(operations)
     plan["adaptation"] = copy.deepcopy(dict(adaptive))
+    semantic_ir = result.get("semantic_ir")
+    if isinstance(semantic_ir, Mapping):
+        plan["semantic_ir"] = copy.deepcopy(dict(semantic_ir))
+        plan["semantic_parser_version"] = result.get(
+            "semantic_parser_version"
+        )
+        plan["semantic_decision_source"] = result.get(
+            "semantic_decision_source"
+        )
     result["prompt"] = prompt
     result["edit_plan"] = plan
     result["parameters"] = build_engine_parameters("opencv", plan)

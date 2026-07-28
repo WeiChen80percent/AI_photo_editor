@@ -22,8 +22,12 @@ from app.services.adaptive_controller_v2 import (
     ADAPTIVE_POLICY_VERSION_V2,
     ADAPTIVE_SCHEMA_VERSION_V2,
     AdaptiveV2Error,
+    AdaptiveSemanticPreflight,
+    build_released_semantic_prompt_seed,
+    preflight_adaptive_semantic_prompt,
     resolve_adaptive_v2,
 )
+from app.services.semantic_parser import SemanticParseAttempt
 
 
 ADAPTIVE_SCHEMA_VERSION = ADAPTIVE_SCHEMA_VERSION_V2
@@ -594,6 +598,7 @@ def resolve_adaptive_adjustment(
     parent_record: Mapping[str, Any] | None,
     default_base_image_path: str,
     engine_name: str = "opencv",
+    semantic_attempt: SemanticParseAttempt | None = None,
 ) -> AdaptiveAdjustment:
     """Resolve one immutable branch-local adaptive v2 request.
 
@@ -608,6 +613,7 @@ def resolve_adaptive_adjustment(
             parent_record=parent_record,
             default_base_image_path=default_base_image_path,
             engine_name=engine_name,
+            semantic_attempt=semantic_attempt,
         )
     except AdaptiveV2Error as exc:
         if exc.code == "adaptive_feedback_satisfied":
