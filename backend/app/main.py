@@ -44,8 +44,14 @@ app.add_middleware(
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 STORAGE_DIR = BASE_DIR / "storage"
+STYLE_PREVIEW_DIR = BASE_DIR / "app" / "style_catalog" / "previews"
 
 app.mount("/storage", StaticFiles(directory=STORAGE_DIR), name="storage")
+app.mount(
+    "/style-previews",
+    StaticFiles(directory=STYLE_PREVIEW_DIR),
+    name="style-previews",
+)
 
 app.include_router(health_router)
 app.include_router(edit_router)

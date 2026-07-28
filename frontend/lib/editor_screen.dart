@@ -26,6 +26,10 @@ class _EditorScreenState extends State<EditorScreen> {
   late final bool _ownsController;
   late final ImagePicker _imagePicker;
   late final TextEditingController _promptController;
+  BuildContext? _toolSheetContext;
+  bool _toolSheetOpen = false;
+  bool _toolSheetDismissScheduled = false;
+  bool _preserveActiveToolAfterSheetDismiss = false;
 
   @override
   void initState() {
@@ -86,6 +90,9 @@ class _EditorScreenState extends State<EditorScreen> {
                   MediaQuery.orientationOf(context) == Orientation.landscape;
               final sideBySide =
                   isExpanded || (!isCompact && isLandscape && width >= 760);
+              if (isExpanded) {
+                _dismissToolSheetForExpandedLayout();
+              }
               return Column(
                 children: [
                   if (_controller.statusMessage != null)
@@ -154,69 +161,105 @@ class _EditorScreenState extends State<EditorScreen> {
     _controller.setActiveTool(tool);
     if (tool == EditorTool.manual) {
       await _controller.openManual();
+    } else if (tool == EditorTool.styles) {
+      await _controller.openStyles();
     }
     if (!mounted || isExpanded) {
       return;
     }
 
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: AppColors.surface,
-      barrierColor: Colors.black54,
-      builder: (sheetContext) {
-        final initial = tool == EditorTool.manual || tool == EditorTool.history
-            ? 0.72
-            : 0.56;
-        return AnimatedPadding(
-          duration: const Duration(milliseconds: 120),
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.viewInsetsOf(sheetContext).bottom,
-          ),
-          child: DraggableScrollableSheet(
-            expand: false,
-            initialChildSize: initial,
-            minChildSize: 0.34,
-            maxChildSize: 0.94,
-            snap: true,
-            snapSizes: const [0.5, 0.72, 0.94],
-            builder: (context, scrollController) {
-              return AnimatedBuilder(
-                animation: _controller,
-                builder: (_, _) {
-                  return Column(
-                    children: [
-                      const SizedBox(height: 8),
-                      Container(
-                        width: 38,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: AppColors.borderStrong,
-                          borderRadius: BorderRadius.circular(999),
+    _toolSheetOpen = true;
+    var preserveActiveTool = false;
+    try {
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        useSafeArea: true,
+        backgroundColor: AppColors.surface,
+        barrierColor: Colors.black54,
+        builder: (sheetContext) {
+          _toolSheetContext = sheetContext;
+          final initial =
+              tool == EditorTool.manual ||
+                  tool == EditorTool.history ||
+                  tool == EditorTool.styles
+              ? 0.72
+              : 0.56;
+          return AnimatedPadding(
+            duration: const Duration(milliseconds: 120),
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.viewInsetsOf(sheetContext).bottom,
+            ),
+            child: DraggableScrollableSheet(
+              expand: false,
+              initialChildSize: initial,
+              minChildSize: 0.34,
+              maxChildSize: 0.94,
+              snap: true,
+              snapSizes: const [0.5, 0.72, 0.94],
+              builder: (context, scrollController) {
+                return AnimatedBuilder(
+                  animation: _controller,
+                  builder: (_, _) {
+                    return Column(
+                      children: [
+                        const SizedBox(height: 8),
+                        Container(
+                          width: 38,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: AppColors.borderStrong,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Expanded(
-                        child: _panelForTool(
-                          tool,
-                          isExpanded: false,
-                          sheetContext: sheetContext,
-                          scrollController: scrollController,
+                        const SizedBox(height: 4),
+                        Expanded(
+                          child: _panelForTool(
+                            tool,
+                            isExpanded: false,
+                            sheetContext: sheetContext,
+                            scrollController: scrollController,
+                          ),
                         ),
-                      ),
-                    ],
-                  );
-                },
-              );
-            },
-          ),
-        );
-      },
-    );
-    if (mounted && _controller.activeTool == tool) {
+                      ],
+                    );
+                  },
+                );
+              },
+            ),
+          );
+        },
+      );
+    } finally {
+      preserveActiveTool = _preserveActiveToolAfterSheetDismiss;
+      _toolSheetOpen = false;
+      _toolSheetContext = null;
+      _toolSheetDismissScheduled = false;
+      _preserveActiveToolAfterSheetDismiss = false;
+    }
+    if (mounted && !preserveActiveTool && _controller.activeTool == tool) {
       _controller.setActiveTool(null);
     }
+  }
+
+  void _dismissToolSheetForExpandedLayout() {
+    if (!_toolSheetOpen || _toolSheetDismissScheduled) {
+      return;
+    }
+    _toolSheetDismissScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _toolSheetDismissScheduled = false;
+      final sheetContext = _toolSheetContext;
+      if (!mounted || !_toolSheetOpen || sheetContext == null) {
+        return;
+      }
+      final navigator = Navigator.of(sheetContext);
+      if (!navigator.canPop()) {
+        return;
+      }
+      _preserveActiveToolAfterSheetDismiss = true;
+      navigator.pop();
+    });
   }
 
   Widget _panelForTool(
@@ -241,6 +284,21 @@ class _EditorScreenState extends State<EditorScreen> {
           onClose: close,
           onSubmit: () async {
             final success = await _controller.submitPrompt();
+            if (success &&
+                !isExpanded &&
+                sheetContext != null &&
+                sheetContext.mounted) {
+              Navigator.of(sheetContext).pop();
+            }
+          },
+        );
+      case EditorTool.styles:
+        return StylesPanel(
+          controller: _controller,
+          onClose: close,
+          scrollController: scrollController,
+          onApply: (style) async {
+            final success = await _controller.applyStyle(style);
             if (success &&
                 !isExpanded &&
                 sheetContext != null &&

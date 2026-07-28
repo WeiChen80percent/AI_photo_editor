@@ -1,19 +1,5 @@
 typedef ImageUrlBuilder = String Function(String path);
 
-const Set<String> _adaptivePublicAxes = <String>{
-  'exposure',
-  'brightness',
-  'contrast',
-  'highlights',
-  'shadows',
-  'saturation',
-  'temperature',
-  'sharpen',
-  'clarity',
-  'dehaze',
-  'vignette',
-};
-
 Map<String, dynamic> _mapValue(dynamic value) {
   if (value is Map) {
     return Map<String, dynamic>.from(value);
@@ -24,6 +10,13 @@ Map<String, dynamic> _mapValue(dynamic value) {
 String? _stringValue(dynamic value) {
   final text = value?.toString().trim();
   return text == null || text.isEmpty ? null : text;
+}
+
+List<String> _stringList(dynamic value) {
+  if (value is! List) {
+    return const <String>[];
+  }
+  return value.map(_stringValue).whereType<String>().toList(growable: false);
 }
 
 double _doubleValue(dynamic value, {double fallback = 0}) {
@@ -61,6 +54,243 @@ int? _nullableIntValue(dynamic value) {
     return value.toInt();
   }
   return int.tryParse(value?.toString() ?? '');
+}
+
+String _formatParameterNumber(double value, {bool signed = false}) {
+  final rounded = value == value.roundToDouble()
+      ? value.toInt().toString()
+      : value
+            .toStringAsFixed(3)
+            .replaceFirst(RegExp(r'0+$'), '')
+            .replaceFirst(RegExp(r'\.$'), '');
+  return signed && value > 0 ? '+$rounded' : rounded;
+}
+
+class ParameterMetadata {
+  const ParameterMetadata({
+    required this.key,
+    required this.label,
+    required this.unit,
+    required this.neutral,
+    required this.transform,
+    this.minimum,
+    this.maximum,
+    this.quantum,
+  });
+
+  final String key;
+  final String label;
+  final String unit;
+  final double neutral;
+  final String transform;
+  final double? minimum;
+  final double? maximum;
+  final double? quantum;
+
+  bool get usesLogTransform => transform.toLowerCase() == 'log';
+
+  bool isMeaningful(num value) {
+    return (value.toDouble() - neutral).abs() > 0.0001;
+  }
+
+  String formatValue(double value, {bool signed = false}) {
+    final number = _formatParameterNumber(value, signed: signed);
+    if (unit.isEmpty) {
+      return number;
+    }
+    return unit == 'x' ? '$number$unit' : '$number $unit';
+  }
+
+  String formatStep(double value) {
+    if (usesLogTransform) {
+      return _formatParameterNumber(value);
+    }
+    return formatValue(value);
+  }
+}
+
+const Map<String, ParameterMetadata> _legacyParameterMetadata =
+    <String, ParameterMetadata>{
+      'exposure': ParameterMetadata(
+        key: 'exposure',
+        label: '曝光',
+        unit: 'EV',
+        neutral: 0,
+        transform: 'linear',
+      ),
+      'brightness': ParameterMetadata(
+        key: 'brightness',
+        label: '亮度',
+        unit: '',
+        neutral: 0,
+        transform: 'linear',
+      ),
+      'contrast': ParameterMetadata(
+        key: 'contrast',
+        label: '對比',
+        unit: 'x',
+        neutral: 1,
+        transform: 'log',
+      ),
+      'highlights': ParameterMetadata(
+        key: 'highlights',
+        label: '高光',
+        unit: '',
+        neutral: 0,
+        transform: 'linear',
+      ),
+      'shadows': ParameterMetadata(
+        key: 'shadows',
+        label: '陰影',
+        unit: '',
+        neutral: 0,
+        transform: 'linear',
+      ),
+      'whites': ParameterMetadata(
+        key: 'whites',
+        label: '白位',
+        unit: '',
+        neutral: 0,
+        transform: 'linear',
+      ),
+      'blacks': ParameterMetadata(
+        key: 'blacks',
+        label: '黑位',
+        unit: '',
+        neutral: 0,
+        transform: 'linear',
+      ),
+      'saturation': ParameterMetadata(
+        key: 'saturation',
+        label: '飽和度',
+        unit: 'x',
+        neutral: 1,
+        transform: 'log',
+      ),
+      'vibrance': ParameterMetadata(
+        key: 'vibrance',
+        label: '自然飽和度',
+        unit: '',
+        neutral: 0,
+        transform: 'linear',
+      ),
+      'temperature': ParameterMetadata(
+        key: 'temperature',
+        label: '色溫',
+        unit: '',
+        neutral: 0,
+        transform: 'linear',
+      ),
+      'white_balance_tint': ParameterMetadata(
+        key: 'white_balance_tint',
+        label: '白平衡色偏',
+        unit: '',
+        neutral: 0,
+        transform: 'linear',
+      ),
+      'sharpen': ParameterMetadata(
+        key: 'sharpen',
+        label: '銳化',
+        unit: '',
+        neutral: 0,
+        transform: 'linear',
+      ),
+      'clarity': ParameterMetadata(
+        key: 'clarity',
+        label: '清晰度',
+        unit: '',
+        neutral: 0,
+        transform: 'linear',
+      ),
+      'dehaze': ParameterMetadata(
+        key: 'dehaze',
+        label: '去霧',
+        unit: '',
+        neutral: 0,
+        transform: 'linear',
+      ),
+      'vignette': ParameterMetadata(
+        key: 'vignette',
+        label: '暗角',
+        unit: '',
+        neutral: 0,
+        transform: 'linear',
+      ),
+    };
+
+class ParameterMetadataCatalog {
+  ParameterMetadataCatalog._(Map<String, ParameterMetadata> metadata)
+    : _metadata = Map<String, ParameterMetadata>.unmodifiable(metadata);
+
+  static final ParameterMetadataCatalog legacy = ParameterMetadataCatalog._(
+    _legacyParameterMetadata,
+  );
+
+  factory ParameterMetadataCatalog.fromSources({
+    ManualSchema? manualSchema,
+    dynamic policyRegistry,
+    bool includeLegacyFallback = true,
+  }) {
+    final merged = <String, ParameterMetadata>{
+      if (includeLegacyFallback) ..._legacyParameterMetadata,
+    };
+    final registry = _mapValue(policyRegistry);
+    for (final entry in registry.entries) {
+      if (entry.value is! Map) {
+        continue;
+      }
+      final policy = Map<String, dynamic>.from(entry.value as Map);
+      final key = entry.key.trim().toLowerCase();
+      final axis = (_stringValue(policy['axis']) ?? key).toLowerCase();
+      if (key.isEmpty || axis != key) {
+        continue;
+      }
+      final existing = merged[key];
+      merged[key] = ParameterMetadata(
+        key: key,
+        label: _stringValue(policy['label']) ?? existing?.label ?? key,
+        unit: _stringValue(policy['unit']) ?? existing?.unit ?? '',
+        neutral:
+            _nullableDoubleValue(policy['neutral']) ?? existing?.neutral ?? 0,
+        transform:
+            _stringValue(policy['transform']) ??
+            existing?.transform ??
+            'linear',
+        minimum: _nullableDoubleValue(policy['minimum']) ?? existing?.minimum,
+        maximum: _nullableDoubleValue(policy['maximum']) ?? existing?.maximum,
+        quantum: _nullableDoubleValue(policy['quantum']) ?? existing?.quantum,
+      );
+    }
+    for (final spec
+        in manualSchema?.parameters ?? const <ManualParameterSpec>[]) {
+      final key = spec.key.trim().toLowerCase();
+      if (key.isEmpty) {
+        continue;
+      }
+      final existing = merged[key];
+      merged[key] = ParameterMetadata(
+        key: key,
+        label: spec.label,
+        unit: spec.unit,
+        neutral: spec.neutral,
+        transform: existing?.transform ?? 'linear',
+        minimum: spec.minimum,
+        maximum: spec.maximum,
+        quantum: spec.step,
+      );
+    }
+    return ParameterMetadataCatalog._(merged);
+  }
+
+  final Map<String, ParameterMetadata> _metadata;
+
+  ParameterMetadata? metadataFor(String key) {
+    return _metadata[key.trim().toLowerCase()];
+  }
+
+  bool contains(String key) => metadataFor(key) != null;
+
+  String labelFor(String key) => metadataFor(key)?.label ?? key;
 }
 
 class AdaptiveOperation {
@@ -103,13 +333,15 @@ class AdaptiveOperation {
   static AdaptiveOperation? tryParse(
     dynamic value, {
     String defaultRegion = 'all',
+    ParameterMetadataCatalog? metadataCatalog,
   }) {
     if (value is! Map) {
       return null;
     }
     final json = Map<String, dynamic>.from(value);
     final axis = _stringValue(json['axis'] ?? json['primary_parameter']);
-    if (axis == null || !_adaptivePublicAxes.contains(axis)) {
+    final catalog = metadataCatalog ?? ParameterMetadataCatalog.legacy;
+    if (axis == null || !catalog.contains(axis)) {
       return null;
     }
     final hasMeaningfulState = <dynamic>[
@@ -260,6 +492,152 @@ class ManualSchema {
   }
 }
 
+class StyleMetadata {
+  const StyleMetadata({
+    required this.styleId,
+    required this.version,
+    required this.strength,
+    required this.family,
+    required this.displayNameZh,
+    required this.displayNameEn,
+    required this.recipeHash,
+    required this.assetHash,
+    required this.rendererVersion,
+    required this.reviewStatus,
+    required this.sourceEditId,
+    required this.anchorImagePath,
+  });
+
+  final String styleId;
+  final String version;
+  final double strength;
+  final String family;
+  final String displayNameZh;
+  final String displayNameEn;
+  final String recipeHash;
+  final String assetHash;
+  final String rendererVersion;
+  final String reviewStatus;
+  final String? sourceEditId;
+  final String? anchorImagePath;
+
+  String get displayName =>
+      displayNameZh.isNotEmpty ? displayNameZh : displayNameEn;
+
+  factory StyleMetadata.fromJson(Map<String, dynamic> json) {
+    final displayName = _mapValue(json['display_name']);
+    return StyleMetadata(
+      styleId: _stringValue(json['style_id']) ?? '',
+      version: _stringValue(json['version']) ?? '',
+      strength: _nullableDoubleValue(json['strength']) ?? 1,
+      family: _stringValue(json['family']) ?? '',
+      displayNameZh: _stringValue(displayName['zh']) ?? '',
+      displayNameEn: _stringValue(displayName['en']) ?? '',
+      recipeHash: _stringValue(json['recipe_hash']) ?? '',
+      assetHash: _stringValue(json['asset_hash']) ?? '',
+      rendererVersion: _stringValue(json['renderer_version']) ?? '',
+      reviewStatus: _stringValue(json['review_status']) ?? '',
+      sourceEditId: _stringValue(json['source_edit_id']),
+      anchorImagePath: _stringValue(json['anchor_image_path']),
+    );
+  }
+}
+
+class StyleCatalogItem {
+  const StyleCatalogItem({
+    required this.styleId,
+    required this.version,
+    required this.displayNameZh,
+    required this.displayNameEn,
+    required this.family,
+    required this.tags,
+    required this.description,
+    required this.defaultStrength,
+    required this.minimumStrength,
+    required this.maximumStrength,
+    required this.previewUrl,
+  });
+
+  final String styleId;
+  final String version;
+  final String displayNameZh;
+  final String displayNameEn;
+  final String family;
+  final List<String> tags;
+  final String description;
+  final double defaultStrength;
+  final double minimumStrength;
+  final double maximumStrength;
+  final String? previewUrl;
+
+  String get displayName =>
+      displayNameZh.isNotEmpty ? displayNameZh : displayNameEn;
+
+  factory StyleCatalogItem.fromJson(
+    Map<String, dynamic> json, {
+    required ImageUrlBuilder buildImageUrl,
+  }) {
+    final displayName = _mapValue(json['display_name']);
+    final strength = _mapValue(json['strength']);
+    final review = _mapValue(json['review']);
+    final previewPath = _stringValue(review['preview_path']);
+    return StyleCatalogItem(
+      styleId: _stringValue(json['style_id']) ?? '',
+      version: _stringValue(json['version']) ?? '',
+      displayNameZh: _stringValue(displayName['zh']) ?? '',
+      displayNameEn: _stringValue(displayName['en']) ?? '',
+      family: _stringValue(json['family']) ?? '',
+      tags: _stringList(json['tags']),
+      description: _stringValue(json['description']) ?? '',
+      defaultStrength: _nullableDoubleValue(strength['default']) ?? 1,
+      minimumStrength: _nullableDoubleValue(strength['minimum']) ?? 0,
+      maximumStrength: _nullableDoubleValue(strength['maximum']) ?? 1,
+      previewUrl: previewPath == null ? null : buildImageUrl(previewPath),
+    );
+  }
+}
+
+class StyleCatalog {
+  const StyleCatalog({
+    required this.catalogVersion,
+    required this.styleCount,
+    required this.families,
+    required this.styles,
+  });
+
+  final String catalogVersion;
+  final int styleCount;
+  final Map<String, int> families;
+  final List<StyleCatalogItem> styles;
+
+  factory StyleCatalog.fromJson(
+    Map<String, dynamic> json, {
+    required ImageUrlBuilder buildImageUrl,
+  }) {
+    final familyMap = _mapValue(json['families']);
+    final styles = json['styles'];
+    return StyleCatalog(
+      catalogVersion: _stringValue(json['catalog_version']) ?? '',
+      styleCount: (json['style_count'] as num?)?.toInt() ?? 0,
+      families: <String, int>{
+        for (final entry in familyMap.entries)
+          if (entry.value is num) entry.key: (entry.value as num).toInt(),
+      },
+      styles: styles is List
+          ? styles
+                .whereType<Map>()
+                .map(
+                  (item) => StyleCatalogItem.fromJson(
+                    Map<String, dynamic>.from(item),
+                    buildImageUrl: buildImageUrl,
+                  ),
+                )
+                .toList(growable: false)
+          : const <StyleCatalogItem>[],
+    );
+  }
+}
+
 class EditHistoryItem {
   const EditHistoryItem({
     required this.sessionId,
@@ -278,6 +656,7 @@ class EditHistoryItem {
     required this.maskInfo,
     required this.createdAt,
     required this.presetName,
+    this.style,
     this.adaptive = const <String, dynamic>{},
   });
 
@@ -297,6 +676,7 @@ class EditHistoryItem {
   final Map<String, dynamic> maskInfo;
   final DateTime? createdAt;
   final String? presetName;
+  final StyleMetadata? style;
   final Map<String, dynamic> adaptive;
 
   factory EditHistoryItem.fromJson(
@@ -337,6 +717,11 @@ class EditHistoryItem {
           ? null
           : DateTime.tryParse(createdAtText),
       presetName: _stringValue(json['preset_name']),
+      style: json['style'] is Map
+          ? StyleMetadata.fromJson(
+              Map<String, dynamic>.from(json['style'] as Map),
+            )
+          : null,
       adaptive: _mapValue(json['adaptive']),
     );
   }
@@ -390,15 +775,31 @@ class EditHistoryItem {
   bool? get adaptiveConverged =>
       _nullableBoolValue(_adaptiveValue('converged'));
 
-  List<AdaptiveOperation> get adaptiveOperations {
+  Map<String, dynamic> get adaptivePolicyRegistry =>
+      _mapValue(_adaptiveValue('policy_registry'));
+
+  ParameterMetadataCatalog parameterMetadataCatalog({
+    ManualSchema? manualSchema,
+  }) {
+    return ParameterMetadataCatalog.fromSources(
+      manualSchema: manualSchema,
+      policyRegistry: adaptivePolicyRegistry,
+    );
+  }
+
+  List<AdaptiveOperation> get adaptiveOperations =>
+      adaptiveOperationsFor(parameterMetadataCatalog());
+
+  List<AdaptiveOperation> adaptiveOperationsFor(
+    ParameterMetadataCatalog metadataCatalog,
+  ) {
     final schema = adaptiveSchemaVersion;
     if (schema != null &&
         schema != 'adaptive_prompt_v1' &&
         schema != 'adaptive_prompt_v2') {
       return const <AdaptiveOperation>[];
     }
-    final defaultRegion =
-        _stringValue(_adaptiveValue('region')) ?? region;
+    final defaultRegion = _stringValue(_adaptiveValue('region')) ?? region;
     final rawOperations = adaptive['operations'];
     if (rawOperations is List) {
       final parsed = rawOperations
@@ -406,6 +807,7 @@ class EditHistoryItem {
             (value) => AdaptiveOperation.tryParse(
               value,
               defaultRegion: defaultRegion,
+              metadataCatalog: metadataCatalog,
             ),
           )
           .whereType<AdaptiveOperation>()
@@ -416,10 +818,11 @@ class EditHistoryItem {
     }
 
     final axis = adaptiveAxis;
-    if (axis == null || !_adaptivePublicAxes.contains(axis)) {
+    if (axis == null || !metadataCatalog.contains(axis)) {
       return const <AdaptiveOperation>[];
     }
-    final hasMeaningfulState = adaptiveReason != null ||
+    final hasMeaningfulState =
+        adaptiveReason != null ||
         _stringValue(_adaptiveValue('relation')) != null ||
         adaptiveCurrentValue != null ||
         adaptiveNextValue != null ||
@@ -465,6 +868,9 @@ class EditHistoryItem {
   String get targetLabel => regionLabel(region);
 
   String get modeLabel {
+    if (resolvedIntent == 'apply_style') {
+      return '風格';
+    }
     switch (editMode) {
       case 'manual':
         return '手動調整';
@@ -476,6 +882,9 @@ class EditHistoryItem {
   }
 
   String get displayTitle {
+    if (resolvedIntent == 'apply_style' && style != null) {
+      return '${style!.displayName} · ${(style!.strength * 100).round()}%';
+    }
     if (editMode == 'manual') {
       return '手動調整';
     }
@@ -483,6 +892,30 @@ class EditHistoryItem {
       return '參考圖修圖';
     }
     return prompt.isEmpty ? (resolvedIntent ?? '指令修圖') : prompt;
+  }
+
+  bool get isDirectStyleEdit =>
+      resolvedIntent == 'apply_style' && style != null;
+
+  Map<String, dynamic> parametersForDisplay(
+    ParameterMetadataCatalog metadataCatalog,
+  ) {
+    if (!isDirectStyleEdit) {
+      return parameters;
+    }
+    final strength = style!.strength.clamp(0.0, 1.0).toDouble();
+    return <String, dynamic>{
+      for (final entry in parameters.entries)
+        entry.key: switch (entry.value) {
+          final num value when metadataCatalog.metadataFor(entry.key) != null =>
+            _interpolateStyleDisplayValue(
+              value.toDouble(),
+              metadataCatalog.metadataFor(entry.key)!.neutral,
+              strength,
+            ),
+          _ => entry.value,
+        },
+    };
   }
 }
 
@@ -528,6 +961,7 @@ class ManualEditResponse {
     required this.parameterOverrides,
     required this.maskInfo,
     required this.explanation,
+    this.style,
   });
 
   final String sessionId;
@@ -541,6 +975,7 @@ class ManualEditResponse {
   final Map<String, dynamic> parameterOverrides;
   final Map<String, dynamic> maskInfo;
   final String? explanation;
+  final StyleMetadata? style;
 
   factory ManualEditResponse.fromJson(
     Map<String, dynamic> json, {
@@ -568,6 +1003,11 @@ class ManualEditResponse {
       parameterOverrides: _mapValue(json['parameter_overrides']),
       maskInfo: _mapValue(json['mask_info']),
       explanation: _stringValue(json['explanation']),
+      style: json['style'] is Map
+          ? StyleMetadata.fromJson(
+              Map<String, dynamic>.from(json['style'] as Map),
+            )
+          : null,
     );
   }
 
@@ -593,23 +1033,10 @@ class ManualEditResponse {
       maskInfo: maskInfo,
       createdAt: DateTime.now().toUtc(),
       presetName: null,
+      style: style,
     );
   }
 }
-
-const Map<String, String> parameterLabels = {
-  'exposure': '曝光',
-  'brightness': '亮度',
-  'contrast': '對比',
-  'highlights': '高光',
-  'shadows': '陰影',
-  'saturation': '飽和度',
-  'temperature': '色溫',
-  'sharpen': '銳化',
-  'clarity': '清晰度',
-  'dehaze': '去霧',
-  'vignette': '暗角',
-};
 
 String regionLabel(String region) {
   switch (region) {
@@ -629,6 +1056,29 @@ String regionLabel(String region) {
       return '邊緣';
     default:
       return '全圖';
+  }
+}
+
+String styleFamilyLabel(String family) {
+  switch (family) {
+    case 'natural_clean':
+      return '自然清透';
+    case 'portrait_skin':
+      return '人像膚色';
+    case 'landscape_travel':
+      return '風景旅行';
+    case 'cinematic':
+      return '電影敘事';
+    case 'film_retro':
+      return '底片復古';
+    case 'black_white':
+      return '黑白';
+    case 'night_neon':
+      return '夜景霓虹';
+    case 'pastel_creative':
+      return '粉彩創意';
+    default:
+      return family;
   }
 }
 
@@ -652,19 +1102,22 @@ String parserSourceLabel(String? source) {
 String compactParameterSummary(
   Map<String, dynamic> parameters, {
   int limit = 3,
+  ParameterMetadataCatalog? metadataCatalog,
 }) {
+  final catalog = metadataCatalog ?? ParameterMetadataCatalog.legacy;
   final entries = <String>[];
   for (final entry in parameters.entries) {
-    final label = parameterLabels[entry.key];
+    final metadata = catalog.metadataFor(entry.key);
     final value = entry.value;
-    if (label == null || value is! num || !_isMeaningful(entry.key, value)) {
+    if (metadata == null || value is! num || !metadata.isMeaningful(value)) {
       continue;
     }
     final normalized = value.toDouble();
-    final formatted = normalized == normalized.roundToDouble()
-        ? normalized.toInt().toString()
-        : normalized.toStringAsFixed(2);
-    entries.add('$label ${normalized > 0 ? '+' : ''}$formatted');
+    final formatted = metadata.formatValue(
+      normalized,
+      signed: metadata.neutral == 0,
+    );
+    entries.add('${metadata.label} $formatted');
     if (entries.length == limit) {
       break;
     }
@@ -672,7 +1125,10 @@ String compactParameterSummary(
   return entries.join(' · ');
 }
 
-bool _isMeaningful(String key, num value) {
-  final neutral = key == 'contrast' || key == 'saturation' ? 1.0 : 0.0;
-  return (value.toDouble() - neutral).abs() > 0.0001;
+double _interpolateStyleDisplayValue(
+  double fullStyleValue,
+  double neutral,
+  double strength,
+) {
+  return neutral + (fullStyleValue - neutral) * strength;
 }

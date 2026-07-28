@@ -18,6 +18,8 @@ abstract class EditorApi {
 
   Future<EditSession> fetchSession(String sessionId);
 
+  Future<StyleCatalog> fetchStyleCatalog();
+
   Future<ManualSchema> fetchManualSchema();
 
   Future<ManualEditResponse> previewManual({
@@ -141,6 +143,12 @@ class ApiService implements EditorApi {
   Future<EditSession> fetchSession(String sessionId) async {
     final response = await _get('/edit/sessions/$sessionId');
     return EditSession.fromJson(response, buildImageUrl: buildImageUrl);
+  }
+
+  @override
+  Future<StyleCatalog> fetchStyleCatalog() async {
+    final response = await _get('/edit/styles');
+    return StyleCatalog.fromJson(response, buildImageUrl: buildImageUrl);
   }
 
   @override

@@ -35,6 +35,16 @@ backend/run_local_edit_eval.py
 backend/run_manual_edit_eval.py
 backend/run_semantic_model_benchmark.py
 
+# local style evaluation helpers
+backend/app/services/style_eval_runner.py
+backend/tools/run_style_performance.py
+backend/tools/run_style_seed_eval.py
+
+# local Flutter tool sandboxes
+.flutter_build_tmp/
+.flutter_test_tmp/
+.flutter_tool_tmp/
+
 # local validation reports, browser evidence, and design snapshots
 backend/storage/report_runs/
 backend/storage/semantic_model_benchmarks/
@@ -44,6 +54,16 @@ frontend/design/legacy_main_before_mobile_first.txt
 docs/2026-07-15_mobile_first_regression.md
 docs/2026-07-22_adaptive_v2_regression.md
 docs/2026-07-23_adaptive_prompt_robustness.md
+docs/2026-07-26_semantic_manual_acceptance_checklist.md
+docs/2026-07-28_style_catalog_v1.md
+docs/semantic_*_20260725.md
+docs/semantic_*_20260726.md
+docs/semantic_holdout_adjudication_v1.md
+
+# generated or rejected style preview review artifacts
+backend/app/style_catalog/previews/_preview_anchor.png
+backend/app/style_catalog/previews/true_color.jpg
+backend/app/style_catalog/previews/studio_neutral_portrait.jpg
 
 .vscode/
 .idea/

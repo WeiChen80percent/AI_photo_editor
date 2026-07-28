@@ -15,9 +15,8 @@ from app.services.edit_history import EditHistoryNotFound, EditHistoryStore
 from app.services.edit_plan import build_raw_parameter_edit_plan
 from app.services.edit_schema import (
     ManualParameterValidationError,
-    validate_edit_mask_type,
+    require_region_mask_pair,
     validate_edit_parameters,
-    validate_edit_region,
     validate_manual_parameter_overrides,
 )
 from app.services.opencv_parameter_mapper import NEUTRAL_OPENCV_PARAMETERS
@@ -47,6 +46,7 @@ class ManualEditContext:
     parameter_overrides: dict[str, float]
     canonical_parameters: dict[str, Any]
     edit_plan: dict[str, Any]
+    style: dict[str, Any] | None
 
 
 class ManualEditService:
@@ -195,6 +195,7 @@ class ManualEditService:
             manual_source_edit_id=context.source_edit_id,
             parameter_overrides=context.parameter_overrides,
             processing_timings=processing_timings,
+            style=context.style,
         )
         self.history_store.save_edit(record)
         response = self._base_response(
@@ -262,6 +263,16 @@ class ManualEditService:
 
         original_saved_path = str(source.get("original_image_path") or "")
         base_saved_path = str(source.get("base_image_path") or "")
+        source_plan = source.get("edit_plan")
+        source_is_style = (
+            isinstance(source_plan, Mapping)
+            and str(source_plan.get("type") or "") == "style"
+        )
+        if source_is_style:
+            # A style result becomes the immutable visual anchor for manual
+            # micro-adjustments.  Reusing the pre-style base here would drop
+            # the recipe/LUT and keep only its public parameter envelope.
+            base_saved_path = str(source.get("result_image_path") or "")
         original_path = self._safe_backend_path(original_saved_path, "original image")
         base_path = self._safe_backend_path(base_saved_path, "base image")
 
@@ -272,22 +283,37 @@ class ManualEditService:
                 "Source edit does not contain reusable OpenCV parameters",
             )
         canonical: dict[str, Any] = NEUTRAL_OPENCV_PARAMETERS.copy()
-        canonical.update(validate_edit_parameters(source_parameters))
+        if not source_is_style:
+            canonical.update(validate_edit_parameters(source_parameters))
         canonical.update(overrides)
         canonical["reference_tint"] = 0.0
-        source_plan = source.get("edit_plan")
-        region = validate_edit_region(
-            source_parameters.get("region")
-            or (source_plan.get("region") if isinstance(source_plan, Mapping) else None)
+        raw_region = (
+            None if source_is_style else source_parameters.get("region")
+        ) or (
+            source_plan.get("region")
+            if isinstance(source_plan, Mapping)
+            else None
         )
-        mask_type = validate_edit_mask_type(
-            source_parameters.get("mask_type")
-            or (
-                source_plan.get("mask_type")
-                if isinstance(source_plan, Mapping)
-                else None
+        raw_mask_type = (
+            None if source_is_style else source_parameters.get("mask_type")
+        ) or (
+            source_plan.get("mask_type")
+            if isinstance(source_plan, Mapping)
+            else None
+        )
+        try:
+            region, mask_type = require_region_mask_pair(
+                raw_region,
+                raw_mask_type,
             )
-        )
+        except ValueError as exc:
+            raise ManualEditError(
+                "manual_source_region_contract_invalid",
+                (
+                    "Source edit contains an invalid region/mask contract; "
+                    "manual adjustment was not rendered"
+                ),
+            ) from exc
         canonical["region"] = region
         canonical["mask_type"] = mask_type
         edit_plan = build_raw_parameter_edit_plan(
@@ -307,6 +333,11 @@ class ManualEditService:
             parameter_overrides=overrides,
             canonical_parameters=canonical,
             edit_plan=edit_plan,
+            style=(
+                dict(source["style"])
+                if isinstance(source.get("style"), Mapping)
+                else None
+            ),
         )
 
     def _render(
@@ -346,6 +377,7 @@ class ManualEditService:
             "parameters": process_result["parameters"],
             "mask_info": process_result.get("mask_info"),
             "processing_timings": process_result.get("timings_ms"),
+            "style": context.style,
         }
 
     def _preview_id(self, context: ManualEditContext) -> str:

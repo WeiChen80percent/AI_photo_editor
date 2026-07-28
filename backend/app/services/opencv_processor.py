@@ -8,11 +8,10 @@ import numpy as np
 
 from app.services.edit_schema import (
     EDIT_PARAMETER_RANGES,
-    default_mask_type_for_region,
-    validate_edit_mask_type,
+    require_region_mask_pair,
     validate_edit_parameters,
-    validate_edit_region,
 )
+from app.services.render_contract import OPENCV_RENDER_CONTRACT
 from app.services.semantic_mask_service import get_semantic_region_mask
 
 
@@ -22,14 +21,25 @@ DEFAULT_OPENCV_PARAMETERS: dict[str, float] = {
     "contrast": 1.08,
     "highlights": 0.0,
     "shadows": 0.0,
+    "whites": 0.0,
+    "blacks": 0.0,
     "saturation": 1.12,
+    "vibrance": 0.0,
     "temperature": 6.0,
+    "white_balance_tint": 0.0,
     "sharpen": 0.25,
     "clarity": 0.0,
     "dehaze": 0.0,
     "vignette": 0.08,
     "reference_tint": 0.12,
 }
+
+if frozenset(DEFAULT_OPENCV_PARAMETERS) != (
+    OPENCV_RENDER_CONTRACT.all_parameter_keys
+):
+    raise RuntimeError(
+        "OpenCV defaults do not match the executable render contract"
+    )
 
 PARAMETER_RANGES = EDIT_PARAMETER_RANGES
 MASK_ARTIFACT_ROOT = Path(__file__).resolve().parents[2] / "storage" / "masks"
@@ -48,39 +58,39 @@ def create_opencv_result(
     reference = _read_image(reference_path, "reference") if reference_path else None
     image_read_ms = _elapsed_ms(read_started)
     resolve_started = time.perf_counter()
-    resolved = _resolve_parameters(parameters)
+    resolved = resolve_opencv_parameters(parameters)
     if reference is None:
         resolved["reference_tint"] = 0.0
     parameter_resolution_ms = _elapsed_ms(resolve_started)
 
     adjustments_started = time.perf_counter()
-    adjusted = _apply_exposure(original, resolved["exposure"])
-    adjusted = _apply_brightness_contrast(
-        adjusted,
-        brightness=resolved["brightness"],
-        contrast=resolved["contrast"],
+    adjusted = apply_opencv_global_adjustments(
+        original,
+        resolved,
+        reference=reference,
     )
-    adjusted = _apply_tonal_controls(
-        adjusted,
-        highlights=resolved["highlights"],
-        shadows=resolved["shadows"],
-    )
-    adjusted = _apply_saturation(adjusted, resolved["saturation"])
-    adjusted = _apply_temperature(adjusted, resolved["temperature"])
-    adjusted = _apply_dehaze(adjusted, resolved["dehaze"])
-    adjusted = _apply_clarity(adjusted, resolved["clarity"])
-    if reference is not None:
-        adjusted = _apply_reference_tint(adjusted, reference, resolved["reference_tint"])
-    adjusted = _apply_sharpen(adjusted, resolved["sharpen"])
-    adjusted = _apply_vignette(adjusted, resolved["vignette"])
     adjustments_ms = _elapsed_ms(adjustments_started)
     mask_started = time.perf_counter()
+    resolved_mask_source_path = mask_source_path or original_path
+    mask_source_image = original
+    if (
+        resolved["region"] in {"highlights", "shadows"}
+        or resolved["mask_type"] in {
+            "luminance_highlights",
+            "luminance_shadows",
+        }
+    ) and resolved_mask_source_path.resolve() != original_path.resolve():
+        mask_source_image = _read_image(
+            resolved_mask_source_path,
+            "mask source",
+        )
     adjusted, mask_info = _apply_region_mask(
         original=original,
         adjusted=adjusted,
         region=resolved["region"],
         mask_type=resolved["mask_type"],
-        mask_source_path=mask_source_path or original_path,
+        mask_source_path=resolved_mask_source_path,
+        mask_source_image=mask_source_image,
     )
     mask_ms = _elapsed_ms(mask_started)
 
@@ -120,6 +130,71 @@ def _write_image(path: Path, image: np.ndarray) -> None:
     encoded.tofile(path)
 
 
+def read_opencv_image(path: Path, label: str = "image") -> np.ndarray:
+    return _read_image(path, label)
+
+
+def write_opencv_image(path: Path, image: np.ndarray) -> None:
+    _write_image(path, image)
+
+
+def resolve_opencv_parameters(
+    parameters: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """Resolve one complete, validated OpenCV parameter snapshot."""
+
+    return _resolve_parameters(parameters)
+
+
+def apply_opencv_global_adjustments(
+    image: np.ndarray,
+    parameters: dict[str, Any],
+    *,
+    reference: np.ndarray | None = None,
+) -> np.ndarray:
+    """Apply the executable global OpenCV pipeline to an in-memory image.
+
+    Region masks intentionally remain in ``create_opencv_result``.  The style
+    renderer uses this function only for whole-image recipes so parameter
+    behavior stays identical instead of being reimplemented in two places.
+    """
+
+    adjusted = _apply_exposure(image, float(parameters["exposure"]))
+    adjusted = _apply_brightness_contrast(
+        adjusted,
+        brightness=float(parameters["brightness"]),
+        contrast=float(parameters["contrast"]),
+    )
+    adjusted = _apply_tonal_controls(
+        adjusted,
+        highlights=float(parameters["highlights"]),
+        shadows=float(parameters["shadows"]),
+    )
+    adjusted = _apply_white_black_controls(
+        adjusted,
+        whites=float(parameters["whites"]),
+        blacks=float(parameters["blacks"]),
+    )
+    adjusted = _apply_saturation(adjusted, float(parameters["saturation"]))
+    adjusted = _apply_vibrance(adjusted, float(parameters["vibrance"]))
+    adjusted = _apply_temperature(adjusted, float(parameters["temperature"]))
+    adjusted = _apply_white_balance_tint(
+        adjusted,
+        float(parameters["white_balance_tint"]),
+    )
+    adjusted = _apply_dehaze(adjusted, float(parameters["dehaze"]))
+    adjusted = _apply_clarity(adjusted, float(parameters["clarity"]))
+    if reference is not None:
+        adjusted = _apply_reference_tint(
+            adjusted,
+            reference,
+            float(parameters["reference_tint"]),
+        )
+    adjusted = _apply_sharpen(adjusted, float(parameters["sharpen"]))
+    adjusted = _apply_vignette(adjusted, float(parameters["vignette"]))
+    return adjusted
+
+
 def _resolve_parameters(parameters: dict[str, Any] | None) -> dict[str, Any]:
     resolved = DEFAULT_OPENCV_PARAMETERS.copy()
     resolved.update(validate_edit_parameters(parameters))
@@ -128,10 +203,10 @@ def _resolve_parameters(parameters: dict[str, Any] | None) -> dict[str, Any]:
         low, high = PARAMETER_RANGES[key]
         resolved[key] = round(float(np.clip(value, low, high)), 4)
 
-    region = validate_edit_region((parameters or {}).get("region"))
-    mask_type = validate_edit_mask_type((parameters or {}).get("mask_type"))
-    if mask_type == "none":
-        mask_type = default_mask_type_for_region(region)
+    region, mask_type = require_region_mask_pair(
+        (parameters or {}).get("region"),
+        (parameters or {}).get("mask_type"),
+    )
     resolved["region"] = region
     resolved["mask_type"] = mask_type
 
@@ -248,6 +323,26 @@ def _apply_saturation(image: np.ndarray, saturation: float) -> np.ndarray:
     return np.clip(adjusted, 0, 255).astype(np.uint8)
 
 
+def _apply_vibrance(image: np.ndarray, vibrance: float) -> np.ndarray:
+    if vibrance == 0:
+        return image
+
+    hsv = cv2.cvtColor(
+        image.astype(np.float32) / 255.0,
+        cv2.COLOR_BGR2HSV,
+    )
+    saturation = hsv[:, :, 1]
+    if vibrance > 0:
+        chroma_guard = _smoothstep(0.025, 0.22, saturation)
+        headroom = (1.0 - saturation) ** 1.35
+        saturation = saturation + vibrance * 0.78 * chroma_guard * headroom
+    else:
+        saturation = saturation * (1.0 + vibrance * 0.72)
+    hsv[:, :, 1] = np.clip(saturation, 0.0, 1.0)
+    rendered = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+    return np.round(np.clip(rendered, 0.0, 1.0) * 255.0).astype(np.uint8)
+
+
 def _apply_temperature(image: np.ndarray, temperature: float) -> np.ndarray:
     if temperature == 0:
         return image
@@ -256,6 +351,52 @@ def _apply_temperature(image: np.ndarray, temperature: float) -> np.ndarray:
     adjusted[:, :, 0] = np.clip(adjusted[:, :, 0] - temperature, 0, 255)
     adjusted[:, :, 2] = np.clip(adjusted[:, :, 2] + temperature, 0, 255)
     return adjusted.astype(np.uint8)
+
+
+def _apply_white_balance_tint(
+    image: np.ndarray,
+    tint: float,
+) -> np.ndarray:
+    if tint == 0:
+        return image
+
+    lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB).astype(np.float32)
+    lab[:, :, 1] = np.clip(lab[:, :, 1] + tint * 0.72, 0.0, 255.0)
+    return cv2.cvtColor(lab.astype(np.uint8), cv2.COLOR_LAB2BGR)
+
+
+def _apply_white_black_controls(
+    image: np.ndarray,
+    *,
+    whites: float,
+    blacks: float,
+) -> np.ndarray:
+    if whites == 0 and blacks == 0:
+        return image
+
+    lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB).astype(np.float32)
+    luminance = lab[:, :, 0]
+    adjusted = luminance.copy()
+    if whites != 0:
+        weight = _smoothstep(178.0, 248.0, luminance)
+        adjusted = _apply_weighted_luminance_delta(
+            adjusted,
+            weight=weight,
+            amount=whites / 100.0,
+            positive_strength=0.72,
+            negative_strength=0.32,
+        )
+    if blacks != 0:
+        weight = 1.0 - _smoothstep(8.0, 82.0, luminance)
+        adjusted = _apply_weighted_luminance_delta(
+            adjusted,
+            weight=weight,
+            amount=blacks / 100.0,
+            positive_strength=0.34,
+            negative_strength=0.62,
+        )
+    lab[:, :, 0] = np.clip(adjusted, 0.0, 255.0)
+    return cv2.cvtColor(lab.astype(np.uint8), cv2.COLOR_LAB2BGR)
 
 
 def _apply_reference_tint(
@@ -344,6 +485,7 @@ def _apply_region_mask(
     region: str,
     mask_type: str,
     mask_source_path: Path,
+    mask_source_image: np.ndarray,
 ) -> tuple[np.ndarray, dict[str, Any] | None]:
     if region == "all" or mask_type == "none":
         return adjusted, None
@@ -353,9 +495,14 @@ def _apply_region_mask(
         region=region,
         mask_type=mask_type,
         mask_source_path=mask_source_path,
+        mask_source_image=mask_source_image,
     )
     if mask is None:
-        return adjusted, mask_info
+        raise ValueError(
+            "A validated local edit produced no mask; refusing to widen the "
+            f"edit to the full image (region={region!r}, "
+            f"mask_type={mask_type!r})."
+        )
 
     blended = (
         original.astype(np.float32) * (1.0 - mask[:, :, np.newaxis])
@@ -370,6 +517,7 @@ def _build_region_mask(
     region: str,
     mask_type: str,
     mask_source_path: Path,
+    mask_source_image: np.ndarray,
 ) -> tuple[np.ndarray | None, dict[str, Any] | None]:
     semantic_target = _semantic_target_for_mask(region=region, mask_type=mask_type)
     if semantic_target is not None:
@@ -384,28 +532,48 @@ def _build_region_mask(
         return np.clip(semantic_mask, 0.0, 1.0), semantic_result.info
 
     if region == "shadows" or mask_type == "luminance_shadows":
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY).astype(np.float32)
+        gray = cv2.cvtColor(
+            mask_source_image,
+            cv2.COLOR_BGR2GRAY,
+        ).astype(np.float32)
         mask = np.clip((130.0 - gray) / 90.0, 0.0, 1.0)
         feathered = _feather_mask(mask)
-        return feathered, _local_mask_info(
+        mask_info = _local_mask_info(
             target="shadows",
             source="opencv_luminance",
-            image=image,
+            image=mask_source_image,
             raw_mask=mask,
             feathered_mask=feathered,
         )
+        if feathered.shape != image.shape[:2]:
+            feathered = cv2.resize(
+                feathered,
+                (image.shape[1], image.shape[0]),
+                interpolation=cv2.INTER_LINEAR,
+            )
+        return np.clip(feathered, 0.0, 1.0), mask_info
 
     if region == "highlights" or mask_type == "luminance_highlights":
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY).astype(np.float32)
+        gray = cv2.cvtColor(
+            mask_source_image,
+            cv2.COLOR_BGR2GRAY,
+        ).astype(np.float32)
         mask = np.clip((gray - 150.0) / 80.0, 0.0, 1.0)
         feathered = _feather_mask(mask)
-        return feathered, _local_mask_info(
+        mask_info = _local_mask_info(
             target="highlights",
             source="opencv_luminance",
-            image=image,
+            image=mask_source_image,
             raw_mask=mask,
             feathered_mask=feathered,
         )
+        if feathered.shape != image.shape[:2]:
+            feathered = cv2.resize(
+                feathered,
+                (image.shape[1], image.shape[0]),
+                interpolation=cv2.INTER_LINEAR,
+            )
+        return np.clip(feathered, 0.0, 1.0), mask_info
 
     if region == "center" or mask_type == "center_ellipse":
         mask = _center_mask(image.shape[:2])
@@ -429,7 +597,10 @@ def _build_region_mask(
             feathered_mask=feathered,
         )
 
-    return None, None
+    raise ValueError(
+        "No mask implementation exists for the validated region/mask pair: "
+        f"region={region!r}, mask_type={mask_type!r}"
+    )
 
 
 def _semantic_target_for_mask(*, region: str, mask_type: str) -> str | None:
@@ -530,8 +701,12 @@ def _build_explanation(parameters: dict[str, Any]) -> str:
         f"contrast={parameters['contrast']}, "
         f"highlights={parameters['highlights']}, "
         f"shadows={parameters['shadows']}, "
+        f"whites={parameters['whites']}, "
+        f"blacks={parameters['blacks']}, "
         f"saturation={parameters['saturation']}, "
+        f"vibrance={parameters['vibrance']}, "
         f"temperature={parameters['temperature']}, "
+        f"white_balance_tint={parameters['white_balance_tint']}, "
         f"sharpen={parameters['sharpen']}, "
         f"clarity={parameters['clarity']}, "
         f"dehaze={parameters['dehaze']}, "

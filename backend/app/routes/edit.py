@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.services.adaptive_adjustment import (
     AdaptiveAdjustmentError,
+    preflight_adaptive_semantic_prompt,
     resolve_adaptive_adjustment,
 )
 from app.services.edit_engines import create_engine_result, normalize_engine_name
@@ -17,11 +18,21 @@ from app.services.edit_history import (
     EditHistoryNotFound,
     EditHistoryStore,
 )
+from app.services.english_prompt_contract import MAX_ENGLISH_PROMPT_LENGTH
 from app.services.edit_intent_resolver import resolve_edit_intent
 from app.services.edit_plan import build_reference_edit_plan
 from app.services.edit_schema import manual_parameter_schema
 from app.services.manual_edit_service import ManualEditError, ManualEditService
 from app.services.semantic_mask_service import SemanticTargetNotFoundError
+from app.services.semantic_shadow_mode import observe_grounded_semantic_shadow
+from app.services.style_registry import (
+    StyleCatalogError,
+    get_style_registry,
+)
+from app.services.style_selector import (
+    StyleSelectionError,
+    try_resolve_style_prompt,
+)
 
 router = APIRouter()
 
@@ -61,6 +72,20 @@ async def upload_images(
     engine: str = Form("opencv"),
 ):
     prompt_text = prompt.strip()
+    if len(prompt_text) > MAX_ENGLISH_PROMPT_LENGTH:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "adaptive_prompt_too_long",
+                "message": "Prompt 長度超過安全解析上限，未建立修圖版本。",
+                "issues": [
+                    {
+                        "reason": "prompt_length_limit",
+                        "maximum": MAX_ENGLISH_PROMPT_LENGTH,
+                    }
+                ],
+            },
+        )
     has_reference = reference_image is not None
     requested_session_id = session_id.strip() if session_id else None
     requested_parent_edit_id = parent_edit_id.strip() if parent_edit_id else None
@@ -181,30 +206,90 @@ async def upload_images(
 
         adaptive = None
         adaptive_explanation = None
+        semantic_shadow_payload = None
         if edit_mode == "prompt":
-            prompt_result = resolve_edit_intent(prompt_text)
             try:
-                adaptive_result = resolve_adaptive_adjustment(
-                    prompt_result=prompt_result,
-                    prompt=prompt_text,
-                    parent_record=parent_record,
-                    default_base_image_path=base_saved_path,
-                    engine_name=engine_name,
-                )
-            except AdaptiveAdjustmentError as exc:
-                detail = {"code": exc.code, "message": str(exc)}
-                if exc.issues:
-                    detail["issues"] = exc.issues
+                style_prompt_result = try_resolve_style_prompt(prompt_text)
+            except StyleSelectionError as exc:
                 raise HTTPException(
                     status_code=exc.status_code,
-                    detail=detail,
+                    detail={
+                        "code": exc.code,
+                        "message": str(exc),
+                        "candidates": list(exc.candidates),
+                    },
                 )
-            prompt_result = adaptive_result.prompt_result
-            adaptive = adaptive_result.adaptive
-            adaptive_explanation = adaptive_result.explanation
-            if adaptive_result.render_base_image_path != base_saved_path:
-                base_saved_path = adaptive_result.render_base_image_path
-                base_path = _safe_backend_file(base_saved_path, "adaptive anchor")
+            if style_prompt_result is not None:
+                prompt_result = style_prompt_result
+                style_plan = prompt_result["edit_plan"]
+                parent_style = (
+                    parent_record.get("style")
+                    if isinstance(parent_record, dict)
+                    and isinstance(parent_record.get("style"), dict)
+                    else None
+                )
+                if parent_style is not None:
+                    style_anchor = str(
+                        parent_style.get("anchor_image_path") or ""
+                    )
+                    style_source_edit_id = parent_style.get("source_edit_id")
+                    if style_anchor:
+                        base_saved_path = style_anchor
+                        base_path = _safe_backend_file(
+                            style_anchor,
+                            "style anchor",
+                        )
+                        history_parent_edit_id = (
+                            str(style_source_edit_id)
+                            if style_source_edit_id
+                            else None
+                        )
+                style_plan["style_source_edit_id"] = history_parent_edit_id
+                style_plan["style_anchor_image_path"] = base_saved_path
+            else:
+                semantic_preflight = preflight_adaptive_semantic_prompt(
+                    prompt=prompt_text,
+                    engine_name=engine_name,
+                )
+                if semantic_preflight.semantic_attempt is not None:
+                    semantic_shadow = observe_grounded_semantic_shadow(
+                        prompt=prompt_text,
+                        deterministic_attempt=semantic_preflight.semantic_attempt,
+                        engine=engine_name,
+                    )
+                    if semantic_shadow.enabled:
+                        semantic_shadow_payload = semantic_shadow.as_dict()
+                prompt_result = semantic_preflight.prompt_result
+                if not semantic_preflight.bypass_intent_resolver:
+                    prompt_result = resolve_edit_intent(prompt_text)
+                try:
+                    adaptive_result = resolve_adaptive_adjustment(
+                        prompt_result=prompt_result,
+                        prompt=prompt_text,
+                        parent_record=parent_record,
+                        default_base_image_path=base_saved_path,
+                        engine_name=engine_name,
+                        semantic_attempt=semantic_preflight.semantic_attempt,
+                    )
+                except AdaptiveAdjustmentError as exc:
+                    detail = {"code": exc.code, "message": str(exc)}
+                    if exc.issues:
+                        detail["issues"] = exc.issues
+                    if semantic_shadow_payload is not None:
+                        detail["semantic_shadow"] = semantic_shadow_payload
+                    raise HTTPException(
+                        status_code=exc.status_code,
+                        detail=detail,
+                    )
+                prompt_result = adaptive_result.prompt_result
+                adaptive = adaptive_result.adaptive
+                adaptive_explanation = adaptive_result.explanation
+                if adaptive_result.render_base_image_path != base_saved_path:
+                    base_saved_path = adaptive_result.render_base_image_path
+                    base_path = _safe_backend_file(
+                        base_saved_path,
+                        "adaptive anchor",
+                    )
         else:
             prompt_result = {
                 "prompt": "",
@@ -236,6 +321,14 @@ async def upload_images(
                     "mask_info": e.mask_info,
                 },
             )
+        except StyleCatalogError as e:
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "code": getattr(e, "code", "style_catalog_invalid"),
+                    "message": str(e),
+                },
+            )
         except HTTPException:
             raise
         except Exception as e:
@@ -250,6 +343,26 @@ async def upload_images(
         )
         intent_explanation = adaptive_explanation or prompt_result["explanation"]
         explanation = f"{intent_explanation} {process_result['explanation']}"
+        active_style = process_result.get("style")
+        if isinstance(active_style, dict):
+            active_style = {
+                **active_style,
+                "source_edit_id": prompt_result["edit_plan"].get(
+                    "style_source_edit_id"
+                ),
+                "anchor_image_path": prompt_result["edit_plan"].get(
+                    "style_anchor_image_path"
+                ),
+            }
+        elif (
+            edit_mode == "prompt"
+            and prompt_result.get("resolved_intent") != "reset_to_original"
+            and isinstance(parent_record, dict)
+            and isinstance(parent_record.get("style"), dict)
+        ):
+            active_style = dict(parent_record["style"])
+        else:
+            active_style = None
 
         history_record = HISTORY_STORE.build_record(
             session_id=effective_session_id,
@@ -273,6 +386,7 @@ async def upload_images(
             preset_name=prompt_result.get("preset_name"),
             processing_timings=process_result.get("timings_ms"),
             adaptive=adaptive,
+            style=active_style,
         )
 
         response_payload = {
@@ -298,10 +412,15 @@ async def upload_images(
             "prompt": prompt_result["prompt"],
             "resolved_intent": prompt_result["resolved_intent"],
             "preset_name": prompt_result.get("preset_name"),
+            "style": active_style,
             "parser_source": prompt_result["parser_source"],
             "fallback_reason": prompt_result["fallback_reason"],
             "explanation": explanation,
         }
+        if semantic_shadow_payload is not None:
+            # Development-only shadow telemetry is intentionally response-only:
+            # it must never become controller input or immutable edit history.
+            response_payload["semantic_shadow"] = semantic_shadow_payload
 
         HISTORY_STORE.save_edit(history_record)
         history_committed = True
@@ -321,6 +440,20 @@ def get_edit_session(session_id: str):
         raise HTTPException(status_code=400, detail=str(e))
     except EditHistoryNotFound as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.get("/edit/styles")
+def get_style_catalog():
+    try:
+        return get_style_registry().payload()
+    except StyleCatalogError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": getattr(exc, "code", "style_catalog_invalid"),
+                "message": str(exc),
+            },
+        )
 
 
 @router.get("/edit/manual/schema")

@@ -5,6 +5,8 @@ from typing import Any
 
 from app.services.opencv_parameter_mapper import build_opencv_parameters_from_plan
 from app.services.opencv_processor import create_opencv_result
+from app.services.style_plan import resolve_style_plan
+from app.services.style_renderer import create_opencv_style_result
 
 
 SUPPORTED_EDIT_ENGINES = {"opencv"}
@@ -42,6 +44,15 @@ def create_engine_result(
     normalized = normalize_engine_name(engine_name)
     parameters = build_engine_parameters(normalized, edit_plan)
     if normalized == "opencv":
+        if str(edit_plan.get("type") or "") == "style":
+            resolved_style = resolve_style_plan(edit_plan)
+            return create_opencv_style_result(
+                original_path=original_path,
+                result_path=result_path,
+                style=resolved_style.style,
+                parameters=parameters,
+                strength=resolved_style.strength,
+            )
         return create_opencv_result(
             original_path=original_path,
             reference_path=reference_path,

@@ -1,6 +1,32 @@
 # AI Photo Editor
 
-目前先做到前後端基本流程有通。
+> 2026-07-28 現況：專案已不只是早期 mock。正式主線為
+> Flutter mobile-first 工作區 + FastAPI + OpenCV 自然語言微調，
+> 支援 15 個公開參數、50 個核准風格、session/history 分支、
+> 手動 preview/commit、reference 模式與五區域局部修圖。
+> Darktable 暫停，不是近期主線。
+
+目前 production prompt 流程已接上資料驅動的多語言語意層：
+
+`自然中文／英文／中英混用 → registry slots → scope → semantic IR → validator → adaptive controller → OpenCV → history`
+
+語意 parser 以集中式 registry、帶原文 span 的關鍵概念與通用
+slot/scope 演算法運作，不要求固定句型，也不以逐句
+`if prompt contains ...` 擴充。未來新增「既有參數的新說法」主要補
+registry aliases 與測試 seed；新增真的可改像素的參數仍需補 schema、
+policy、mapper、processor 與前端 metadata。
+
+Style Catalog v1 使用版本化 recipe、來源／授權 manifest、hash 與
+人工 review，production 不在 runtime 下載任意 LUT。風格套用後仍可
+沿既有 fixed-anchor、manual、adaptive 與 history 分支繼續微調。
+
+最新文件：
+
+- `docs/semantic_extension_guide.md`：如何擴充語言詞彙與新參數。
+- `docs/2026-07-23_system_flow_plain_language.md`：目前完整流程的白話說明。
+
+以下內容包含專案早期建立流程時的歷史筆記；若與上述現況或根目錄
+`AGENTS.md`、`目標.md`、`小階段.md` 不同，以後者為準。
 
 現在有的功能：
 - frontend 可以選原圖

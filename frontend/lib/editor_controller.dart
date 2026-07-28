@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import 'api_service.dart';
 import 'edit_models.dart';
 
-enum EditorTool { prompt, reference, manual, history }
+enum EditorTool { prompt, styles, reference, manual, history }
 
 enum ComparisonView { original, result }
 
@@ -37,6 +37,10 @@ class EditorController extends ChangeNotifier {
   String? statusMessage;
 
   ManualSchema? manualSchema;
+  StyleCatalog? styleCatalog;
+  String? selectedStyleFamily;
+  bool isLoadingStyles = false;
+  final Map<String, double> _styleStrengths = <String, double>{};
   String? manualSourceEditId;
   Map<String, double> manualSourceValues = <String, double>{};
   Map<String, double> manualValues = <String, double>{};
@@ -65,6 +69,16 @@ class EditorController extends ChangeNotifier {
   Map<String, dynamic> get currentParameters =>
       manualPreview?.parameters ?? selectedEdit?.parameters ?? const {};
 
+  ParameterMetadataCatalog metadataCatalogFor(EditHistoryItem? edit) {
+    if (edit == null) {
+      return ParameterMetadataCatalog.fromSources(manualSchema: manualSchema);
+    }
+    return edit.parameterMetadataCatalog(manualSchema: manualSchema);
+  }
+
+  ParameterMetadataCatalog get parameterMetadataCatalog =>
+      metadataCatalogFor(selectedEdit);
+
   bool get hasUncommittedPreview => manualPreview != null && manualIsDirty;
 
   bool get manualIsDirty {
@@ -89,6 +103,32 @@ class EditorController extends ChangeNotifier {
       !isProcessing &&
       referenceImageBytes != null &&
       (hasOriginal || selectedEdit != null);
+
+  List<StyleCatalogItem> get visibleStyles {
+    final styles = styleCatalog?.styles ?? const <StyleCatalogItem>[];
+    final family = selectedStyleFamily;
+    if (family == null) {
+      return styles;
+    }
+    return styles
+        .where((style) => style.family == family)
+        .toList(growable: false);
+  }
+
+  double styleStrengthFor(StyleCatalogItem style) =>
+      _styleStrengths[style.styleId] ?? style.defaultStrength;
+
+  void setStyleFamily(String? family) {
+    selectedStyleFamily = family;
+    _notify();
+  }
+
+  void setStyleStrength(StyleCatalogItem style, double value) {
+    _styleStrengths[style.styleId] = value
+        .clamp(style.minimumStrength, style.maximumStrength)
+        .toDouble();
+    _notify();
+  }
 
   bool get canOpenManual {
     final edit = selectedEdit;
@@ -122,12 +162,24 @@ class EditorController extends ChangeNotifier {
     final target = regionLabel(
       (currentParameters['region'] ?? edit.region).toString(),
     );
-    final parameters = compactParameterSummary(currentParameters);
+    final displayParameters = hasUncommittedPreview
+        ? currentParameters
+        : edit.parametersForDisplay(parameterMetadataCatalog);
+    final parameters = compactParameterSummary(
+      displayParameters,
+      metadataCatalog: parameterMetadataCatalog,
+    );
     final previewLabel = hasUncommittedPreview ? '預覽 · ' : '';
+    final styleLabel = edit.style == null
+        ? ''
+        : '${edit.style!.displayName} ${(edit.style!.strength * 100).round()}% · ';
     if (parameters.isEmpty) {
-      return '$previewLabel$target · ${edit.modeLabel}';
+      return '$previewLabel$styleLabel$target · ${edit.modeLabel}';
     }
-    return '$previewLabel$target · $parameters';
+    final parameterLabel = edit.isDirectStyleEdit && !hasUncommittedPreview
+        ? '等效 $parameters'
+        : parameters;
+    return '$previewLabel$styleLabel$target · $parameterLabel';
   }
 
   void setActiveTool(EditorTool? tool) {
@@ -144,6 +196,7 @@ class EditorController extends ChangeNotifier {
   void setPromptDraft(String value) {
     promptDraft = value;
     errorMessage = null;
+    statusMessage = null;
     _notify();
   }
 
@@ -212,6 +265,41 @@ class EditorController extends ChangeNotifier {
       return false;
     }
     return _submitEdit(prompt: '', referenceBytes: reference);
+  }
+
+  Future<bool> openStyles() async {
+    activeTool = EditorTool.styles;
+    if (styleCatalog != null) {
+      _notify();
+      return true;
+    }
+    isLoadingStyles = true;
+    errorMessage = null;
+    _notify();
+    try {
+      styleCatalog = await _api.fetchStyleCatalog();
+      for (final style in styleCatalog!.styles) {
+        _styleStrengths.putIfAbsent(style.styleId, () => style.defaultStrength);
+      }
+      return true;
+    } on ApiException catch (error) {
+      errorMessage = _friendlyApiMessage(error);
+      return false;
+    } catch (error) {
+      errorMessage = '無法載入風格目錄：$error';
+      return false;
+    } finally {
+      isLoadingStyles = false;
+      _notify();
+    }
+  }
+
+  Future<bool> applyStyle(StyleCatalogItem style) {
+    final strength = styleStrengthFor(style);
+    return _submitEdit(
+      prompt: '${style.styleId} 強度 ${strength.toStringAsFixed(2)}',
+      referenceBytes: null,
+    );
   }
 
   Future<bool> _submitEdit({
@@ -580,6 +668,13 @@ class EditorController extends ChangeNotifier {
 
   String _friendlyApiMessage(ApiException error) {
     switch (error.code) {
+      case 'style_selection_ambiguous':
+        return '這段描述同時符合多個風格，請從風格目錄指定一個名稱。';
+      case 'style_compound_not_supported':
+        return '請先套用風格，再用下一句調整亮度、色彩或其他參數。';
+      case 'style_asset_invalid':
+      case 'style_version_mismatch':
+        return '風格資產或版本驗證失敗，未套用其他替代風格。';
       case 'semantic_target_not_found':
         return '照片中找不到指定的局部範圍。請換一張圖片，或改用全圖調整。';
       case 'adaptive_clarification_required':
@@ -636,7 +731,8 @@ class EditorController extends ChangeNotifier {
       final region = issue['region']?.toString();
       final sourceClause = issue['source_clause']?.toString().trim();
       final parts = <String>[
-        if (axis != null && axis.isNotEmpty) parameterLabels[axis] ?? axis,
+        if (axis != null && axis.isNotEmpty)
+          parameterMetadataCatalog.labelFor(axis),
         if (region != null && region.isNotEmpty) regionLabel(region),
         if (sourceClause != null && sourceClause.isNotEmpty) '「$sourceClause」',
       ];

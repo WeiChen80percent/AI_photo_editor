@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import 'app_theme.dart';
@@ -73,6 +74,449 @@ class PromptPanel extends StatelessWidget {
             label: Text(controller.isProcessing ? '處理中…' : '套用指令'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class StylesPanel extends StatelessWidget {
+  const StylesPanel({
+    super.key,
+    required this.controller,
+    required this.onClose,
+    required this.onApply,
+    this.scrollController,
+  });
+
+  final EditorController controller;
+  final VoidCallback onClose;
+  final Future<void> Function(StyleCatalogItem style) onApply;
+  final ScrollController? scrollController;
+
+  @override
+  Widget build(BuildContext context) {
+    final catalog = controller.styleCatalog;
+    if (controller.isLoadingStyles) {
+      return PanelScaffold(
+        title: '風格目錄',
+        icon: Icons.palette_outlined,
+        onClose: onClose,
+        child: const Center(
+          child: Padding(
+            padding: EdgeInsets.all(32),
+            child: CircularProgressIndicator(),
+          ),
+        ),
+      );
+    }
+    if (catalog == null) {
+      return PanelScaffold(
+        title: '風格目錄',
+        icon: Icons.palette_outlined,
+        onClose: onClose,
+        message: controller.errorMessage,
+        messageIsError: true,
+        child: const _UnavailablePanel(
+          icon: Icons.palette_outlined,
+          message: '風格目錄目前無法載入，請確認後端已啟動。',
+        ),
+      );
+    }
+
+    final styles = controller.visibleStyles;
+    final families = catalog.families.keys.toList()..sort();
+    return Column(
+      key: const Key('styles_panel'),
+      children: [
+        PanelHeader(
+          title: '風格目錄',
+          subtitle: '${catalog.styleCount} 種已核准風格 · v${catalog.catalogVersion}',
+          icon: Icons.palette_outlined,
+          onClose: onClose,
+        ),
+        if (controller.errorMessage != null)
+          PanelMessage(message: controller.errorMessage!, isError: true),
+        _StyleFamilyFilterBar(
+          families: families,
+          counts: catalog.families,
+          selectedFamily: controller.selectedStyleFamily,
+          onSelected: controller.setStyleFamily,
+        ),
+        Expanded(
+          child: ListView.separated(
+            controller: scrollController,
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.sm,
+              AppSpacing.md,
+              AppSpacing.lg,
+            ),
+            itemCount: styles.length,
+            separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
+            itemBuilder: (context, index) {
+              final style = styles[index];
+              return _StyleCatalogCard(
+                key: Key('style_${style.styleId}'),
+                style: style,
+                strength: controller.styleStrengthFor(style),
+                processing: controller.isProcessing,
+                canApply:
+                    controller.hasOriginal || controller.selectedEdit != null,
+                onStrengthChanged: (value) =>
+                    controller.setStyleStrength(style, value),
+                onApply: () => onApply(style),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _StyleFamilyFilterBar extends StatefulWidget {
+  const _StyleFamilyFilterBar({
+    required this.families,
+    required this.counts,
+    required this.selectedFamily,
+    required this.onSelected,
+  });
+
+  final List<String> families;
+  final Map<String, int> counts;
+  final String? selectedFamily;
+  final ValueChanged<String?> onSelected;
+
+  @override
+  State<_StyleFamilyFilterBar> createState() => _StyleFamilyFilterBarState();
+}
+
+class _StyleFamilyFilterBarState extends State<_StyleFamilyFilterBar> {
+  final ScrollController _controller = ScrollController();
+  bool _hasOverflow = false;
+  bool _canScrollBack = false;
+  bool _canScrollForward = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_syncScrollState);
+    _scheduleScrollStateSync();
+  }
+
+  @override
+  void didUpdateWidget(covariant _StyleFamilyFilterBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _scheduleScrollStateSync();
+  }
+
+  @override
+  void dispose() {
+    _controller
+      ..removeListener(_syncScrollState)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _scheduleScrollStateSync() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _syncScrollState();
+      }
+    });
+  }
+
+  void _syncScrollState() {
+    if (!_controller.hasClients) {
+      return;
+    }
+    final position = _controller.position;
+    final hasOverflow = position.maxScrollExtent > 0.5;
+    final canScrollBack = position.pixels > 0.5;
+    final canScrollForward = position.pixels < position.maxScrollExtent - 0.5;
+    if (hasOverflow != _hasOverflow ||
+        canScrollBack != _canScrollBack ||
+        canScrollForward != _canScrollForward) {
+      setState(() {
+        _hasOverflow = hasOverflow;
+        _canScrollBack = canScrollBack;
+        _canScrollForward = canScrollForward;
+      });
+    }
+  }
+
+  void _scrollBy(double delta) {
+    if (!_controller.hasClients || delta == 0) {
+      return;
+    }
+    final target = (_controller.offset + delta)
+        .clamp(0.0, _controller.position.maxScrollExtent)
+        .toDouble();
+    _controller.animateTo(
+      target,
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  void _handlePointerSignal(PointerSignalEvent event) {
+    if (event is! PointerScrollEvent) {
+      return;
+    }
+    final delta = event.scrollDelta.dx.abs() > event.scrollDelta.dy.abs()
+        ? event.scrollDelta.dx
+        : event.scrollDelta.dy;
+    _scrollBy(delta);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dragDevices = <PointerDeviceKind>{
+      PointerDeviceKind.touch,
+      PointerDeviceKind.mouse,
+      PointerDeviceKind.stylus,
+      PointerDeviceKind.trackpad,
+    };
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.sm,
+        AppSpacing.xs,
+        AppSpacing.sm,
+        0,
+      ),
+      child: Row(
+        children: [
+          if (_hasOverflow)
+            _FamilyScrollButton(
+              key: const Key('style_family_scroll_back'),
+              icon: Icons.chevron_left,
+              tooltip: '向左查看更多分類',
+              onPressed: _canScrollBack ? () => _scrollBy(-220) : null,
+            ),
+          Expanded(
+            child: Listener(
+              onPointerSignal: _handlePointerSignal,
+              child: Scrollbar(
+                controller: _controller,
+                thumbVisibility: _hasOverflow,
+                interactive: true,
+                scrollbarOrientation: ScrollbarOrientation.bottom,
+                child: ScrollConfiguration(
+                  behavior: ScrollConfiguration.of(
+                    context,
+                  ).copyWith(dragDevices: dragDevices),
+                  child: SingleChildScrollView(
+                    key: const Key('style_family_scroll'),
+                    controller: _controller,
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.xs,
+                      0,
+                      AppSpacing.xs,
+                      AppSpacing.sm,
+                    ),
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        ChoiceChip(
+                          key: const Key('style_family_all'),
+                          label: const Text('全部'),
+                          selected: widget.selectedFamily == null,
+                          onSelected: (_) => widget.onSelected(null),
+                        ),
+                        for (final family in widget.families) ...[
+                          const SizedBox(width: AppSpacing.xs),
+                          ChoiceChip(
+                            key: Key('style_family_$family'),
+                            label: Text(
+                              '${styleFamilyLabel(family)} '
+                              '${widget.counts[family]}',
+                            ),
+                            selected: widget.selectedFamily == family,
+                            onSelected: (_) => widget.onSelected(family),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          if (_hasOverflow)
+            _FamilyScrollButton(
+              key: const Key('style_family_scroll_forward'),
+              icon: Icons.chevron_right,
+              tooltip: '向右查看更多分類',
+              onPressed: _canScrollForward ? () => _scrollBy(220) : null,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FamilyScrollButton extends StatelessWidget {
+  const _FamilyScrollButton({
+    super.key,
+    required this.icon,
+    required this.tooltip,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: tooltip,
+      visualDensity: VisualDensity.compact,
+      constraints: const BoxConstraints.tightFor(width: 32, height: 36),
+      padding: EdgeInsets.zero,
+      onPressed: onPressed,
+      icon: Icon(icon, size: 20),
+    );
+  }
+}
+
+class _StyleCatalogCard extends StatelessWidget {
+  const _StyleCatalogCard({
+    super.key,
+    required this.style,
+    required this.strength,
+    required this.processing,
+    required this.canApply,
+    required this.onStrengthChanged,
+    required this.onApply,
+  });
+
+  final StyleCatalogItem style;
+  final double strength;
+  final bool processing;
+  final bool canApply;
+  final ValueChanged<double> onStrengthChanged;
+  final VoidCallback onApply;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceRaised,
+        borderRadius: BorderRadius.circular(AppRadii.medium),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(AppRadii.small),
+              child: SizedBox(
+                width: 72,
+                height: 92,
+                child: style.previewUrl == null
+                    ? const ColoredBox(
+                        color: AppColors.surfaceSoft,
+                        child: Icon(
+                          Icons.palette_outlined,
+                          color: AppColors.textMuted,
+                        ),
+                      )
+                    : Image.network(
+                        style.previewUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) => const ColoredBox(
+                          color: AppColors.surfaceSoft,
+                          child: Icon(
+                            Icons.broken_image_outlined,
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                      ),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          style.displayName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                      Text(
+                        'v${style.version}',
+                        style: const TextStyle(
+                          color: AppColors.textMuted,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${styleFamilyLabel(style.family)} · ${style.displayNameEn}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 11,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Row(
+                    children: [
+                      const Text(
+                        '強度',
+                        style: TextStyle(
+                          color: AppColors.textMuted,
+                          fontSize: 11,
+                        ),
+                      ),
+                      Expanded(
+                        child: Slider(
+                          key: Key('style_strength_${style.styleId}'),
+                          min: style.minimumStrength,
+                          max: style.maximumStrength,
+                          divisions: 20,
+                          value: strength,
+                          semanticFormatterCallback: (value) =>
+                              '${(value * 100).round()}%',
+                          onChanged: processing ? null : onStrengthChanged,
+                        ),
+                      ),
+                      SizedBox(
+                        width: 34,
+                        child: Text(
+                          '${(strength * 100).round()}%',
+                          textAlign: TextAlign.end,
+                          style: const TextStyle(fontSize: 11),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: IconButton.filledTonal(
+                      key: Key('apply_style_${style.styleId}'),
+                      tooltip: '套用風格',
+                      onPressed: processing || !canApply ? null : onApply,
+                      icon: const Icon(Icons.auto_fix_high, size: 17),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -384,6 +828,7 @@ class HistoryPanel extends StatelessWidget {
                     return HistoryTile(
                       key: Key('history_${item.editId}'),
                       item: item,
+                      metadataCatalog: controller.metadataCatalogFor(item),
                       version: originalIndex + 1,
                       parentVersion: parentIndex < 0 ? null : parentIndex + 1,
                       selected: item.editId == controller.selectedEditId,
@@ -413,8 +858,15 @@ class EditDetailsPanel extends StatelessWidget {
     if (edit == null) {
       return const SizedBox.shrink();
     }
-    final parameters = controller.currentParameters.entries
-        .where((entry) => parameterLabels.containsKey(entry.key))
+    final metadataCatalog = controller.metadataCatalogFor(edit);
+    final adaptiveOperations = edit.adaptiveOperationsFor(metadataCatalog);
+    final displayedParameters = controller.hasUncommittedPreview
+        ? controller.currentParameters
+        : edit.parametersForDisplay(metadataCatalog);
+    final parameters = displayedParameters.entries
+        .where(
+          (entry) => entry.value is num && metadataCatalog.contains(entry.key),
+        )
         .toList();
     return PanelScaffold(
       title: controller.hasUncommittedPreview ? '目前預覽' : '目前調整',
@@ -424,6 +876,19 @@ class EditDetailsPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (edit.style != null) ...[
+            _StyleDetails(style: edit.style!),
+            const SizedBox(height: AppSpacing.md),
+          ],
+          if (edit.isDirectStyleEdit && !controller.hasUncommittedPreview) ...[
+            Text(
+              '以下為依 ${(edit.style!.strength * 100).round()}% 強度折算的'
+              '等效參數；風格實際效果也包含曲線、分色與其他內部配方。',
+              key: const Key('style_effective_parameter_note'),
+              style: const TextStyle(color: AppColors.textMuted, fontSize: 11),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
           if (edit.explanation != null) ...[
             Text(
               edit.explanation!,
@@ -431,8 +896,12 @@ class EditDetailsPanel extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.md),
           ],
-          if (edit.hasAdaptiveInfo) ...[
-            _AdaptiveDetails(edit: edit),
+          if (adaptiveOperations.isNotEmpty) ...[
+            _AdaptiveDetails(
+              edit: edit,
+              metadataCatalog: metadataCatalog,
+              operations: adaptiveOperations,
+            ),
             const SizedBox(height: AppSpacing.md),
           ],
           for (final entry in parameters)
@@ -442,12 +911,14 @@ class EditDetailsPanel extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      parameterLabels[entry.key]!,
+                      metadataCatalog.metadataFor(entry.key)!.label,
                       style: const TextStyle(color: AppColors.textSecondary),
                     ),
                   ),
                   Text(
-                    entry.value.toString(),
+                    metadataCatalog
+                        .metadataFor(entry.key)!
+                        .formatValue((entry.value as num).toDouble()),
                     style: const TextStyle(
                       fontWeight: FontWeight.w600,
                       fontFeatures: [FontFeature.tabularFigures()],
@@ -467,14 +938,80 @@ class EditDetailsPanel extends StatelessWidget {
   }
 }
 
-class _AdaptiveDetails extends StatelessWidget {
-  const _AdaptiveDetails({required this.edit});
+class _StyleDetails extends StatelessWidget {
+  const _StyleDetails({required this.style});
 
-  final EditHistoryItem edit;
+  final StyleMetadata style;
 
   @override
   Widget build(BuildContext context) {
-    final operations = edit.adaptiveOperations;
+    return DecoratedBox(
+      key: const Key('active_style_details'),
+      decoration: BoxDecoration(
+        color: AppColors.accentSoft,
+        borderRadius: BorderRadius.circular(AppRadii.small),
+        border: Border.all(color: AppColors.accent.withValues(alpha: 0.35)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  Icons.palette_outlined,
+                  size: 18,
+                  color: AppColors.accentBright,
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Expanded(
+                  child: Text(
+                    style.displayName,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
+                Text(
+                  '${(style.strength * 100).round()}%',
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${styleFamilyLabel(style.family)} · '
+              '${style.styleId}@${style.version}',
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 12,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              '理解結果：已套用 ${style.displayName}，'
+              'renderer ${style.rendererVersion}',
+              style: const TextStyle(color: AppColors.textMuted, fontSize: 11),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AdaptiveDetails extends StatelessWidget {
+  const _AdaptiveDetails({
+    required this.edit,
+    required this.metadataCatalog,
+    required this.operations,
+  });
+
+  final EditHistoryItem edit;
+  final ParameterMetadataCatalog metadataCatalog;
+  final List<AdaptiveOperation> operations;
+
+  @override
+  Widget build(BuildContext context) {
     final policy = edit.adaptivePolicyVersion;
     final converged = operations.isNotEmpty
         ? operations.every((operation) => operation.converged == true)
@@ -541,6 +1078,7 @@ class _AdaptiveDetails extends StatelessWidget {
             const SizedBox(height: AppSpacing.xs),
             _AdaptiveOperationDetails(
               operation: operations[index],
+              metadata: metadataCatalog.metadataFor(operations[index].axis)!,
               index: index,
               singleOperation: operations.length == 1,
             ),
@@ -561,17 +1099,18 @@ class _AdaptiveDetails extends StatelessWidget {
 class _AdaptiveOperationDetails extends StatelessWidget {
   const _AdaptiveOperationDetails({
     required this.operation,
+    required this.metadata,
     required this.index,
     required this.singleOperation,
   });
 
   final AdaptiveOperation operation;
+  final ParameterMetadata metadata;
   final int index;
   final bool singleOperation;
 
-  Key _key(String name) => Key(
-    singleOperation ? 'adaptive_$name' : 'adaptive_${name}_${index + 1}',
-  );
+  Key _key(String name) =>
+      Key(singleOperation ? 'adaptive_$name' : 'adaptive_${name}_${index + 1}');
 
   @override
   Widget build(BuildContext context) {
@@ -592,10 +1131,7 @@ class _AdaptiveOperationDetails extends StatelessWidget {
               spacing: AppSpacing.xs,
               runSpacing: 4,
               children: [
-                _AdaptiveTag(
-                  key: _key('axis'),
-                  text: _adaptiveAxisLabel(axis),
-                ),
+                _AdaptiveTag(key: _key('axis'), text: metadata.label),
                 _AdaptiveTag(
                   key: _key('region'),
                   text: regionLabel(operation.region),
@@ -611,36 +1147,36 @@ class _AdaptiveOperationDetails extends StatelessWidget {
               _AdaptiveValueRow(
                 key: _key('delta'),
                 label: '本次相對調整',
-                value:
-                    _formatAdaptiveAxisNumber(
-                      axis,
-                      operation.deltaFromParent!,
-                      signed: true,
-                    ),
+                value: metadata.formatValue(
+                  operation.deltaFromParent!,
+                  signed: true,
+                ),
               ),
             if (operation.currentValue != null || operation.nextValue != null)
               _AdaptiveValueRow(
                 key: _key('current_next'),
                 label: '候選值',
                 value:
-                    '${_formatAdaptiveAxisOptional(axis, operation.currentValue)} → '
-                    '${_formatAdaptiveAxisOptional(axis, operation.nextValue)}',
+                    '${_formatAdaptiveOptional(metadata, operation.currentValue)} → '
+                    '${_formatAdaptiveOptional(metadata, operation.nextValue)}',
               ),
             if (operation.lowerBound != null || operation.upperBound != null)
               _AdaptiveValueRow(
                 key: _key('bounds'),
                 label: '目前界線',
                 value:
-                    '${operation.lowerBound == null ? '−∞' : _formatAdaptiveAxisNumber(axis, operation.lowerBound!)} ～ '
-                    '${operation.upperBound == null ? '+∞' : _formatAdaptiveAxisNumber(axis, operation.upperBound!)}',
+                    '${operation.lowerBound == null ? '−∞' : metadata.formatValue(operation.lowerBound!)} ～ '
+                    '${operation.upperBound == null ? '+∞' : metadata.formatValue(operation.upperBound!)}',
               ),
             if (operation.stepBefore != null || operation.stepAfter != null)
               _AdaptiveValueRow(
                 key: _key('steps'),
-                label: _adaptiveAxisUsesLogStep(axis) ? '步幅（log）' : '步幅',
+                label: metadata.usesLogTransform
+                    ? '步幅（${metadata.transform}）'
+                    : '步幅',
                 value:
-                    '${_formatAdaptiveStep(axis, operation.stepBefore)} → '
-                    '${_formatAdaptiveStep(axis, operation.stepAfter)}',
+                    '${_formatAdaptiveStep(metadata, operation.stepBefore)} → '
+                    '${_formatAdaptiveStep(metadata, operation.stepAfter)}',
               ),
           ],
         ),
@@ -718,35 +1254,6 @@ class _AdaptiveValueRow extends StatelessWidget {
   }
 }
 
-String _adaptiveAxisLabel(String axis) {
-  switch (axis) {
-    case 'exposure':
-      return '曝光';
-    case 'brightness':
-      return '亮度';
-    case 'contrast':
-      return '對比';
-    case 'highlights':
-      return '高光';
-    case 'shadows':
-      return '陰影';
-    case 'temperature':
-      return '色溫';
-    case 'saturation':
-      return '飽和度';
-    case 'sharpen':
-      return '銳利度';
-    case 'clarity':
-      return '清晰度';
-    case 'dehaze':
-      return '去霧';
-    case 'vignette':
-      return '暗角';
-    default:
-      return axis;
-  }
-}
-
 String _adaptiveReasonLabel(String reason) {
   switch (reason) {
     case 'initial_step':
@@ -783,50 +1290,15 @@ String _adaptiveReasonLabel(String reason) {
   }
 }
 
-String _formatAdaptiveAxisOptional(String? axis, double? value) {
-  return value == null ? '—' : _formatAdaptiveAxisNumber(axis, value);
+String _formatAdaptiveOptional(ParameterMetadata metadata, double? value) {
+  return value == null ? '—' : metadata.formatValue(value);
 }
 
-String _formatAdaptiveAxisNumber(
-  String? axis,
-  double value, {
-  bool signed = false,
-}) {
-  final formatted = _formatAdaptiveNumber(value, signed: signed);
-  switch (axis) {
-    case 'exposure':
-      return '$formatted EV';
-    case 'contrast':
-    case 'saturation':
-      return '${formatted}x';
-    default:
-      return formatted;
-  }
-}
-
-bool _adaptiveAxisUsesLogStep(String? axis) {
-  return axis == 'contrast' || axis == 'saturation';
-}
-
-String _formatAdaptiveStep(String? axis, double? value) {
+String _formatAdaptiveStep(ParameterMetadata metadata, double? value) {
   if (value == null) {
     return '—';
   }
-  final formatted = _formatAdaptiveNumber(value);
-  return axis == 'exposure' ? '$formatted EV' : formatted;
-}
-
-String _formatAdaptiveNumber(double value, {bool signed = false}) {
-  final rounded = value == value.roundToDouble()
-      ? value.toInt().toString()
-      : value
-            .toStringAsFixed(3)
-            .replaceFirst(RegExp(r'0+$'), '')
-            .replaceFirst(RegExp(r'\.$'), '');
-  if (signed && value > 0) {
-    return '+$rounded';
-  }
-  return rounded;
+  return metadata.formatStep(value);
 }
 
 class PanelScaffold extends StatelessWidget {
@@ -1062,6 +1534,7 @@ class HistoryTile extends StatelessWidget {
   const HistoryTile({
     super.key,
     required this.item,
+    required this.metadataCatalog,
     required this.version,
     required this.parentVersion,
     required this.selected,
@@ -1069,6 +1542,7 @@ class HistoryTile extends StatelessWidget {
   });
 
   final EditHistoryItem item;
+  final ParameterMetadataCatalog metadataCatalog;
   final int version;
   final int? parentVersion;
   final bool selected;
@@ -1076,7 +1550,13 @@ class HistoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final summary = compactParameterSummary(item.parameters);
+    final summary = compactParameterSummary(
+      item.parametersForDisplay(metadataCatalog),
+      metadataCatalog: metadataCatalog,
+    );
+    final parameterSummary = item.isDirectStyleEdit && summary.isNotEmpty
+        ? '等效 $summary'
+        : summary;
     return Material(
       color: selected ? AppColors.accentSoft : AppColors.surfaceRaised,
       shape: RoundedRectangleBorder(
@@ -1158,7 +1638,8 @@ class HistoryTile extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${item.targetLabel}${summary.isEmpty ? '' : ' · $summary'}',
+                      '${item.targetLabel}'
+                      '${parameterSummary.isEmpty ? '' : ' · $parameterSummary'}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(

@@ -10,10 +10,9 @@ from app.services.edit_intent_templates import (
 )
 from app.services.edit_schema import validate_edit_parameters
 from app.services.edit_schema import (
-    default_mask_type_for_region,
-    validate_edit_mask_type,
-    validate_edit_region,
+    require_region_mask_pair,
 )
+from app.services.style_plan import resolve_style_plan
 
 
 NEUTRAL_OPENCV_PARAMETERS: dict[str, float] = {
@@ -22,8 +21,12 @@ NEUTRAL_OPENCV_PARAMETERS: dict[str, float] = {
     "contrast": 1.0,
     "highlights": 0.0,
     "shadows": 0.0,
+    "whites": 0.0,
+    "blacks": 0.0,
     "saturation": 1.0,
+    "vibrance": 0.0,
     "temperature": 0.0,
+    "white_balance_tint": 0.0,
     "sharpen": 0.0,
     "clarity": 0.0,
     "dehaze": 0.0,
@@ -132,6 +135,13 @@ def build_opencv_parameters_from_plan(edit_plan: Mapping[str, Any]) -> dict[str,
             build_opencv_preset_parameters(str(edit_plan.get("preset_name") or "")),
             edit_plan,
         )
+    if plan_type == "style":
+        resolved_style = resolve_style_plan(edit_plan)
+        parameters = build_opencv_parameters_for_style(resolved_style.style)
+        return _with_region_metadata(
+            validate_edit_parameters(parameters),
+            edit_plan,
+        )
     if plan_type == "edits":
         edits = edit_plan.get("edits")
         if not isinstance(edits, list):
@@ -212,6 +222,15 @@ def build_opencv_preset_parameters(preset_name: str) -> dict[str, float]:
     return _with_region_metadata(validate_edit_parameters(parameters), {})
 
 
+def build_opencv_parameters_for_style(style: Any) -> dict[str, float]:
+    legacy_preset = style.legacy_preset_name
+    if legacy_preset is not None:
+        return build_opencv_preset_parameters(legacy_preset)
+    parameters = NEUTRAL_OPENCV_PARAMETERS.copy()
+    parameters.update(style.base_parameters)
+    return _with_region_metadata(validate_edit_parameters(parameters), {})
+
+
 def _metadata_source(
     edit_plan: Mapping[str, Any],
     raw_parameters: Any,
@@ -227,10 +246,10 @@ def _with_region_metadata(
     parameters: dict[str, float],
     source: Mapping[str, Any],
 ) -> dict[str, Any]:
-    region = validate_edit_region(source.get("region"))
-    mask_type = validate_edit_mask_type(source.get("mask_type"))
-    if mask_type == "none":
-        mask_type = default_mask_type_for_region(region)
+    region, mask_type = require_region_mask_pair(
+        source.get("region"),
+        source.get("mask_type"),
+    )
     return {
         **parameters,
         "region": region,

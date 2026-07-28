@@ -38,6 +38,14 @@ class EditorToolDock extends StatelessWidget {
                 onTap: onSelected,
               ),
               _ToolItem(
+                key: const Key('tool_styles'),
+                tool: EditorTool.styles,
+                label: '風格',
+                icon: Icons.palette_outlined,
+                selected: selectedTool == EditorTool.styles,
+                onTap: onSelected,
+              ),
+              _ToolItem(
                 key: const Key('tool_reference'),
                 tool: EditorTool.reference,
                 label: '參考',

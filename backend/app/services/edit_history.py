@@ -107,6 +107,7 @@ class EditHistoryStore:
         parameter_overrides: dict[str, Any] | None = None,
         processing_timings: dict[str, Any] | None = None,
         adaptive: dict[str, Any] | None = None,
+        style: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         return {
             "session_id": session_id,
@@ -127,6 +128,7 @@ class EditHistoryStore:
             "parameter_overrides": parameter_overrides,
             "processing_timings": processing_timings,
             "adaptive": adaptive,
+            "style": style,
             "parameters": parameters,
             "preset_name": preset_name,
             "explanation": explanation,
