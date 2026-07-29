@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'app_theme.dart';
 import 'editor_controller.dart';
+import 'l10n/l10n_context.dart';
 
 class EditorToolDock extends StatelessWidget {
   const EditorToolDock({
@@ -17,11 +18,13 @@ class EditorToolDock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.editorColors;
+    final l10n = context.l10n;
     return DecoratedBox(
       key: const Key('editor_tool_dock'),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(top: BorderSide(color: AppColors.border)),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        border: Border(top: BorderSide(color: colors.border)),
       ),
       child: SafeArea(
         top: false,
@@ -32,7 +35,7 @@ class EditorToolDock extends StatelessWidget {
               _ToolItem(
                 key: const Key('tool_prompt'),
                 tool: EditorTool.prompt,
-                label: '指令',
+                label: l10n.toolPrompt,
                 icon: Icons.auto_awesome_outlined,
                 selected: selectedTool == EditorTool.prompt,
                 onTap: onSelected,
@@ -40,7 +43,7 @@ class EditorToolDock extends StatelessWidget {
               _ToolItem(
                 key: const Key('tool_styles'),
                 tool: EditorTool.styles,
-                label: '風格',
+                label: l10n.toolStyles,
                 icon: Icons.palette_outlined,
                 selected: selectedTool == EditorTool.styles,
                 onTap: onSelected,
@@ -48,7 +51,7 @@ class EditorToolDock extends StatelessWidget {
               _ToolItem(
                 key: const Key('tool_reference'),
                 tool: EditorTool.reference,
-                label: '參考',
+                label: l10n.toolReference,
                 icon: Icons.photo_outlined,
                 selected: selectedTool == EditorTool.reference,
                 onTap: onSelected,
@@ -56,7 +59,7 @@ class EditorToolDock extends StatelessWidget {
               _ToolItem(
                 key: const Key('tool_manual'),
                 tool: EditorTool.manual,
-                label: '調整',
+                label: l10n.toolManual,
                 icon: Icons.tune,
                 selected: selectedTool == EditorTool.manual,
                 onTap: onSelected,
@@ -64,7 +67,7 @@ class EditorToolDock extends StatelessWidget {
               _ToolItem(
                 key: const Key('tool_history'),
                 tool: EditorTool.history,
-                label: '歷史',
+                label: l10n.toolHistory,
                 icon: Icons.history,
                 selected: selectedTool == EditorTool.history,
                 badge: historyCount == 0 ? null : historyCount.toString(),
@@ -98,6 +101,7 @@ class _ToolItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.editorColors;
     return Expanded(
       child: Semantics(
         button: true,
@@ -110,7 +114,7 @@ class _ToolItem extends StatelessWidget {
             decoration: BoxDecoration(
               border: Border(
                 top: BorderSide(
-                  color: selected ? AppColors.accent : Colors.transparent,
+                  color: selected ? colors.accent : Colors.transparent,
                   width: 2,
                 ),
               ),
@@ -125,8 +129,8 @@ class _ToolItem extends StatelessWidget {
                       icon,
                       size: 23,
                       color: selected
-                          ? AppColors.accentBright
-                          : AppColors.textSecondary,
+                          ? colors.accentBright
+                          : colors.textSecondary,
                     ),
                     if (badge != null)
                       Positioned(
@@ -139,15 +143,15 @@ class _ToolItem extends StatelessWidget {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.accent,
+                            color: colors.accent,
                             borderRadius: BorderRadius.circular(999),
                             border: Border.all(
-                              color: AppColors.surface,
+                              color: colors.surface,
                               width: 1.5,
                             ),
                           ),
                           child: Text(
-                            badge!,
+                            _compactBadge(badge!),
                             textAlign: TextAlign.center,
                             style: const TextStyle(
                               color: Colors.white,
@@ -161,14 +165,23 @@ class _ToolItem extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 5),
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: selected
-                        ? AppColors.accentBright
-                        : AppColors.textSecondary,
-                    fontSize: 12,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: selected
+                            ? colors.accentBright
+                            : colors.textSecondary,
+                        fontSize: 12,
+                        fontWeight: selected
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -177,5 +190,10 @@ class _ToolItem extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _compactBadge(String value) {
+    final parsed = int.tryParse(value);
+    return parsed != null && parsed > 99 ? '99+' : value;
   }
 }

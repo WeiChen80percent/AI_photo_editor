@@ -4,8 +4,10 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import 'app_theme.dart';
+import 'editor_localizations.dart';
 import 'edit_models.dart';
 import 'editor_controller.dart';
+import 'l10n/l10n_context.dart';
 
 class PromptPanel extends StatelessWidget {
   const PromptPanel({
@@ -23,17 +25,18 @@ class PromptPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return PanelScaffold(
-      title: '指令修圖',
+      title: l10n.promptEditTitle,
       subtitle: controller.selectedEdit == null
           ? controller.isOriginalBaseSelected && controller.history.isNotEmpty
-                ? '從原圖建立新的歷史分支'
-                : '從原圖建立第一個版本'
-          : '從目前選中的版本繼續調整',
+                ? l10n.promptBranchFromOriginal
+                : l10n.promptFirstVersionFromOriginal
+          : l10n.promptContinueSelected,
       icon: Icons.auto_awesome_outlined,
       onClose: onClose,
-      message: controller.errorMessage ?? controller.statusMessage,
-      messageIsError: controller.errorMessage != null,
+      message: _localizedControllerMessage(context, controller),
+      messageIsError: _hasControllerError(controller),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -50,28 +53,33 @@ class PromptPanel extends StatelessWidget {
                 onSubmit();
               }
             },
-            decoration: const InputDecoration(hintText: '例如：人物亮一點、天空暗一點、不要太鮮豔'),
+            decoration: InputDecoration(hintText: l10n.promptHint),
           ),
           const SizedBox(height: AppSpacing.sm),
-          const Text(
-            '指令與參考圖是兩種獨立模式；這裡只會送出文字。',
-            style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+          Text(
+            l10n.promptModeNotice,
+            style: TextStyle(
+              color: context.editorColors.textMuted,
+              fontSize: 12,
+            ),
           ),
           const SizedBox(height: AppSpacing.lg),
           FilledButton.icon(
             key: const Key('submit_prompt_button'),
             onPressed: controller.canSubmitPrompt ? onSubmit : null,
             icon: controller.isProcessing
-                ? const SizedBox(
+                ? SizedBox(
                     width: 18,
                     height: 18,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onPrimary,
                     ),
                   )
                 : const Icon(Icons.auto_fix_high),
-            label: Text(controller.isProcessing ? '處理中…' : '套用指令'),
+            label: Text(
+              controller.isProcessing ? l10n.processing : l10n.applyPrompt,
+            ),
           ),
         ],
       ),
@@ -95,10 +103,11 @@ class StylesPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final catalog = controller.styleCatalog;
     if (controller.isLoadingStyles) {
       return PanelScaffold(
-        title: '風格目錄',
+        title: l10n.styleCatalogTitle,
         icon: Icons.palette_outlined,
         onClose: onClose,
         child: const Center(
@@ -111,14 +120,14 @@ class StylesPanel extends StatelessWidget {
     }
     if (catalog == null) {
       return PanelScaffold(
-        title: '風格目錄',
+        title: l10n.styleCatalogTitle,
         icon: Icons.palette_outlined,
         onClose: onClose,
-        message: controller.errorMessage,
+        message: _localizedControllerError(context, controller),
         messageIsError: true,
-        child: const _UnavailablePanel(
+        child: _UnavailablePanel(
           icon: Icons.palette_outlined,
-          message: '風格目錄目前無法載入，請確認後端已啟動。',
+          message: l10n.styleCatalogUnavailable,
         ),
       );
     }
@@ -129,13 +138,19 @@ class StylesPanel extends StatelessWidget {
       key: const Key('styles_panel'),
       children: [
         PanelHeader(
-          title: '風格目錄',
-          subtitle: '${catalog.styleCount} 種已核准風格 · v${catalog.catalogVersion}',
+          title: l10n.styleCatalogTitle,
+          subtitle: l10n.styleCatalogSubtitle(
+            catalog.styleCount,
+            catalog.catalogVersion,
+          ),
           icon: Icons.palette_outlined,
           onClose: onClose,
         ),
-        if (controller.errorMessage != null)
-          PanelMessage(message: controller.errorMessage!, isError: true),
+        if (_hasControllerError(controller))
+          PanelMessage(
+            message: _localizedControllerError(context, controller)!,
+            isError: true,
+          ),
         _StyleFamilyFilterBar(
           families: families,
           counts: catalog.families,
@@ -290,7 +305,7 @@ class _StyleFamilyFilterBarState extends State<_StyleFamilyFilterBar> {
             _FamilyScrollButton(
               key: const Key('style_family_scroll_back'),
               icon: Icons.chevron_left,
-              tooltip: '向左查看更多分類',
+              tooltip: context.l10n.styleCategoryPrevious,
               onPressed: _canScrollBack ? () => _scrollBy(-220) : null,
             ),
           Expanded(
@@ -319,7 +334,7 @@ class _StyleFamilyFilterBarState extends State<_StyleFamilyFilterBar> {
                       children: [
                         ChoiceChip(
                           key: const Key('style_family_all'),
-                          label: const Text('全部'),
+                          label: Text(context.l10n.styleCategoryAll),
                           selected: widget.selectedFamily == null,
                           onSelected: (_) => widget.onSelected(null),
                         ),
@@ -328,7 +343,7 @@ class _StyleFamilyFilterBarState extends State<_StyleFamilyFilterBar> {
                           ChoiceChip(
                             key: Key('style_family_$family'),
                             label: Text(
-                              '${styleFamilyLabel(family)} '
+                              '${localizedStyleFamilyLabel(context.l10n, family)} '
                               '${widget.counts[family]}',
                             ),
                             selected: widget.selectedFamily == family,
@@ -346,7 +361,7 @@ class _StyleFamilyFilterBarState extends State<_StyleFamilyFilterBar> {
             _FamilyScrollButton(
               key: const Key('style_family_scroll_forward'),
               icon: Icons.chevron_right,
-              tooltip: '向右查看更多分類',
+              tooltip: context.l10n.styleCategoryNext,
               onPressed: _canScrollForward ? () => _scrollBy(220) : null,
             ),
         ],
@@ -400,11 +415,14 @@ class _StyleCatalogCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.editorColors;
+    final styleName = localizedCatalogStyleName(context.l10n, style);
+    final secondaryLabel = _localizedCatalogStyleSecondaryLabel(context, style);
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: AppColors.surfaceRaised,
+        color: colors.surfaceRaised,
         borderRadius: BorderRadius.circular(AppRadii.medium),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: colors.border),
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.sm),
@@ -417,21 +435,21 @@ class _StyleCatalogCard extends StatelessWidget {
                 width: 72,
                 height: 92,
                 child: style.previewUrl == null
-                    ? const ColoredBox(
-                        color: AppColors.surfaceSoft,
+                    ? ColoredBox(
+                        color: colors.surfaceSoft,
                         child: Icon(
                           Icons.palette_outlined,
-                          color: AppColors.textMuted,
+                          color: colors.textMuted,
                         ),
                       )
                     : Image.network(
                         style.previewUrl!,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => const ColoredBox(
-                          color: AppColors.surfaceSoft,
+                        errorBuilder: (_, _, _) => ColoredBox(
+                          color: colors.surfaceSoft,
                           child: Icon(
                             Icons.broken_image_outlined,
-                            color: AppColors.textMuted,
+                            color: colors.textMuted,
                           ),
                         ),
                       ),
@@ -446,7 +464,7 @@ class _StyleCatalogCard extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          style.displayName,
+                          styleName,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(fontWeight: FontWeight.w700),
@@ -454,32 +472,23 @@ class _StyleCatalogCard extends StatelessWidget {
                       ),
                       Text(
                         'v${style.version}',
-                        style: const TextStyle(
-                          color: AppColors.textMuted,
-                          fontSize: 11,
-                        ),
+                        style: TextStyle(color: colors.textMuted, fontSize: 11),
                       ),
                     ],
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${styleFamilyLabel(style.family)} · ${style.displayNameEn}',
+                    secondaryLabel,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 11,
-                    ),
+                    style: TextStyle(color: colors.textSecondary, fontSize: 11),
                   ),
                   const SizedBox(height: AppSpacing.xs),
                   Row(
                     children: [
-                      const Text(
-                        '強度',
-                        style: TextStyle(
-                          color: AppColors.textMuted,
-                          fontSize: 11,
-                        ),
+                      Text(
+                        context.l10n.styleStrength,
+                        style: TextStyle(color: colors.textMuted, fontSize: 11),
                       ),
                       Expanded(
                         child: Slider(
@@ -507,7 +516,7 @@ class _StyleCatalogCard extends StatelessWidget {
                     alignment: Alignment.centerRight,
                     child: IconButton.filledTonal(
                       key: Key('apply_style_${style.styleId}'),
-                      tooltip: '套用風格',
+                      tooltip: context.l10n.applyStyle,
                       onPressed: processing || !canApply ? null : onApply,
                       icon: const Icon(Icons.auto_fix_high, size: 17),
                     ),
@@ -538,14 +547,15 @@ class ReferencePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return PanelScaffold(
-      title: '參考圖修圖',
+      title: l10n.referenceEditTitle,
       subtitle: controller.selectedEdit == null
-          ? '原圖會依參考圖的色彩方向調整'
-          : '從目前版本套用參考圖方向',
+          ? l10n.referenceFromOriginal
+          : l10n.referenceFromCurrent,
       icon: Icons.photo_outlined,
       onClose: onClose,
-      message: controller.errorMessage,
+      message: _localizedControllerError(context, controller),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -559,7 +569,11 @@ class ReferencePanel extends StatelessWidget {
                   onPressed: onPickReference,
                   icon: const Icon(Icons.photo_library_outlined),
                   label: Text(
-                    controller.referenceImageBytes == null ? '選擇參考圖' : '更換參考圖',
+                    controller.referenceImageBytes == null
+                        ? l10n.selectReference
+                        : l10n.changeReference,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ),
@@ -567,7 +581,7 @@ class ReferencePanel extends StatelessWidget {
                 const SizedBox(width: AppSpacing.xs),
                 IconButton.outlined(
                   key: const Key('clear_reference_button'),
-                  tooltip: '移除參考圖',
+                  tooltip: l10n.removeReference,
                   onPressed: controller.clearReferenceImage,
                   icon: const Icon(Icons.delete_outline),
                 ),
@@ -579,16 +593,18 @@ class ReferencePanel extends StatelessWidget {
             key: const Key('submit_reference_button'),
             onPressed: controller.canSubmitReference ? onSubmit : null,
             icon: controller.isProcessing
-                ? const SizedBox(
+                ? SizedBox(
                     width: 18,
                     height: 18,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onPrimary,
                     ),
                   )
                 : const Icon(Icons.auto_fix_high),
-            label: Text(controller.isProcessing ? '處理中…' : '套用參考圖'),
+            label: Text(
+              controller.isProcessing ? l10n.processing : l10n.applyReference,
+            ),
           ),
         ],
       ),
@@ -610,9 +626,10 @@ class ManualPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     if (controller.isLoadingManual) {
       return PanelScaffold(
-        title: '手動調整',
+        title: l10n.manualEditTitle,
         icon: Icons.tune,
         onClose: onClose,
         child: const Center(
@@ -628,13 +645,13 @@ class ManualPanel extends StatelessWidget {
         controller.manualSchema == null ||
         controller.manualSourceEditId == null) {
       return PanelScaffold(
-        title: '手動調整',
+        title: l10n.manualEditTitle,
         icon: Icons.tune,
         onClose: onClose,
-        message: controller.errorMessage,
+        message: _localizedControllerError(context, controller),
         child: _UnavailablePanel(
           icon: Icons.tune,
-          message: controller.manualDisabledReason,
+          message: _localizedManualDisabledReason(context, controller),
         ),
       );
     }
@@ -652,16 +669,22 @@ class ManualPanel extends StatelessWidget {
       key: const Key('manual_panel'),
       children: [
         PanelHeader(
-          title: '手動調整',
+          title: l10n.manualEditTitle,
           subtitle: source == null
               ? null
-              : '來源版本 · ${source.targetLabel} · ${source.modeLabel}',
+              : l10n.manualSourceVersion(
+                  localizedRegionLabel(context.l10n, source.region),
+                  localizedEditModeLabel(context.l10n, source),
+                ),
           icon: Icons.tune,
           onClose: onClose,
           trailing: controller.manualIsDirty ? const _DraftStatus() : null,
         ),
-        if (controller.errorMessage != null)
-          PanelMessage(message: controller.errorMessage!, isError: true),
+        if (_hasControllerError(controller))
+          PanelMessage(
+            message: _localizedControllerError(context, controller)!,
+            isError: true,
+          ),
         Expanded(
           child: ListView(
             controller: scrollController,
@@ -695,17 +718,17 @@ class ManualPanel extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
-                        const Expanded(
+                        Expanded(
                           child: Text(
-                            '進階調整',
-                            style: TextStyle(fontWeight: FontWeight.w600),
+                            l10n.advancedAdjustments,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
                         ),
                         Icon(
                           controller.manualAdvancedExpanded
                               ? Icons.expand_less
                               : Icons.expand_more,
-                          color: AppColors.textSecondary,
+                          color: context.editorColors.textSecondary,
                         ),
                       ],
                     ),
@@ -759,26 +782,30 @@ class HistoryPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final items = controller.history.reversed.toList();
     return Column(
       key: const Key('history_panel'),
       children: [
         PanelHeader(
-          title: '歷史紀錄',
-          subtitle: '版本 ${controller.history.length}',
+          title: l10n.historyTitle,
+          subtitle: l10n.historyVersionCount(controller.history.length),
           icon: Icons.history,
           onClose: onClose,
           trailing: IconButton(
             key: const Key('refresh_history_button'),
-            tooltip: '重新同步',
+            tooltip: l10n.refreshHistory,
             onPressed: controller.sessionId == null
                 ? null
                 : () => controller.refreshHistory(),
             icon: const Icon(Icons.refresh, size: 20),
           ),
         ),
-        if (controller.errorMessage != null)
-          PanelMessage(message: controller.errorMessage!, isError: true),
+        if (_hasControllerError(controller))
+          PanelMessage(
+            message: _localizedControllerError(context, controller)!,
+            isError: true,
+          ),
         if (items.isNotEmpty)
           Padding(
             padding: const EdgeInsets.fromLTRB(
@@ -793,16 +820,18 @@ class HistoryPanel extends StatelessWidget {
               icon: const Icon(Icons.account_tree_outlined, size: 18),
               label: Text(
                 controller.isOriginalBaseSelected
-                    ? '已選原圖 · 下一次建立新分支'
-                    : '從原圖建立新分支',
+                    ? l10n.selectedOriginalNewBranch
+                    : l10n.createBranchFromOriginal,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ),
         Expanded(
           child: items.isEmpty
-              ? const _UnavailablePanel(
+              ? _UnavailablePanel(
                   icon: Icons.history,
-                  message: '完成第一次修圖後，版本會依序顯示在這裡。',
+                  message: l10n.emptyHistory,
                 )
               : ListView.separated(
                   controller: scrollController,
@@ -868,9 +897,14 @@ class EditDetailsPanel extends StatelessWidget {
           (entry) => entry.value is num && metadataCatalog.contains(entry.key),
         )
         .toList();
+    final safeExplanation = _localizedSafeExplanation(context, edit);
     return PanelScaffold(
-      title: controller.hasUncommittedPreview ? '目前預覽' : '目前調整',
-      subtitle: '${edit.targetLabel} · ${edit.modeLabel}',
+      title: controller.hasUncommittedPreview
+          ? context.l10n.currentPreview
+          : context.l10n.currentAdjustments,
+      subtitle:
+          '${localizedRegionLabel(context.l10n, edit.region)} · '
+          '${localizedEditModeLabel(context.l10n, edit)}',
       icon: Icons.info_outline,
       onClose: onClose,
       child: Column(
@@ -882,17 +916,21 @@ class EditDetailsPanel extends StatelessWidget {
           ],
           if (edit.isDirectStyleEdit && !controller.hasUncommittedPreview) ...[
             Text(
-              '以下為依 ${(edit.style!.strength * 100).round()}% 強度折算的'
-              '等效參數；風格實際效果也包含曲線、分色與其他內部配方。',
+              context.l10n.styleEffectiveParameters(
+                (edit.style!.strength * 100).round(),
+              ),
               key: const Key('style_effective_parameter_note'),
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 11),
+              style: TextStyle(
+                color: context.editorColors.textMuted,
+                fontSize: 11,
+              ),
             ),
             const SizedBox(height: AppSpacing.sm),
           ],
-          if (edit.explanation != null) ...[
+          if (safeExplanation != null) ...[
             Text(
-              edit.explanation!,
-              style: const TextStyle(color: AppColors.textSecondary),
+              safeExplanation,
+              style: TextStyle(color: context.editorColors.textSecondary),
             ),
             const SizedBox(height: AppSpacing.md),
           ],
@@ -911,8 +949,14 @@ class EditDetailsPanel extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      metadataCatalog.metadataFor(entry.key)!.label,
-                      style: const TextStyle(color: AppColors.textSecondary),
+                      localizedParameterLabel(
+                        context.l10n,
+                        entry.key,
+                        fallback: metadataCatalog.metadataFor(entry.key)!.label,
+                      ),
+                      style: TextStyle(
+                        color: context.editorColors.textSecondary,
+                      ),
                     ),
                   ),
                   Text(
@@ -928,9 +972,9 @@ class EditDetailsPanel extends StatelessWidget {
               ),
             ),
           if (parameters.isEmpty)
-            const Text(
-              '這個版本沒有可顯示的手動參數。',
-              style: TextStyle(color: AppColors.textMuted),
+            Text(
+              context.l10n.noManualParameters,
+              style: TextStyle(color: context.editorColors.textMuted),
             ),
         ],
       ),
@@ -945,12 +989,15 @@ class _StyleDetails extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.editorColors;
+    final styleName = localizedHistoryStyleName(context.l10n, style);
+    final strengthPercent = (style.strength * 100).round();
     return DecoratedBox(
       key: const Key('active_style_details'),
       decoration: BoxDecoration(
-        color: AppColors.accentSoft,
+        color: colors.accentSoft,
         borderRadius: BorderRadius.circular(AppRadii.small),
-        border: Border.all(color: AppColors.accent.withValues(alpha: 0.35)),
+        border: Border.all(color: colors.accent.withValues(alpha: 0.35)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.sm),
@@ -959,38 +1006,35 @@ class _StyleDetails extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.palette_outlined,
                   size: 18,
-                  color: AppColors.accentBright,
+                  color: colors.accentBright,
                 ),
                 const SizedBox(width: AppSpacing.xs),
                 Expanded(
                   child: Text(
-                    style.displayName,
+                    styleName,
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ),
                 Text(
-                  '${(style.strength * 100).round()}%',
+                  '$strengthPercent%',
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
               ],
             ),
             const SizedBox(height: 4),
             Text(
-              '${styleFamilyLabel(style.family)} · '
+              '${localizedStyleFamilyLabel(context.l10n, style.family)} · '
               '${style.styleId}@${style.version}',
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 12,
-              ),
+              style: TextStyle(color: colors.textSecondary, fontSize: 12),
             ),
             const SizedBox(height: 2),
             Text(
-              '理解結果：已套用 ${style.displayName}，'
+              '${context.l10n.styleUnderstanding(styleName, strengthPercent)} '
               'renderer ${style.rendererVersion}',
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 11),
+              style: TextStyle(color: colors.textMuted, fontSize: 11),
             ),
           ],
         ),
@@ -1012,37 +1056,39 @@ class _AdaptiveDetails extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.editorColors;
+    final l10n = context.l10n;
     final policy = edit.adaptivePolicyVersion;
     final converged = operations.isNotEmpty
         ? operations.every((operation) => operation.converged == true)
         : edit.adaptiveConverged == true;
     final status = operations.length > 1
-        ? '${operations.length} 項微調'
+        ? l10n.adjustmentCount(operations.length)
         : edit.adaptiveApplied == false
-        ? '已重設區間'
+        ? l10n.adaptiveIntervalReset
         : converged
-        ? '已收斂'
-        : '持續微調';
+        ? l10n.adaptiveConverged
+        : l10n.adaptiveContinue;
 
     return Container(
       key: const Key('adaptive_details'),
       padding: const EdgeInsets.all(AppSpacing.sm),
       decoration: BoxDecoration(
-        color: AppColors.accentSoft,
+        color: colors.accentSoft,
         borderRadius: BorderRadius.circular(AppRadii.small),
-        border: Border.all(color: AppColors.accent.withValues(alpha: 0.35)),
+        border: Border.all(color: colors.accent.withValues(alpha: 0.35)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
-              const Icon(Icons.tune, size: 18, color: AppColors.accentBright),
+              Icon(Icons.tune, size: 18, color: colors.accentBright),
               const SizedBox(width: AppSpacing.xs),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  '自適應微調',
-                  style: TextStyle(fontWeight: FontWeight.w700),
+                  l10n.adaptiveFineTune,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),
               Text(
@@ -1050,8 +1096,8 @@ class _AdaptiveDetails extends StatelessWidget {
                 key: const Key('adaptive_converged'),
                 style: TextStyle(
                   color: converged == true
-                      ? AppColors.success
-                      : AppColors.textSecondary,
+                      ? colors.success
+                      : colors.textSecondary,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
@@ -1087,7 +1133,10 @@ class _AdaptiveDetails extends StatelessWidget {
             const SizedBox(height: AppSpacing.xs),
             _AdaptiveTag(
               key: const Key('adaptive_reason'),
-              text: _adaptiveReasonLabel(edit.adaptiveReason!),
+              text: localizedAdaptiveReasonLabel(
+                context.l10n,
+                edit.adaptiveReason!,
+              ),
             ),
           ],
         ],
@@ -1115,12 +1164,14 @@ class _AdaptiveOperationDetails extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final axis = operation.axis;
+    final colors = context.editorColors;
+    final l10n = context.l10n;
     return DecoratedBox(
       key: Key('adaptive_operation_${index + 1}_$axis'),
       decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.55),
+        color: colors.surface.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(AppRadii.small),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: colors.border),
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.xs),
@@ -1131,22 +1182,32 @@ class _AdaptiveOperationDetails extends StatelessWidget {
               spacing: AppSpacing.xs,
               runSpacing: 4,
               children: [
-                _AdaptiveTag(key: _key('axis'), text: metadata.label),
+                _AdaptiveTag(
+                  key: _key('axis'),
+                  text: localizedParameterLabel(
+                    context.l10n,
+                    operation.axis,
+                    fallback: metadata.label,
+                  ),
+                ),
                 _AdaptiveTag(
                   key: _key('region'),
-                  text: regionLabel(operation.region),
+                  text: localizedRegionLabel(context.l10n, operation.region),
                 ),
                 if (operation.reason != null)
                   _AdaptiveTag(
                     key: _key('reason'),
-                    text: _adaptiveReasonLabel(operation.reason!),
+                    text: localizedAdaptiveReasonLabel(
+                      context.l10n,
+                      operation.reason!,
+                    ),
                   ),
               ],
             ),
             if (operation.deltaFromParent != null)
               _AdaptiveValueRow(
                 key: _key('delta'),
-                label: '本次相對調整',
+                label: l10n.relativeAdjustment,
                 value: metadata.formatValue(
                   operation.deltaFromParent!,
                   signed: true,
@@ -1155,7 +1216,7 @@ class _AdaptiveOperationDetails extends StatelessWidget {
             if (operation.currentValue != null || operation.nextValue != null)
               _AdaptiveValueRow(
                 key: _key('current_next'),
-                label: '候選值',
+                label: l10n.candidateValue,
                 value:
                     '${_formatAdaptiveOptional(metadata, operation.currentValue)} → '
                     '${_formatAdaptiveOptional(metadata, operation.nextValue)}',
@@ -1163,7 +1224,7 @@ class _AdaptiveOperationDetails extends StatelessWidget {
             if (operation.lowerBound != null || operation.upperBound != null)
               _AdaptiveValueRow(
                 key: _key('bounds'),
-                label: '目前界線',
+                label: l10n.currentBounds,
                 value:
                     '${operation.lowerBound == null ? '−∞' : metadata.formatValue(operation.lowerBound!)} ～ '
                     '${operation.upperBound == null ? '+∞' : metadata.formatValue(operation.upperBound!)}',
@@ -1172,8 +1233,8 @@ class _AdaptiveOperationDetails extends StatelessWidget {
               _AdaptiveValueRow(
                 key: _key('steps'),
                 label: metadata.usesLogTransform
-                    ? '步幅（${metadata.transform}）'
-                    : '步幅',
+                    ? l10n.stepSizeWithTransform(metadata.transform)
+                    : l10n.stepSize,
                 value:
                     '${_formatAdaptiveStep(metadata, operation.stepBefore)} → '
                     '${_formatAdaptiveStep(metadata, operation.stepAfter)}',
@@ -1194,14 +1255,17 @@ class _AdaptiveTag extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.72),
+        color: context.editorColors.surface.withValues(alpha: 0.72),
         borderRadius: BorderRadius.circular(AppRadii.small),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
         child: Text(
           text,
-          style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+          style: TextStyle(
+            color: context.editorColors.textSecondary,
+            fontSize: 11,
+          ),
         ),
       ),
     );
@@ -1228,8 +1292,8 @@ class _AdaptiveValueRow extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(
-                color: AppColors.textSecondary,
+              style: TextStyle(
+                color: context.editorColors.textSecondary,
                 fontSize: 12,
               ),
             ),
@@ -1251,42 +1315,6 @@ class _AdaptiveValueRow extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-String _adaptiveReasonLabel(String reason) {
-  switch (reason) {
-    case 'initial_step':
-    case 'initial_anchor_step':
-    case 'initial_template':
-      return '建立初始步幅';
-    case 'initial_negative_bracket':
-      return '從目前效果往回收斂';
-    case 'companion_takeover':
-      return '接手相關參數調整';
-    case 'bracket_midpoint':
-    case 'bounded_midpoint':
-      return '依回饋取區間中點';
-    case 'unbounded_same_direction':
-    case 'same_direction_unbounded':
-    case 'unbounded_template_step':
-      return '延續同方向探索';
-    case 'direction_reversal':
-    case 'reverse_direction':
-      return '依反向回饋縮小';
-    case 'state_reset':
-    case 'explicit_strength_reset':
-      return '重新建立調整基準';
-    case 'absolute_value_reset':
-      return '採用明確數值並重設區間';
-    case 'relative_numeric_reset':
-      return '依相對數值調整';
-    case 'axis_reset':
-      return '重設單一參數';
-    case 'global_reset':
-      return '回到原圖';
-    default:
-      return reason;
   }
 }
 
@@ -1369,8 +1397,8 @@ class PanelHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.border)),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: context.editorColors.border)),
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
@@ -1381,7 +1409,7 @@ class PanelHeader extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(icon, size: 21, color: AppColors.accentBright),
+            Icon(icon, size: 21, color: context.editorColors.accentBright),
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Column(
@@ -1394,8 +1422,8 @@ class PanelHeader extends StatelessWidget {
                       subtitle!,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.textMuted,
+                      style: TextStyle(
+                        color: context.editorColors.textMuted,
                         fontSize: 11,
                       ),
                     ),
@@ -1406,7 +1434,7 @@ class PanelHeader extends StatelessWidget {
             ?trailing,
             IconButton(
               key: const Key('close_panel_button'),
-              tooltip: '收合',
+              tooltip: context.l10n.collapse,
               onPressed: onClose,
               icon: const Icon(Icons.close, size: 21),
             ),
@@ -1425,6 +1453,7 @@ class PanelMessage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.editorColors;
     return Container(
       key: Key(isError ? 'panel_error' : 'panel_status'),
       margin: const EdgeInsets.fromLTRB(
@@ -1436,20 +1465,20 @@ class PanelMessage extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.sm),
       decoration: BoxDecoration(
         color: isError
-            ? AppColors.error.withValues(alpha: 0.1)
-            : AppColors.success.withValues(alpha: 0.1),
+            ? colors.error.withValues(alpha: 0.1)
+            : colors.success.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppRadii.small),
         border: Border.all(
           color: isError
-              ? AppColors.error.withValues(alpha: 0.35)
-              : AppColors.success.withValues(alpha: 0.35),
+              ? colors.error.withValues(alpha: 0.35)
+              : colors.success.withValues(alpha: 0.35),
         ),
       ),
       child: Row(
         children: [
           Icon(
             isError ? Icons.error_outline : Icons.check_circle_outline,
-            color: isError ? AppColors.error : AppColors.success,
+            color: isError ? colors.error : colors.success,
             size: 19,
           ),
           const SizedBox(width: AppSpacing.xs),
@@ -1457,7 +1486,7 @@ class PanelMessage extends StatelessWidget {
             child: Text(
               message,
               style: TextStyle(
-                color: isError ? AppColors.error : AppColors.success,
+                color: isError ? colors.error : colors.success,
                 fontSize: 12,
               ),
             ),
@@ -1485,6 +1514,11 @@ class ManualSlider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final divisions = ((spec.maximum - spec.minimum) / spec.step).round();
+    final localizedLabel = localizedParameterLabel(
+      context.l10n,
+      spec.key,
+      fallback: spec.label,
+    );
     return Padding(
       key: Key('manual_slider_${spec.key}'),
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
@@ -1494,15 +1528,17 @@ class ManualSlider extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  spec.label,
+                  localizedLabel,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontWeight: FontWeight.w500),
                 ),
               ),
               Text(
                 spec.format(value),
                 key: Key('manual_value_${spec.key}'),
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
+                style: TextStyle(
+                  color: context.editorColors.textSecondary,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   fontFeatures: [FontFeature.tabularFigures()],
@@ -1510,7 +1546,7 @@ class ManualSlider extends StatelessWidget {
               ),
               const SizedBox(width: 2),
               IconButton(
-                tooltip: '將${spec.label}設為中性值',
+                tooltip: context.l10n.resetParameter(localizedLabel),
                 onPressed: onReset,
                 visualDensity: VisualDensity.compact,
                 icon: const Icon(Icons.restart_alt, size: 18),
@@ -1550,18 +1586,20 @@ class HistoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final summary = compactParameterSummary(
+    final summary = localizedCompactParameterSummary(
+      context.l10n,
       item.parametersForDisplay(metadataCatalog),
       metadataCatalog: metadataCatalog,
     );
     final parameterSummary = item.isDirectStyleEdit && summary.isNotEmpty
-        ? '等效 $summary'
+        ? context.l10n.equivalentParameters(summary)
         : summary;
+    final colors = context.editorColors;
     return Material(
-      color: selected ? AppColors.accentSoft : AppColors.surfaceRaised,
+      color: selected ? colors.accentSoft : colors.surfaceRaised,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadii.small),
-        side: BorderSide(color: selected ? AppColors.accent : AppColors.border),
+        side: BorderSide(color: selected ? colors.accent : colors.border),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -1578,14 +1616,14 @@ class HistoryTile extends StatelessWidget {
                   width: 64,
                   height: 64,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => const SizedBox(
+                  errorBuilder: (_, _, _) => SizedBox(
                     width: 64,
                     height: 64,
                     child: ColoredBox(
-                      color: AppColors.surfaceSoft,
+                      color: colors.surfaceSoft,
                       child: Icon(
                         Icons.broken_image_outlined,
-                        color: AppColors.textMuted,
+                        color: colors.textMuted,
                       ),
                     ),
                   ),
@@ -1600,7 +1638,10 @@ class HistoryTile extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            '版本 $version · ${item.modeLabel}',
+                            context.l10n.historyVersionMode(
+                              version,
+                              localizedEditModeLabel(context.l10n, item),
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
@@ -1610,10 +1651,10 @@ class HistoryTile extends StatelessWidget {
                           ),
                         ),
                         if (selected)
-                          const Icon(
+                          Icon(
                             Icons.check_circle,
                             size: 18,
-                            color: AppColors.accentBright,
+                            color: colors.accentBright,
                           ),
                       ],
                     ),
@@ -1628,24 +1669,21 @@ class HistoryTile extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      item.displayTitle,
+                      localizedEditDisplayTitle(context.l10n, item),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
+                      style: TextStyle(
+                        color: colors.textSecondary,
                         fontSize: 12,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${item.targetLabel}'
+                      '${localizedRegionLabel(context.l10n, item.region)}'
                       '${parameterSummary.isEmpty ? '' : ' · $parameterSummary'}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.textMuted,
-                        fontSize: 11,
-                      ),
+                      style: TextStyle(color: colors.textMuted, fontSize: 11),
                     ),
                   ],
                 ),
@@ -1671,13 +1709,13 @@ class _HistoryBranchBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final label = isRoot
-        ? '根分支'
+        ? context.l10n.rootBranch
         : parentVersion == null
-        ? '接續父版本'
-        : '接續版本 $parentVersion';
+        ? context.l10n.continuesParent
+        : context.l10n.continuesVersion(parentVersion!);
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: AppColors.surfaceSoft,
+        color: context.editorColors.surfaceSoft,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Padding(
@@ -1686,7 +1724,7 @@ class _HistoryBranchBadge extends StatelessWidget {
           label,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(color: AppColors.textMuted, fontSize: 10),
+          style: TextStyle(color: context.editorColors.textMuted, fontSize: 10),
         ),
       ),
     );
@@ -1706,23 +1744,25 @@ class _ReferencePreview extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadii.medium),
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: AppColors.imageStage,
-            border: Border.all(color: AppColors.border),
+            color: context.editorColors.imageStage,
+            border: Border.all(color: context.editorColors.border),
             borderRadius: BorderRadius.circular(AppRadii.medium),
           ),
           child: bytes == null
-              ? const Center(
+              ? Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
                         Icons.add_photo_alternate_outlined,
-                        color: AppColors.textMuted,
+                        color: context.editorColors.imageStageMuted,
                       ),
-                      SizedBox(height: 8),
+                      const SizedBox(height: 8),
                       Text(
-                        '尚未選擇參考圖',
-                        style: TextStyle(color: AppColors.textMuted),
+                        context.l10n.referenceNotSelected,
+                        style: TextStyle(
+                          color: context.editorColors.imageStageMuted,
+                        ),
                       ),
                     ],
                   ),
@@ -1742,9 +1782,9 @@ class _ManualActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(top: BorderSide(color: AppColors.border)),
+      decoration: BoxDecoration(
+        color: context.editorColors.surface,
+        border: Border(top: BorderSide(color: context.editorColors.border)),
       ),
       child: SafeArea(
         top: false,
@@ -1759,7 +1799,11 @@ class _ManualActions extends StatelessWidget {
                       ? controller.resetAllManual
                       : null,
                   icon: const Icon(Icons.restart_alt),
-                  label: const Text('重設'),
+                  label: Text(
+                    context.l10n.actionReset,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
@@ -1773,16 +1817,22 @@ class _ManualActions extends StatelessWidget {
                       ? controller.commitManual
                       : null,
                   icon: controller.isCommittingManual
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 18,
                           height: 18,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: Colors.white,
+                            color: Theme.of(context).colorScheme.onPrimary,
                           ),
                         )
                       : const Icon(Icons.check),
-                  label: Text(controller.isCommittingManual ? '套用中…' : '套用'),
+                  label: Text(
+                    controller.isCommittingManual
+                        ? context.l10n.actionApplying
+                        : context.l10n.actionApply,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ),
             ],
@@ -1798,17 +1848,19 @@ class _DraftStatus extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.circle, size: 7, color: AppColors.warning),
-          SizedBox(width: 5),
+          Icon(Icons.circle, size: 7, color: context.editorColors.warning),
+          const SizedBox(width: 5),
           Text(
-            '尚未套用',
+            context.l10n.notApplied,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              color: AppColors.warning,
+              color: context.editorColors.warning,
               fontSize: 11,
               fontWeight: FontWeight.w600,
             ),
@@ -1833,16 +1885,92 @@ class _UnavailablePanel extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 36, color: AppColors.textMuted),
+            Icon(icon, size: 36, color: context.editorColors.textMuted),
             const SizedBox(height: AppSpacing.md),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.textSecondary),
+              style: TextStyle(color: context.editorColors.textSecondary),
             ),
           ],
         ),
       ),
     );
   }
+}
+
+bool _usesEnglishUi(BuildContext context) =>
+    Localizations.localeOf(context).languageCode == 'en';
+
+bool _hasControllerError(EditorController controller) =>
+    controller.errorPresentation != null || controller.errorMessage != null;
+
+String? _localizedControllerError(
+  BuildContext context,
+  EditorController controller,
+) {
+  if (!_hasControllerError(controller)) {
+    return null;
+  }
+  return localizedPresentationMessage(
+    context.l10n,
+    controller.errorPresentation,
+    legacyFallback: controller.errorMessage,
+  );
+}
+
+String? _localizedControllerMessage(
+  BuildContext context,
+  EditorController controller,
+) {
+  final error = _localizedControllerError(context, controller);
+  if (error != null) {
+    return error;
+  }
+  if (controller.statusPresentation == null &&
+      controller.statusMessage == null) {
+    return null;
+  }
+  return localizedPresentationMessage(
+    context.l10n,
+    controller.statusPresentation,
+    legacyFallback: controller.statusMessage,
+  );
+}
+
+String _localizedCatalogStyleSecondaryLabel(
+  BuildContext context,
+  StyleCatalogItem style,
+) {
+  final family = localizedStyleFamilyLabel(context.l10n, style.family);
+  if (_usesEnglishUi(context)) {
+    return family;
+  }
+  final englishName = style.displayNameEn.trim();
+  return englishName.isEmpty ? family : '$family · $englishName';
+}
+
+String _localizedManualDisabledReason(
+  BuildContext context,
+  EditorController controller,
+) {
+  final edit = controller.selectedEdit;
+  if (edit == null) {
+    return context.l10n.manualUnavailableNeedPrompt;
+  }
+  if (edit.editMode == 'reference') {
+    return context.l10n.manualUnavailableReference;
+  }
+  if (edit.engine.toLowerCase() != 'opencv') {
+    return context.l10n.manualUnavailableEngine;
+  }
+  return context.l10n.manualUnavailableGeneric;
+}
+
+String? _localizedSafeExplanation(BuildContext context, EditHistoryItem item) {
+  final explanation = item.explanation?.trim();
+  if (explanation == null || explanation.isEmpty || _usesEnglishUi(context)) {
+    return null;
+  }
+  return explanation;
 }

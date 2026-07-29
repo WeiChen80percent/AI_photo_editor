@@ -8,7 +8,22 @@ import 'edit_models.dart';
 
 enum EditorTool { prompt, styles, reference, manual, history }
 
-enum ComparisonView { original, result }
+enum ComparisonView { original, compare, result }
+
+enum ComparisonBaseline { original, parent }
+
+@immutable
+class EditorPresentationMessage {
+  const EditorPresentationMessage(
+    this.code, {
+    this.arguments = const <String, Object?>{},
+    this.details = const <String, dynamic>{},
+  });
+
+  final String code;
+  final Map<String, Object?> arguments;
+  final Map<String, dynamic> details;
+}
 
 class EditorController extends ChangeNotifier {
   static const String originalParentSentinel = 'original';
@@ -31,10 +46,14 @@ class EditorController extends ChangeNotifier {
   EditHistoryItem? selectedEdit;
   EditorTool? activeTool;
   ComparisonView comparisonView = ComparisonView.result;
+  ComparisonBaseline comparisonBaseline = ComparisonBaseline.original;
+  double comparisonSplit = 0.5;
 
   bool isProcessing = false;
   String? errorMessage;
   String? statusMessage;
+  EditorPresentationMessage? errorPresentation;
+  EditorPresentationMessage? statusPresentation;
 
   ManualSchema? manualSchema;
   StyleCatalog? styleCatalog;
@@ -62,6 +81,27 @@ class EditorController extends ChangeNotifier {
 
   String? get currentResultUrl =>
       manualPreview?.resultUrl ?? selectedEdit?.resultUrl;
+
+  EditHistoryItem? get comparisonParentEdit {
+    final parentEditId = hasUncommittedPreview
+        ? manualSourceEditId
+        : selectedEdit?.parentEditId;
+    if (parentEditId == null || parentEditId == originalParentSentinel) {
+      return null;
+    }
+    return _findEdit(parentEditId);
+  }
+
+  bool get canCompareWithParent => comparisonParentEdit != null;
+
+  bool get comparisonUsesParent =>
+      comparisonBaseline == ComparisonBaseline.parent && canCompareWithParent;
+
+  Uint8List? get comparisonBaselineBytes =>
+      comparisonUsesParent ? null : originalImageBytes;
+
+  String? get comparisonBaselineUrl =>
+      comparisonUsesParent ? comparisonParentEdit!.resultUrl : originalImageUrl;
 
   bool get isOriginalBaseSelected =>
       selectedEdit == null && selectedEditId == originalParentSentinel;
@@ -151,6 +191,20 @@ class EditorController extends ChangeNotifier {
     return '這個版本目前不支援手動調整。';
   }
 
+  String get manualDisabledCode {
+    final edit = selectedEdit;
+    if (edit == null) {
+      return 'manual_need_prompt';
+    }
+    if (edit.editMode == 'reference') {
+      return 'manual_reference_unsupported';
+    }
+    if (edit.engine.toLowerCase() != 'opencv') {
+      return 'manual_engine_unsupported';
+    }
+    return 'manual_unavailable';
+  }
+
   String get currentSummary {
     final edit = selectedEdit;
     if (edit == null) {
@@ -189,14 +243,41 @@ class EditorController extends ChangeNotifier {
   }
 
   void setComparisonView(ComparisonView view) {
-    comparisonView = view;
+    final nextView = view == ComparisonView.original || hasResult
+        ? view
+        : ComparisonView.original;
+    if (comparisonView == nextView) {
+      return;
+    }
+    comparisonView = nextView;
+    _notify();
+  }
+
+  void setComparisonBaseline(ComparisonBaseline baseline) {
+    final nextBaseline =
+        baseline == ComparisonBaseline.parent && !canCompareWithParent
+        ? ComparisonBaseline.original
+        : baseline;
+    if (comparisonBaseline == nextBaseline) {
+      return;
+    }
+    comparisonBaseline = nextBaseline;
+    _notify();
+  }
+
+  void setComparisonSplit(double value) {
+    final nextValue = value.clamp(0.05, 0.95).toDouble();
+    if ((comparisonSplit - nextValue).abs() < 0.000001) {
+      return;
+    }
+    comparisonSplit = nextValue;
     _notify();
   }
 
   void setPromptDraft(String value) {
     promptDraft = value;
-    errorMessage = null;
-    statusMessage = null;
+    _clearError();
+    _clearStatus();
     _notify();
   }
 
@@ -209,9 +290,11 @@ class EditorController extends ChangeNotifier {
     selectedEditId = null;
     selectedEdit = null;
     history = <EditHistoryItem>[];
-    comparisonView = ComparisonView.result;
-    errorMessage = null;
-    statusMessage = '已選擇新的原始圖片';
+    comparisonView = ComparisonView.original;
+    comparisonBaseline = ComparisonBaseline.original;
+    comparisonSplit = 0.5;
+    _clearError();
+    _setStatus('已選擇新的原始圖片', 'status_selected_new_original');
     _notify();
   }
 
@@ -224,33 +307,83 @@ class EditorController extends ChangeNotifier {
     selectedEditId = null;
     selectedEdit = null;
     history = <EditHistoryItem>[];
-    errorMessage = null;
-    statusMessage = null;
+    comparisonView = ComparisonView.original;
+    comparisonBaseline = ComparisonBaseline.original;
+    comparisonSplit = 0.5;
+    _clearError();
+    _clearStatus();
     _notify();
   }
 
   void setReferenceImage(Uint8List bytes) {
     referenceImageBytes = bytes;
-    errorMessage = null;
-    statusMessage = '參考圖已準備完成';
+    _clearError();
+    _setStatus('參考圖已準備完成', 'status_reference_ready');
     _notify();
   }
 
   void clearReferenceImage() {
     referenceImageBytes = null;
-    errorMessage = null;
+    _clearError();
     _notify();
   }
 
   void clearMessages() {
+    _clearError();
+    _clearStatus();
+  }
+
+  void _setError(
+    String legacyText,
+    String code, {
+    Map<String, Object?> arguments = const <String, Object?>{},
+    Map<String, dynamic> details = const <String, dynamic>{},
+  }) {
+    errorMessage = legacyText;
+    errorPresentation = EditorPresentationMessage(
+      code,
+      arguments: arguments,
+      details: details,
+    );
+  }
+
+  void _setStatus(
+    String legacyText,
+    String code, {
+    Map<String, Object?> arguments = const <String, Object?>{},
+    Map<String, dynamic> details = const <String, dynamic>{},
+  }) {
+    statusMessage = legacyText;
+    statusPresentation = EditorPresentationMessage(
+      code,
+      arguments: arguments,
+      details: details,
+    );
+  }
+
+  void _setApiError(ApiException error) {
+    _setError(
+      _friendlyApiMessage(error),
+      error.code ?? 'backend_error',
+      arguments: <String, Object?>{'statusCode': error.statusCode},
+      details: error.details,
+    );
+  }
+
+  void _clearError() {
     errorMessage = null;
+    errorPresentation = null;
+  }
+
+  void _clearStatus() {
     statusMessage = null;
+    statusPresentation = null;
   }
 
   Future<bool> submitPrompt() async {
     final prompt = promptDraft.trim();
     if (prompt.isEmpty) {
-      errorMessage = '請輸入修圖指令。';
+      _setError('請輸入修圖指令。', 'prompt_required');
       _notify();
       return false;
     }
@@ -260,7 +393,7 @@ class EditorController extends ChangeNotifier {
   Future<bool> submitReference() async {
     final reference = referenceImageBytes;
     if (reference == null) {
-      errorMessage = '請先選擇參考圖片。';
+      _setError('請先選擇參考圖片。', 'reference_required');
       _notify();
       return false;
     }
@@ -274,7 +407,7 @@ class EditorController extends ChangeNotifier {
       return true;
     }
     isLoadingStyles = true;
-    errorMessage = null;
+    _clearError();
     _notify();
     try {
       styleCatalog = await _api.fetchStyleCatalog();
@@ -283,10 +416,14 @@ class EditorController extends ChangeNotifier {
       }
       return true;
     } on ApiException catch (error) {
-      errorMessage = _friendlyApiMessage(error);
+      _setApiError(error);
       return false;
     } catch (error) {
-      errorMessage = '無法載入風格目錄：$error';
+      _setError(
+        '無法載入風格目錄：$error',
+        'style_catalog_load_failed',
+        arguments: <String, Object?>{'error': error.runtimeType.toString()},
+      );
       return false;
     } finally {
       isLoadingStyles = false;
@@ -311,14 +448,18 @@ class EditorController extends ChangeNotifier {
     }
     final canContinue = sessionId != null && selectedEditId != null;
     if (!canContinue && originalImageBytes == null) {
-      errorMessage = '請先選擇原始圖片。';
+      _setError('請先選擇原始圖片。', 'original_required');
       _notify();
       return false;
     }
 
     isProcessing = true;
-    errorMessage = null;
-    statusMessage = referenceBytes == null ? '正在解析修圖指令…' : '正在套用參考圖…';
+    _clearError();
+    if (referenceBytes == null) {
+      _setStatus('正在解析修圖指令…', 'parsing_prompt');
+    } else {
+      _setStatus('正在套用參考圖…', 'applying_reference');
+    }
     _notify();
 
     try {
@@ -331,7 +472,7 @@ class EditorController extends ChangeNotifier {
       );
       _applyCommittedItem(item);
       await refreshHistory(preferredEditId: item.editId, quiet: true);
-      statusMessage = '修圖完成';
+      _setStatus('修圖完成', 'edit_complete');
       comparisonView = ComparisonView.result;
       return true;
     } on ApiException catch (error) {
@@ -340,16 +481,24 @@ class EditorController extends ChangeNotifier {
           (error.code == 'adaptive_feedback_satisfied' ||
               error.code == 'adaptive_step_converged');
       if (isExpectedAdaptiveStop) {
-        errorMessage = null;
-        statusMessage = _friendlyApiMessage(error);
+        _clearError();
+        _setStatus(
+          _friendlyApiMessage(error),
+          error.code ?? 'adaptive_feedback_satisfied',
+          details: error.details,
+        );
       } else {
-        errorMessage = _friendlyApiMessage(error);
-        statusMessage = null;
+        _setApiError(error);
+        _clearStatus();
       }
       return false;
     } catch (error) {
-      errorMessage = '修圖失敗：$error';
-      statusMessage = null;
+      _setError(
+        '修圖失敗：$error',
+        'edit_failed',
+        arguments: <String, Object?>{'error': error.runtimeType.toString()},
+      );
+      _clearStatus();
       return false;
     } finally {
       isProcessing = false;
@@ -384,14 +533,15 @@ class EditorController extends ChangeNotifier {
       originalImageUrl =
           selectedEdit?.originalUrl ??
           (history.isEmpty ? originalImageUrl : history.first.originalUrl);
+      _ensureComparisonState();
       if (!quiet) {
-        statusMessage = '歷史紀錄已同步';
+        _setStatus('歷史紀錄已同步', 'history_synced');
       }
       _notify();
       return true;
     } on ApiException catch (error) {
       if (!quiet) {
-        errorMessage = _friendlyApiMessage(error);
+        _setApiError(error);
         _notify();
       }
       return false;
@@ -409,8 +559,9 @@ class EditorController extends ChangeNotifier {
     selectedEditId = item.editId;
     originalImageUrl = item.originalUrl ?? originalImageUrl;
     comparisonView = ComparisonView.result;
-    errorMessage = null;
-    statusMessage = '已切換到歷史版本';
+    _ensureComparisonState();
+    _clearError();
+    _setStatus('已切換到歷史版本', 'switched_history');
     _notify();
     return true;
   }
@@ -423,8 +574,9 @@ class EditorController extends ChangeNotifier {
     selectedEdit = null;
     selectedEditId = originalParentSentinel;
     comparisonView = ComparisonView.original;
-    errorMessage = null;
-    statusMessage = '已切換到原圖，可建立新的歷史分支';
+    comparisonBaseline = ComparisonBaseline.original;
+    _clearError();
+    _setStatus('已切換到原圖，可建立新的歷史分支', 'switched_original');
     _notify();
     return true;
   }
@@ -432,7 +584,7 @@ class EditorController extends ChangeNotifier {
   Future<bool> openManual() async {
     final edit = selectedEdit;
     if (edit == null || !canOpenManual) {
-      errorMessage = manualDisabledReason;
+      _setError(manualDisabledReason, manualDisabledCode);
       _notify();
       return false;
     }
@@ -443,7 +595,7 @@ class EditorController extends ChangeNotifier {
     }
 
     isLoadingManual = true;
-    errorMessage = null;
+    _clearError();
     _notify();
     try {
       manualSchema ??= await _api.fetchManualSchema();
@@ -462,10 +614,14 @@ class EditorController extends ChangeNotifier {
       manualAdvancedExpanded = false;
       return true;
     } on ApiException catch (error) {
-      errorMessage = _friendlyApiMessage(error);
+      _setApiError(error);
       return false;
     } catch (error) {
-      errorMessage = '無法開啟手動調整：$error';
+      _setError(
+        '無法開啟手動調整：$error',
+        'open_manual_failed',
+        arguments: <String, Object?>{'error': error.runtimeType.toString()},
+      );
       return false;
     } finally {
       isLoadingManual = false;
@@ -483,8 +639,8 @@ class EditorController extends ChangeNotifier {
       return;
     }
     manualValues[spec.key] = spec.normalize(value);
-    errorMessage = null;
-    statusMessage = null;
+    _clearError();
+    _clearStatus();
     _scheduleManualPreview();
     _notify();
   }
@@ -500,8 +656,8 @@ class EditorController extends ChangeNotifier {
     manualValues = Map<String, double>.from(manualSourceValues);
     _cancelPreview(clearDraft: false);
     manualPreview = null;
-    errorMessage = null;
-    statusMessage = '已回到來源版本參數';
+    _clearError();
+    _setStatus('已回到來源版本參數', 'reset_source_parameters');
     _notify();
   }
 
@@ -562,14 +718,19 @@ class EditorController extends ChangeNotifier {
         return;
       }
       manualPreview = response;
-      errorMessage = null;
+      _ensureComparisonState();
+      _clearError();
     } on ApiException catch (error) {
       if (sequence == _previewSequence) {
-        errorMessage = _friendlyApiMessage(error);
+        _setApiError(error);
       }
     } catch (error) {
       if (sequence == _previewSequence) {
-        errorMessage = '手動預覽失敗：$error';
+        _setError(
+          '手動預覽失敗：$error',
+          'manual_preview_failed',
+          arguments: <String, Object?>{'error': error.runtimeType.toString()},
+        );
       }
     } finally {
       if (identical(_previewClient, client)) {
@@ -595,8 +756,8 @@ class EditorController extends ChangeNotifier {
     ++_previewSequence;
     isPreviewing = false;
     isCommittingManual = true;
-    errorMessage = null;
-    statusMessage = '正在套用手動調整…';
+    _clearError();
+    _setStatus('正在套用手動調整…', 'applying_manual');
     _notify();
 
     try {
@@ -624,16 +785,20 @@ class EditorController extends ChangeNotifier {
         manualValues = Map<String, double>.from(manualSourceValues);
       }
       manualPreview = null;
-      statusMessage = '手動調整已套用並加入歷史';
+      _setStatus('手動調整已套用並加入歷史', 'manual_committed');
       comparisonView = ComparisonView.result;
       return true;
     } on ApiException catch (error) {
-      errorMessage = _friendlyApiMessage(error);
-      statusMessage = null;
+      _setApiError(error);
+      _clearStatus();
       return false;
     } catch (error) {
-      errorMessage = '手動調整套用失敗：$error';
-      statusMessage = null;
+      _setError(
+        '手動調整套用失敗：$error',
+        'manual_commit_failed',
+        arguments: <String, Object?>{'error': error.runtimeType.toString()},
+      );
+      _clearStatus();
       return false;
     } finally {
       isCommittingManual = false;
@@ -655,6 +820,7 @@ class EditorController extends ChangeNotifier {
       history = <EditHistoryItem>[...history]..[existingIndex] = item;
     }
     manualPreview = null;
+    _ensureComparisonState();
   }
 
   EditHistoryItem? _findEdit(String editId) {
@@ -664,6 +830,16 @@ class EditorController extends ChangeNotifier {
       }
     }
     return null;
+  }
+
+  void _ensureComparisonState() {
+    if (!hasResult && comparisonView != ComparisonView.original) {
+      comparisonView = ComparisonView.original;
+    }
+    if (comparisonBaseline == ComparisonBaseline.parent &&
+        !canCompareWithParent) {
+      comparisonBaseline = ComparisonBaseline.original;
+    }
   }
 
   String _friendlyApiMessage(ApiException error) {
@@ -758,6 +934,7 @@ class EditorController extends ChangeNotifier {
       manualValues = <String, double>{};
       manualAdvancedExpanded = false;
     }
+    _ensureComparisonState();
   }
 
   void _notify() {

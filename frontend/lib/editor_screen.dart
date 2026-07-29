@@ -1,14 +1,18 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'api_service.dart';
+import 'app_settings.dart';
 import 'app_theme.dart';
 import 'edit_models.dart';
 import 'editor_canvas.dart';
 import 'editor_controller.dart';
+import 'editor_localizations.dart';
 import 'editor_panels.dart';
+import 'l10n/l10n_context.dart';
 import 'tool_dock.dart';
 
 class EditorScreen extends StatefulWidget {
@@ -54,31 +58,87 @@ class _EditorScreenState extends State<EditorScreen> {
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, _) {
+        final l10n = context.l10n;
+        final colors = context.editorColors;
+        final settings = AppSettingsScope.maybeOf(context);
+        final isEnglish =
+            settings?.isEnglish ??
+            Localizations.localeOf(context).languageCode == 'en';
+        final isDark =
+            settings?.isDarkMode ??
+            Theme.of(context).brightness == Brightness.dark;
+        final isNarrowAppBar = MediaQuery.sizeOf(context).width < 480;
+        final actionConstraints = BoxConstraints.tightFor(
+          width: isNarrowAppBar ? 44 : 48,
+          height: 48,
+        );
         return Scaffold(
           appBar: AppBar(
             toolbarHeight: 58,
-            title: const Text('AI 修圖'),
-            leading: _controller.sessionId == null
-                ? const Padding(
-                    padding: EdgeInsets.all(14),
+            titleSpacing: isNarrowAppBar ? AppSpacing.xxs : 0,
+            title: Text(
+              isNarrowAppBar ? l10n.appCompactTitle : l10n.appTitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            leadingWidth: isNarrowAppBar ? 44 : null,
+            leading: _controller.sessionId == null && isNarrowAppBar
+                ? null
+                : _controller.sessionId == null
+                ? Padding(
+                    padding: const EdgeInsets.all(14),
                     child: Icon(
                       Icons.auto_fix_high,
-                      color: AppColors.accentBright,
+                      color: colors.accentBright,
                     ),
                   )
                 : IconButton(
-                    tooltip: '清除目前工作',
+                    tooltip: l10n.clearCurrentWork,
                     onPressed: _confirmClearWorkspace,
                     icon: const Icon(Icons.close),
                   ),
             actions: [
               IconButton(
+                key: const Key('language_toggle'),
+                constraints: actionConstraints,
+                tooltip: isEnglish
+                    ? l10n.switchToTraditionalChinese
+                    : l10n.switchToEnglish,
+                onPressed: settings == null
+                    ? null
+                    : () => unawaited(settings.toggleLocale()),
+                icon: Text(
+                  isEnglish ? '中' : 'EN',
+                  maxLines: 1,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              IconButton(
+                key: const Key('theme_toggle'),
+                constraints: actionConstraints,
+                tooltip: isDark
+                    ? l10n.switchToLightTheme
+                    : l10n.switchToDarkTheme,
+                onPressed: settings == null
+                    ? null
+                    : () => unawaited(settings.toggleThemeMode()),
+                icon: Icon(
+                  isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                ),
+              ),
+              IconButton(
                 key: const Key('appbar_pick_original'),
-                tooltip: _controller.hasOriginal ? '更換原圖' : '選擇原圖',
+                constraints: actionConstraints,
+                tooltip: _controller.hasOriginal
+                    ? l10n.changeOriginal
+                    : l10n.chooseOriginal,
                 onPressed: _pickOriginal,
                 icon: const Icon(Icons.add_photo_alternate_outlined),
               ),
-              const SizedBox(width: 4),
+              if (!isNarrowAppBar) const SizedBox(width: 2),
             ],
           ),
           body: LayoutBuilder(
@@ -88,8 +148,10 @@ class _EditorScreenState extends State<EditorScreen> {
               final isExpanded = width >= 1024;
               final isLandscape =
                   MediaQuery.orientationOf(context) == Orientation.landscape;
+              final shortLandscape = isLandscape && constraints.maxHeight < 360;
               final sideBySide =
-                  isExpanded || (!isCompact && isLandscape && width >= 760);
+                  isExpanded ||
+                  (isLandscape && width >= (shortLandscape ? 480 : 760));
               if (isExpanded) {
                 _dismissToolSheetForExpandedLayout();
               }
@@ -97,7 +159,11 @@ class _EditorScreenState extends State<EditorScreen> {
                 children: [
                   if (_controller.statusMessage != null)
                     PanelMessage(
-                      message: _controller.statusMessage!,
+                      message: localizedPresentationMessage(
+                        l10n,
+                        _controller.statusPresentation,
+                        legacyFallback: _controller.statusMessage,
+                      ),
                       isError: false,
                     ),
                   Expanded(
@@ -175,8 +241,8 @@ class _EditorScreenState extends State<EditorScreen> {
         context: context,
         isScrollControlled: true,
         useSafeArea: true,
-        backgroundColor: AppColors.surface,
-        barrierColor: Colors.black54,
+        backgroundColor: context.editorColors.surface,
+        barrierColor: context.editorColors.modalBarrier,
         builder: (sheetContext) {
           _toolSheetContext = sheetContext;
           final initial =
@@ -208,7 +274,7 @@ class _EditorScreenState extends State<EditorScreen> {
                           width: 38,
                           height: 4,
                           decoration: BoxDecoration(
-                            color: AppColors.borderStrong,
+                            color: context.editorColors.borderStrong,
                             borderRadius: BorderRadius.circular(999),
                           ),
                         ),
@@ -345,7 +411,6 @@ class _EditorScreenState extends State<EditorScreen> {
         context: context,
         builder: (dialogContext) {
           return Dialog(
-            backgroundColor: AppColors.surface,
             child: SizedBox(
               width: 420,
               height: 560,
@@ -389,17 +454,18 @@ class _EditorScreenState extends State<EditorScreen> {
     final discard = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
+        final l10n = dialogContext.l10n;
         return AlertDialog(
-          title: const Text('捨棄尚未套用的調整？'),
-          content: const Text('切換歷史版本會捨棄目前手動調整草稿。'),
+          title: Text(l10n.discardDraftTitle),
+          content: Text(l10n.discardDraftForHistory),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('返回'),
+              child: Text(l10n.actionBack),
             ),
             FilledButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('捨棄並切換'),
+              child: Text(l10n.actionDiscardAndSwitch),
             ),
           ],
         );
@@ -417,17 +483,18 @@ class _EditorScreenState extends State<EditorScreen> {
     final discard = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
+        final l10n = dialogContext.l10n;
         return AlertDialog(
-          title: const Text('捨棄尚未套用的調整？'),
-          content: const Text('回到原圖建立新分支會捨棄目前手動調整草稿。'),
+          title: Text(l10n.discardDraftTitle),
+          content: Text(l10n.discardDraftForOriginal),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('返回'),
+              child: Text(l10n.actionBack),
             ),
             FilledButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('捨棄並切換'),
+              child: Text(l10n.actionDiscardAndSwitch),
             ),
           ],
         );
@@ -443,17 +510,18 @@ class _EditorScreenState extends State<EditorScreen> {
       final replace = await showDialog<bool>(
         context: context,
         builder: (dialogContext) {
+          final l10n = dialogContext.l10n;
           return AlertDialog(
-            title: const Text('更換原始圖片？'),
-            content: const Text('更換後會清除目前 session 與未套用的手動草稿。'),
+            title: Text(l10n.replaceOriginalTitle),
+            content: Text(l10n.replaceOriginalMessage),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(dialogContext).pop(false),
-                child: const Text('取消'),
+                child: Text(l10n.actionCancel),
               ),
               FilledButton(
                 onPressed: () => Navigator.of(dialogContext).pop(true),
-                child: const Text('更換圖片'),
+                child: Text(l10n.actionReplaceImage),
               ),
             ],
           );
@@ -482,9 +550,12 @@ class _EditorScreenState extends State<EditorScreen> {
       return file == null ? null : await file.readAsBytes();
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('無法選擇圖片：$error')));
+        final l10n = context.l10n;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.imagePickFailed(error.runtimeType.toString())),
+          ),
+        );
       }
       return null;
     }
@@ -494,17 +565,18 @@ class _EditorScreenState extends State<EditorScreen> {
     final clear = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
+        final l10n = dialogContext.l10n;
         return AlertDialog(
-          title: const Text('清除目前工作？'),
-          content: const Text('畫面會回到初始狀態，後端已保存的歷史不會被刪除。'),
+          title: Text(l10n.clearWorkTitle),
+          content: Text(l10n.clearWorkMessage),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('取消'),
+              child: Text(l10n.actionCancel),
             ),
             FilledButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('清除畫面'),
+              child: Text(l10n.actionClearScreen),
             ),
           ],
         );
@@ -525,13 +597,14 @@ class _DesktopInspector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.editorColors;
     return AnimatedContainer(
       key: const Key('desktop_inspector'),
       duration: const Duration(milliseconds: 180),
       width: 380,
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(left: BorderSide(color: AppColors.border)),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        border: Border(left: BorderSide(color: colors.border)),
       ),
       child: child,
     );
