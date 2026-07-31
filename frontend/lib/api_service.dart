@@ -12,6 +12,7 @@ abstract class EditorApi {
     required Uint8List? originalBytes,
     required Uint8List? referenceBytes,
     required String prompt,
+    required String clientRequestId,
     String? sessionId,
     String? parentEditId,
   });
@@ -21,6 +22,8 @@ abstract class EditorApi {
   Future<StyleCatalog> fetchStyleCatalog();
 
   Future<ManualSchema> fetchManualSchema();
+
+  Future<EditContractSchema> fetchEditContractSchema();
 
   Future<ManualEditResponse> previewManual({
     required String sessionId,
@@ -93,6 +96,7 @@ class ApiService implements EditorApi {
     required Uint8List? originalBytes,
     required Uint8List? referenceBytes,
     required String prompt,
+    required String clientRequestId,
     String? sessionId,
     String? parentEditId,
   }) async {
@@ -100,6 +104,7 @@ class ApiService implements EditorApi {
       originalBytes: originalBytes,
       referenceBytes: referenceBytes,
       prompt: prompt,
+      clientRequestId: clientRequestId,
       sessionId: sessionId,
       parentEditId: parentEditId,
     );
@@ -123,11 +128,13 @@ class ApiService implements EditorApi {
     required Uint8List? originalBytes,
     required Uint8List? referenceBytes,
     required String prompt,
+    required String clientRequestId,
     String? sessionId,
     String? parentEditId,
   }) {
     final request = http.MultipartRequest('POST', Uri.parse('$baseUrl/edit'))
-      ..fields['prompt'] = prompt;
+      ..fields['prompt'] = prompt
+      ..fields['client_request_id'] = clientRequestId;
 
     if (sessionId != null && sessionId.isNotEmpty) {
       request.fields['session_id'] = sessionId;
@@ -173,6 +180,12 @@ class ApiService implements EditorApi {
   Future<ManualSchema> fetchManualSchema() async {
     final response = await _get('/edit/manual/schema');
     return ManualSchema.fromJson(response);
+  }
+
+  @override
+  Future<EditContractSchema> fetchEditContractSchema() async {
+    final response = await _get('/edit/contracts/schema');
+    return EditContractSchema.fromJson(response);
   }
 
   @override

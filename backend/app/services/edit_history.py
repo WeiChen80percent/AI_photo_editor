@@ -34,6 +34,7 @@ class EditHistoryStore:
         self.storage_dir = storage_dir
         self._locks_guard = threading.Lock()
         self._session_locks: dict[str, threading.Lock] = {}
+        self._idempotency_lock = threading.Lock()
 
     def new_session_id(self) -> str:
         return f"session_{uuid4().hex}"
@@ -128,6 +129,98 @@ class EditHistoryStore:
             self._write_session_atomic(session_id, session)
             return session, record, True
 
+    def find_edit_request_idempotent(
+        self,
+        *,
+        namespace: str,
+        client_request_id: str,
+        request_hash: str,
+    ) -> tuple[dict[str, Any], dict[str, Any]] | None:
+        """Find one previously committed request across edit sessions.
+
+        Contract uploads can be retried before the client has received a
+        session id, so lookup cannot be limited to a caller-supplied session.
+        Reusing the same request id with different immutable inputs is a
+        conflict instead of silently returning unrelated output.
+        """
+
+        normalized_namespace = self._validate_metadata_namespace(namespace)
+        normalized_request_id = self._require_idempotency_text(
+            client_request_id,
+            "client_request_id",
+        )
+        normalized_hash = self._require_idempotency_text(
+            request_hash,
+            "request_hash",
+        )
+        with self._idempotency_lock:
+            return self._find_edit_request_idempotent_locked(
+                namespace=normalized_namespace,
+                client_request_id=normalized_request_id,
+                request_hash=normalized_hash,
+            )
+
+    def save_edit_request_idempotent(
+        self,
+        record: dict[str, Any],
+        *,
+        namespace: str,
+        client_request_id: str,
+        request_hash: str,
+    ) -> tuple[dict[str, Any], dict[str, Any], bool]:
+        """Atomically append one namespaced request across all sessions."""
+
+        session_id = self._validate_session_id(record.get("session_id"))
+        self._validate_edit_id(record.get("edit_id"))
+        parent_edit_id = record.get("parent_edit_id")
+        if parent_edit_id is not None:
+            self._validate_edit_id(parent_edit_id)
+        normalized_namespace = self._validate_metadata_namespace(namespace)
+        normalized_request_id = self._require_idempotency_text(
+            client_request_id,
+            "client_request_id",
+        )
+        normalized_hash = self._require_idempotency_text(
+            request_hash,
+            "request_hash",
+        )
+        metadata = record.get(normalized_namespace)
+        if not isinstance(metadata, dict):
+            raise EditHistoryConflict(
+                f"{normalized_namespace} idempotency metadata is required"
+            )
+        if (
+            str(metadata.get("client_request_id") or "")
+            != normalized_request_id
+            or str(metadata.get("contract_hash") or "") != normalized_hash
+        ):
+            raise EditHistoryConflict(
+                f"{normalized_namespace} idempotency metadata does not match request"
+            )
+
+        with self._idempotency_lock:
+            existing = self._find_edit_request_idempotent_locked(
+                namespace=normalized_namespace,
+                client_request_id=normalized_request_id,
+                request_hash=normalized_hash,
+            )
+            if existing is not None:
+                session, persisted = existing
+                return session, persisted, False
+            with self._session_lock(session_id):
+                try:
+                    session = self.load_session(session_id)
+                except EditHistoryNotFound:
+                    session = {
+                        "session_id": session_id,
+                        "created_at": record["created_at"],
+                        "edits": [],
+                    }
+                session["updated_at"] = record["created_at"]
+                session.setdefault("edits", []).append(record)
+                self._write_session_atomic(session_id, session)
+                return session, record, True
+
     def find_edit(self, session_id: str, edit_id: str) -> dict[str, Any]:
         edit_id = self._validate_edit_id(edit_id)
         session = self.load_session(session_id)
@@ -166,6 +259,7 @@ class EditHistoryStore:
         adaptive: dict[str, Any] | None = None,
         style: dict[str, Any] | None = None,
         photo_git: dict[str, Any] | None = None,
+        edit_contract: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         return {
             "session_id": session_id,
@@ -188,6 +282,7 @@ class EditHistoryStore:
             "adaptive": adaptive,
             "style": style,
             "photo_git": photo_git,
+            "edit_contract": edit_contract,
             "parameters": parameters,
             "preset_name": preset_name,
             "explanation": explanation,
@@ -236,3 +331,51 @@ class EditHistoryStore:
     def _session_lock(self, session_id: str) -> threading.Lock:
         with self._locks_guard:
             return self._session_locks.setdefault(session_id, threading.Lock())
+
+    def _find_edit_request_idempotent_locked(
+        self,
+        *,
+        namespace: str,
+        client_request_id: str,
+        request_hash: str,
+    ) -> tuple[dict[str, Any], dict[str, Any]] | None:
+        if not self.storage_dir.exists():
+            return None
+        for session_path in sorted(self.storage_dir.glob("session_*.json")):
+            session_id = session_path.stem
+            if _SESSION_ID_PATTERN.fullmatch(session_id) is None:
+                continue
+            session = self.load_session(session_id)
+            for existing in session.get("edits", []):
+                metadata = (
+                    existing.get(namespace)
+                    if isinstance(existing, dict)
+                    else None
+                )
+                if (
+                    not isinstance(metadata, dict)
+                    or str(metadata.get("client_request_id") or "")
+                    != client_request_id
+                ):
+                    continue
+                if str(metadata.get("contract_hash") or "") != request_hash:
+                    raise EditHistoryConflict(
+                        "client_request_id was already used for another "
+                        f"{namespace} request"
+                    )
+                return session, existing
+        return None
+
+    @staticmethod
+    def _validate_metadata_namespace(namespace: Any) -> str:
+        normalized = str(namespace or "").strip()
+        if re.fullmatch(r"[a-z][a-z0-9_]*", normalized) is None:
+            raise EditHistoryConflict("Invalid idempotency namespace")
+        return normalized
+
+    @staticmethod
+    def _require_idempotency_text(value: Any, field_name: str) -> str:
+        normalized = str(value or "").strip()
+        if not normalized:
+            raise EditHistoryConflict(f"{field_name} is required")
+        return normalized

@@ -56,6 +56,7 @@ class EditorController extends ChangeNotifier {
   EditorPresentationMessage? statusPresentation;
 
   ManualSchema? manualSchema;
+  EditContractSchema? editContractSchema;
   StyleCatalog? styleCatalog;
   String? selectedStyleFamily;
   bool isLoadingStyles = false;
@@ -65,6 +66,7 @@ class EditorController extends ChangeNotifier {
   Map<String, double> manualValues = <String, double>{};
   ManualEditResponse? manualPreview;
   bool isLoadingManual = false;
+  bool isLoadingEditContractSchema = false;
   bool isPreviewing = false;
   bool isCommittingManual = false;
   bool manualAdvancedExpanded = false;
@@ -86,7 +88,10 @@ class EditorController extends ChangeNotifier {
   http.Client? _previewClient;
   int _previewSequence = 0;
   int _photoGitRequestSequence = 0;
+  int _editRequestSequence = 0;
   String? _photoGitClientRequestId;
+  String? _pendingEditClientRequestId;
+  int? _pendingEditFingerprint;
   bool _disposed = false;
 
   bool get hasOriginal =>
@@ -681,6 +686,7 @@ class EditorController extends ChangeNotifier {
     selectedEditId = null;
     selectedEdit = null;
     history = <EditHistoryItem>[];
+    _clearPendingEditRequest();
     comparisonView = ComparisonView.original;
     comparisonBaseline = ComparisonBaseline.original;
     comparisonSplit = 0.5;
@@ -699,6 +705,7 @@ class EditorController extends ChangeNotifier {
     selectedEditId = null;
     selectedEdit = null;
     history = <EditHistoryItem>[];
+    _clearPendingEditRequest();
     comparisonView = ComparisonView.original;
     comparisonBaseline = ComparisonBaseline.original;
     comparisonSplit = 0.5;
@@ -773,8 +780,8 @@ class EditorController extends ChangeNotifier {
   }
 
   Future<bool> submitPrompt() async {
-    final prompt = promptDraft.trim();
-    if (prompt.isEmpty) {
+    final prompt = promptDraft;
+    if (prompt.trim().isEmpty) {
       _setError('請輸入修圖指令。', 'prompt_required');
       _notify();
       return false;
@@ -850,6 +857,22 @@ class EditorController extends ChangeNotifier {
       return false;
     }
 
+    final requestFingerprint = Object.hash(
+      prompt,
+      referenceBytes,
+      canContinue ? sessionId : null,
+      canContinue ? selectedEditId : null,
+      canContinue ? null : originalImageBytes,
+    );
+    if (_pendingEditFingerprint != requestFingerprint ||
+        _pendingEditClientRequestId == null) {
+      _pendingEditFingerprint = requestFingerprint;
+      _pendingEditClientRequestId =
+          'flutter_edit_${DateTime.now().microsecondsSinceEpoch}_'
+          '${++_editRequestSequence}';
+    }
+    final clientRequestId = _pendingEditClientRequestId!;
+
     isProcessing = true;
     _clearError();
     if (referenceBytes == null) {
@@ -864,11 +887,16 @@ class EditorController extends ChangeNotifier {
         originalBytes: canContinue ? null : originalImageBytes,
         referenceBytes: referenceBytes,
         prompt: prompt,
+        clientRequestId: clientRequestId,
         sessionId: canContinue ? sessionId : null,
         parentEditId: canContinue ? selectedEditId : null,
       );
       _applyCommittedItem(item);
       await refreshHistory(preferredEditId: item.editId, quiet: true);
+      if (item.editContract != null) {
+        await loadEditContractSchema(quiet: true);
+      }
+      _clearPendingEditRequest();
       _setStatus('修圖完成', 'edit_complete');
       comparisonView = ComparisonView.result;
       return true;
@@ -931,6 +959,9 @@ class EditorController extends ChangeNotifier {
           selectedEdit?.originalUrl ??
           (history.isEmpty ? originalImageUrl : history.first.originalUrl);
       _ensureComparisonState();
+      if (history.any((edit) => edit.editContract != null)) {
+        await loadEditContractSchema(quiet: true);
+      }
       if (!quiet) {
         _setStatus('歷史紀錄已同步', 'history_synced');
       }
@@ -942,6 +973,37 @@ class EditorController extends ChangeNotifier {
         _notify();
       }
       return false;
+    }
+  }
+
+  Future<bool> loadEditContractSchema({bool quiet = false}) async {
+    if (editContractSchema != null) {
+      return true;
+    }
+    if (isLoadingEditContractSchema) {
+      return false;
+    }
+    isLoadingEditContractSchema = true;
+    try {
+      editContractSchema = await _api.fetchEditContractSchema();
+      return true;
+    } on ApiException catch (error) {
+      if (!quiet) {
+        _setApiError(error);
+      }
+      return false;
+    } catch (error) {
+      if (!quiet) {
+        _setError(
+          '無法載入修圖合約定義：$error',
+          'contract_schema_load_failed',
+          arguments: <String, Object?>{'error': error.runtimeType.toString()},
+        );
+      }
+      return false;
+    } finally {
+      isLoadingEditContractSchema = false;
+      _notify();
     }
   }
 
@@ -1226,6 +1288,11 @@ class EditorController extends ChangeNotifier {
     }
     manualPreview = null;
     _ensureComparisonState();
+  }
+
+  void _clearPendingEditRequest() {
+    _pendingEditClientRequestId = null;
+    _pendingEditFingerprint = null;
   }
 
   EditHistoryItem? _findEdit(String editId) {

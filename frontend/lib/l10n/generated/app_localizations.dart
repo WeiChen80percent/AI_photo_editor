@@ -1712,6 +1712,222 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Finish or cancel the current version operation first.'**
   String get errorPhotoGitDraftActive;
+
+  /// No description provided for @contractBadgePassed.
+  ///
+  /// In en, this message translates to:
+  /// **'Contract {passed}/{total} passed'**
+  String contractBadgePassed(int passed, int total);
+
+  /// No description provided for @contractBadgeAdjusted.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjusted to {scale}% to meet the contract'**
+  String contractBadgeAdjusted(int scale);
+
+  /// No description provided for @contractDetailsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified edit contract'**
+  String get contractDetailsTitle;
+
+  /// No description provided for @contractStatusPassed.
+  ///
+  /// In en, this message translates to:
+  /// **'Passed at requested strength'**
+  String get contractStatusPassed;
+
+  /// No description provided for @contractStatusAdjusted.
+  ///
+  /// In en, this message translates to:
+  /// **'Passed after a safe strength adjustment'**
+  String get contractStatusAdjusted;
+
+  /// No description provided for @contractChecks.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification checks'**
+  String get contractChecks;
+
+  /// No description provided for @contractConstraints.
+  ///
+  /// In en, this message translates to:
+  /// **'Understood constraints'**
+  String get contractConstraints;
+
+  /// No description provided for @contractRequestedScale.
+  ///
+  /// In en, this message translates to:
+  /// **'Requested strength'**
+  String get contractRequestedScale;
+
+  /// No description provided for @contractAppliedScale.
+  ///
+  /// In en, this message translates to:
+  /// **'Applied strength'**
+  String get contractAppliedScale;
+
+  /// No description provided for @contractThreshold.
+  ///
+  /// In en, this message translates to:
+  /// **'Threshold'**
+  String get contractThreshold;
+
+  /// No description provided for @contractThresholdSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Threshold source'**
+  String get contractThresholdSource;
+
+  /// No description provided for @contractBaseline.
+  ///
+  /// In en, this message translates to:
+  /// **'Baseline'**
+  String get contractBaseline;
+
+  /// No description provided for @contractActual.
+  ///
+  /// In en, this message translates to:
+  /// **'Actual'**
+  String get contractActual;
+
+  /// No description provided for @contractMetricVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Metric version'**
+  String get contractMetricVersion;
+
+  /// No description provided for @contractTargetVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified target'**
+  String get contractTargetVersion;
+
+  /// No description provided for @contractParentVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Parent'**
+  String get contractParentVersion;
+
+  /// No description provided for @contractVerificationTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification time'**
+  String get contractVerificationTime;
+
+  /// No description provided for @contractVersions.
+  ///
+  /// In en, this message translates to:
+  /// **'Contract versions'**
+  String get contractVersions;
+
+  /// No description provided for @contractRequestedParameters.
+  ///
+  /// In en, this message translates to:
+  /// **'Requested parameters'**
+  String get contractRequestedParameters;
+
+  /// No description provided for @contractActualParameters.
+  ///
+  /// In en, this message translates to:
+  /// **'Applied parameters'**
+  String get contractActualParameters;
+
+  /// No description provided for @contractPolicyDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Versioned policy default'**
+  String get contractPolicyDefault;
+
+  /// No description provided for @contractExplicitUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Specified by user'**
+  String get contractExplicitUser;
+
+  /// No description provided for @contractSystemPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'System safety policy'**
+  String get contractSystemPolicy;
+
+  /// No description provided for @contractOperatorAtMost.
+  ///
+  /// In en, this message translates to:
+  /// **'At most'**
+  String get contractOperatorAtMost;
+
+  /// No description provided for @contractOperatorNoWorse.
+  ///
+  /// In en, this message translates to:
+  /// **'No worse than baseline'**
+  String get contractOperatorNoWorse;
+
+  /// No description provided for @contractCheckPassed.
+  ///
+  /// In en, this message translates to:
+  /// **'Passed'**
+  String get contractCheckPassed;
+
+  /// No description provided for @contractCheckFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get contractCheckFailed;
+
+  /// No description provided for @contractUnknownMetric.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown metric'**
+  String get contractUnknownMetric;
+
+  /// No description provided for @contractNoChecks.
+  ///
+  /// In en, this message translates to:
+  /// **'No verification check data was returned.'**
+  String get contractNoChecks;
+
+  /// No description provided for @contractMilliseconds.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} ms'**
+  String contractMilliseconds(String value);
+
+  /// No description provided for @errorContractClarification.
+  ///
+  /// In en, this message translates to:
+  /// **'One or more protection conditions are unclear. Clarify the metric, area, or limit and try again.'**
+  String get errorContractClarification;
+
+  /// No description provided for @errorContractUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This protection condition or required photo area cannot be verified yet. No edit was applied.'**
+  String get errorContractUnsupported;
+
+  /// No description provided for @errorContractUnsatisfied.
+  ///
+  /// In en, this message translates to:
+  /// **'No effective edit could satisfy every protection condition. Adjust the limit and try again.'**
+  String get errorContractUnsatisfied;
+
+  /// No description provided for @errorContractNoChange.
+  ///
+  /// In en, this message translates to:
+  /// **'The safe result would not create a visible change, so no duplicate version was added.'**
+  String get errorContractNoChange;
+
+  /// No description provided for @errorContractConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'This request ID was already used for different edit content. Submit the current prompt again.'**
+  String get errorContractConflict;
+
+  /// No description provided for @errorContractSchema.
+  ///
+  /// In en, this message translates to:
+  /// **'Contract display metadata could not be loaded. Metric identifiers remain available.'**
+  String get errorContractSchema;
 }
 
 class _AppLocalizationsDelegate

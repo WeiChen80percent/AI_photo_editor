@@ -921,4 +921,125 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get errorPhotoGitDraftActive =>
       'Finish or cancel the current version operation first.';
+
+  @override
+  String contractBadgePassed(int passed, int total) {
+    return 'Contract $passed/$total passed';
+  }
+
+  @override
+  String contractBadgeAdjusted(int scale) {
+    return 'Adjusted to $scale% to meet the contract';
+  }
+
+  @override
+  String get contractDetailsTitle => 'Verified edit contract';
+
+  @override
+  String get contractStatusPassed => 'Passed at requested strength';
+
+  @override
+  String get contractStatusAdjusted =>
+      'Passed after a safe strength adjustment';
+
+  @override
+  String get contractChecks => 'Verification checks';
+
+  @override
+  String get contractConstraints => 'Understood constraints';
+
+  @override
+  String get contractRequestedScale => 'Requested strength';
+
+  @override
+  String get contractAppliedScale => 'Applied strength';
+
+  @override
+  String get contractThreshold => 'Threshold';
+
+  @override
+  String get contractThresholdSource => 'Threshold source';
+
+  @override
+  String get contractBaseline => 'Baseline';
+
+  @override
+  String get contractActual => 'Actual';
+
+  @override
+  String get contractMetricVersion => 'Metric version';
+
+  @override
+  String get contractTargetVersion => 'Verified target';
+
+  @override
+  String get contractParentVersion => 'Parent';
+
+  @override
+  String get contractVerificationTime => 'Verification time';
+
+  @override
+  String get contractVersions => 'Contract versions';
+
+  @override
+  String get contractRequestedParameters => 'Requested parameters';
+
+  @override
+  String get contractActualParameters => 'Applied parameters';
+
+  @override
+  String get contractPolicyDefault => 'Versioned policy default';
+
+  @override
+  String get contractExplicitUser => 'Specified by user';
+
+  @override
+  String get contractSystemPolicy => 'System safety policy';
+
+  @override
+  String get contractOperatorAtMost => 'At most';
+
+  @override
+  String get contractOperatorNoWorse => 'No worse than baseline';
+
+  @override
+  String get contractCheckPassed => 'Passed';
+
+  @override
+  String get contractCheckFailed => 'Failed';
+
+  @override
+  String get contractUnknownMetric => 'Unknown metric';
+
+  @override
+  String get contractNoChecks => 'No verification check data was returned.';
+
+  @override
+  String contractMilliseconds(String value) {
+    return '$value ms';
+  }
+
+  @override
+  String get errorContractClarification =>
+      'One or more protection conditions are unclear. Clarify the metric, area, or limit and try again.';
+
+  @override
+  String get errorContractUnsupported =>
+      'This protection condition or required photo area cannot be verified yet. No edit was applied.';
+
+  @override
+  String get errorContractUnsatisfied =>
+      'No effective edit could satisfy every protection condition. Adjust the limit and try again.';
+
+  @override
+  String get errorContractNoChange =>
+      'The safe result would not create a visible change, so no duplicate version was added.';
+
+  @override
+  String get errorContractConflict =>
+      'This request ID was already used for different edit content. Submit the current prompt again.';
+
+  @override
+  String get errorContractSchema =>
+      'Contract display metadata could not be loaded. Metric identifiers remain available.';
 }

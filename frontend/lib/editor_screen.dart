@@ -29,11 +29,12 @@ class _EditorScreenState extends State<EditorScreen> {
   late final EditorController _controller;
   late final bool _ownsController;
   late final ImagePicker _imagePicker;
-  late final TextEditingController _promptController;
+  late final TextEditingController _promptTextController;
   BuildContext? _toolSheetContext;
   bool _toolSheetOpen = false;
   bool _toolSheetDismissScheduled = false;
   bool _preserveActiveToolAfterSheetDismiss = false;
+  bool _detailsInspectorOpen = false;
 
   @override
   void initState() {
@@ -41,16 +42,45 @@ class _EditorScreenState extends State<EditorScreen> {
     _ownsController = widget.controller == null;
     _controller = widget.controller ?? EditorController(api: ApiService());
     _imagePicker = widget.imagePicker ?? ImagePicker();
-    _promptController = TextEditingController(text: _controller.promptDraft);
+    _promptTextController = TextEditingController.fromValue(
+      TextEditingValue(
+        text: _controller.promptDraft,
+        selection: TextSelection.collapsed(
+          offset: _controller.promptDraft.length,
+        ),
+      ),
+    );
+    _promptTextController.addListener(_syncPromptDraftFromTextController);
+    _controller.addListener(_syncPromptTextFromEditorController);
   }
 
   @override
   void dispose() {
-    _promptController.dispose();
+    _controller.removeListener(_syncPromptTextFromEditorController);
+    _promptTextController.removeListener(_syncPromptDraftFromTextController);
+    _promptTextController.dispose();
     if (_ownsController) {
       _controller.dispose();
     }
     super.dispose();
+  }
+
+  void _syncPromptDraftFromTextController() {
+    final text = _promptTextController.text;
+    if (_controller.promptDraft != text) {
+      _controller.setPromptDraft(text);
+    }
+  }
+
+  void _syncPromptTextFromEditorController() {
+    final draft = _controller.promptDraft;
+    if (_promptTextController.text == draft) {
+      return;
+    }
+    _promptTextController.value = TextEditingValue(
+      text: draft,
+      selection: TextSelection.collapsed(offset: draft.length),
+    );
   }
 
   @override
@@ -152,6 +182,10 @@ class _EditorScreenState extends State<EditorScreen> {
               final sideBySide =
                   isExpanded ||
                   (isLandscape && width >= (shortLandscape ? 480 : 760));
+              final showDesktopInspector =
+                  isExpanded &&
+                  !_toolSheetOpen &&
+                  (_controller.activeTool != null || _detailsInspectorOpen);
               if (isExpanded) {
                 _dismissToolSheetForExpandedLayout();
               }
@@ -175,7 +209,7 @@ class _EditorScreenState extends State<EditorScreen> {
                             padding: EdgeInsets.fromLTRB(
                               isCompact ? AppSpacing.sm : AppSpacing.md,
                               isCompact ? AppSpacing.sm : AppSpacing.md,
-                              isExpanded && _controller.activeTool != null
+                              showDesktopInspector
                                   ? AppSpacing.sm
                                   : isCompact
                                   ? AppSpacing.sm
@@ -190,12 +224,19 @@ class _EditorScreenState extends State<EditorScreen> {
                             ),
                           ),
                         ),
-                        if (isExpanded && _controller.activeTool != null)
+                        if (showDesktopInspector)
                           _DesktopInspector(
-                            child: _panelForTool(
-                              _controller.activeTool!,
-                              isExpanded: true,
-                            ),
+                            child: _detailsInspectorOpen
+                                ? EditDetailsPanel(
+                                    controller: _controller,
+                                    onClose: () => setState(
+                                      () => _detailsInspectorOpen = false,
+                                    ),
+                                  )
+                                : _panelForTool(
+                                    _controller.activeTool!,
+                                    isExpanded: true,
+                                  ),
                           ),
                       ],
                     ),
@@ -249,6 +290,10 @@ class _EditorScreenState extends State<EditorScreen> {
     if (isExpanded && _controller.activeTool == tool) {
       _controller.setActiveTool(null);
       return;
+    }
+
+    if (_detailsInspectorOpen) {
+      setState(() => _detailsInspectorOpen = false);
     }
 
     _controller.setActiveTool(tool);
@@ -332,6 +377,8 @@ class _EditorScreenState extends State<EditorScreen> {
     }
     if (mounted && !preserveActiveTool && _controller.activeTool == tool) {
       _controller.setActiveTool(null);
+    } else if (mounted) {
+      setState(() {});
     }
   }
 
@@ -373,7 +420,7 @@ class _EditorScreenState extends State<EditorScreen> {
       case EditorTool.prompt:
         return PromptPanel(
           controller: _controller,
-          textController: _promptController,
+          textController: _promptTextController,
           onClose: close,
           onSubmit: () async {
             final success = await _controller.submitPrompt();
@@ -434,24 +481,8 @@ class _EditorScreenState extends State<EditorScreen> {
 
   Future<void> _openDetails(bool isExpanded) async {
     if (isExpanded) {
-      await showDialog<void>(
-        context: context,
-        builder: (dialogContext) {
-          return Dialog(
-            child: SizedBox(
-              width: 420,
-              height: 560,
-              child: AnimatedBuilder(
-                animation: _controller,
-                builder: (_, _) => EditDetailsPanel(
-                  controller: _controller,
-                  onClose: () => Navigator.of(dialogContext).pop(),
-                ),
-              ),
-            ),
-          );
-        },
-      );
+      _controller.setActiveTool(null);
+      setState(() => _detailsInspectorOpen = true);
       return;
     }
 
@@ -610,7 +641,6 @@ class _EditorScreenState extends State<EditorScreen> {
       },
     );
     if (clear == true) {
-      _promptController.clear();
       _controller.setPromptDraft('');
       _controller.clearOriginalImage();
     }

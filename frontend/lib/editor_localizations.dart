@@ -219,6 +219,110 @@ String localizedCurrentSummary(
   return '$previewLabel$styleLabel$target · $parameterLabel';
 }
 
+String localizedContractCompactSummary(
+  AppLocalizations l10n,
+  EditContractMetadata contract,
+) {
+  if (contract.wasAdjusted) {
+    final scale = ((contract.appliedScale ?? 0) * 100).round();
+    return l10n.contractBadgeAdjusted(scale);
+  }
+  return l10n.contractBadgePassed(
+    contract.passedCheckCount,
+    contract.checks.length,
+  );
+}
+
+String localizedContractMetricLabel(
+  AppLocalizations l10n,
+  EditContractSchema? schema,
+  String metricId,
+) {
+  final metric = schema?.metricFor(metricId);
+  final localized = _localizedSchemaText(l10n, metric?.labels);
+  if (localized != null) {
+    return localized;
+  }
+  final fallback = _humanizeIdentifier(metricId);
+  return fallback.isEmpty ? l10n.contractUnknownMetric : fallback;
+}
+
+String localizedContractMetricDescription(
+  AppLocalizations l10n,
+  EditContractSchema? schema,
+  String metricId,
+) {
+  return _localizedSchemaText(
+        l10n,
+        schema?.metricFor(metricId)?.descriptions,
+      ) ??
+      '';
+}
+
+String localizedContractThresholdSource(AppLocalizations l10n, String source) {
+  return switch (source.trim().toLowerCase()) {
+    'explicit_user' || 'user_explicit' => l10n.contractExplicitUser,
+    'system_policy' || 'system_default' => l10n.contractSystemPolicy,
+    'policy_default' || 'profile_default' => l10n.contractPolicyDefault,
+    final value => _humanizeIdentifier(value),
+  };
+}
+
+String localizedContractOperator(AppLocalizations l10n, String operator) {
+  return switch (operator.trim().toLowerCase()) {
+    '<=' || 'less_than_or_equal' => l10n.contractOperatorAtMost,
+    'no_worse_than_baseline' => l10n.contractOperatorNoWorse,
+    final value => value,
+  };
+}
+
+String localizedContractValue(
+  AppLocalizations l10n,
+  EditContractSchema? schema,
+  String unit,
+  double? value,
+) {
+  if (value == null || !value.isFinite) {
+    return '—';
+  }
+  final definition = schema?.unitFor(unit);
+  final precision = (definition?.displayPrecision ?? 3).clamp(0, 6);
+  if (unit == 'ratio') {
+    final percentPrecision = precision > 2 ? 2 : precision;
+    return '${(value * 100).toStringAsFixed(percentPrecision)}%';
+  }
+  final number = value.toStringAsFixed(precision);
+  final label = _localizedSchemaText(l10n, definition?.labels);
+  return label == null || label.isEmpty ? number : '$number $label';
+}
+
+String? _localizedSchemaText(
+  AppLocalizations l10n,
+  Map<String, String>? values,
+) {
+  if (values == null || values.isEmpty) {
+    return null;
+  }
+  final preferred = _isEnglish(l10n) ? values['en'] : values['zh'];
+  if (preferred != null && preferred.trim().isNotEmpty) {
+    return preferred.trim();
+  }
+  for (final value in values.values) {
+    if (value.trim().isNotEmpty) {
+      return value.trim();
+    }
+  }
+  return null;
+}
+
+String _humanizeIdentifier(String value) {
+  final normalized = value.trim().replaceAll(RegExp(r'[_-]+'), ' ');
+  if (normalized.isEmpty) {
+    return '';
+  }
+  return normalized[0].toUpperCase() + normalized.substring(1);
+}
+
 String localizedAdaptiveReasonLabel(AppLocalizations l10n, String? reason) {
   return switch (reason?.trim().toLowerCase()) {
     'initial_adjustment' ||
@@ -318,6 +422,33 @@ String localizedPresentationMessage(
     'photo_git_version_unsupported' ||
     'photo_git_recipe_unsupported' => l10n.errorPhotoGitUnsupported,
     'photo_git_draft_active' => l10n.errorPhotoGitDraftActive,
+    'contract_schema_load_failed' => l10n.errorContractSchema,
+    'contract_no_change' => l10n.errorContractNoChange,
+    'contract_unsatisfied' => l10n.errorContractUnsatisfied,
+    'contract_request_conflict' => l10n.errorContractConflict,
+    _ when message.details['disposition'] == 'clarification_required' =>
+      l10n.errorContractClarification,
+    _ when message.details['disposition'] == 'unsupported' =>
+      l10n.errorContractUnsupported,
+    _ when message.details['disposition'] == 'unsatisfied' =>
+      l10n.errorContractUnsatisfied,
+    _
+        when message.details['disposition'] == 'no_change' ||
+            message.details['disposition'] == 'rejected' =>
+      l10n.errorContractNoChange,
+    final code
+        when code.startsWith('contract_') &&
+            (code.contains('unsupported') ||
+                code.contains('unavailable') ||
+                code.contains('mask_not_found')) =>
+      l10n.errorContractUnsupported,
+    final code
+        when code.startsWith('contract_') &&
+            (code.contains('clarification') ||
+                code.contains('unresolved') ||
+                code.contains('ambiguous') ||
+                code.contains('required')) =>
+      l10n.errorContractClarification,
     'style_selection_ambiguous' => l10n.errorStyleAmbiguous,
     'style_compound_not_supported' => l10n.errorStyleCompound,
     'style_asset_invalid' || 'style_version_mismatch' => l10n.errorStyleAsset,
@@ -348,11 +479,16 @@ String localizedPresentationMessage(
     final axis = issue['axis']?.toString().trim();
     final region = issue['region']?.toString().trim();
     final sourceClause = issue['source_clause']?.toString().trim();
+    final sourceText = issue['source_text']?.toString().trim();
+    final metricId = issue['metric_id']?.toString().trim();
     final parts = <String>[
       if (axis != null && axis.isNotEmpty) localizedParameterLabel(l10n, axis),
       if (region != null && region.isNotEmpty)
         localizedRegionLabel(l10n, region),
       if (sourceClause != null && sourceClause.isNotEmpty) '“$sourceClause”',
+      if (sourceText != null && sourceText.isNotEmpty) '“$sourceText”',
+      if (metricId != null && metricId.isNotEmpty)
+        localizedContractMetricLabel(l10n, null, metricId),
     ];
     final context = parts.join(' ');
     if (context.isNotEmpty && !contexts.contains(context)) {

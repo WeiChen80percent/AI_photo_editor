@@ -55,9 +55,112 @@ def create_opencv_result(
 ) -> dict[str, Any]:
     total_started = time.perf_counter()
     read_started = time.perf_counter()
-    original = _read_image(original_path, "original")
-    reference = _read_image(reference_path, "reference") if reference_path else None
+    original = read_opencv_image(original_path, "original")
+    reference = (
+        read_opencv_image(reference_path, "reference")
+        if reference_path
+        else None
+    )
     image_read_ms = _elapsed_ms(read_started)
+    resolved_mask_source_path = mask_source_path or original_path
+    mask_source_image = original
+    if (
+        str((parameters or {}).get("region") or "") in {"highlights", "shadows"}
+        or str((parameters or {}).get("mask_type") or "") in {
+            "luminance_highlights",
+            "luminance_shadows",
+        }
+    ) and resolved_mask_source_path.resolve() != original_path.resolve():
+        mask_source_image = read_opencv_image(
+            resolved_mask_source_path,
+            "mask source",
+        )
+
+    rendered = render_opencv_image(
+        original=original,
+        parameters=parameters,
+        reference=reference,
+        mask_source_path=resolved_mask_source_path,
+        mask_source_image=mask_source_image,
+    )
+
+    write_started = time.perf_counter()
+    write_opencv_image(result_path, rendered["image"])
+    image_write_ms = _elapsed_ms(write_started)
+
+    return {
+        "engine": "opencv",
+        "parameters": rendered["parameters"],
+        "mask_info": rendered["mask_info"],
+        "timings_ms": {
+            "image_read": round(image_read_ms, 3),
+            "parameter_resolution": rendered["timings_ms"][
+                "parameter_resolution"
+            ],
+            "adjustments": rendered["timings_ms"]["adjustments"],
+            "mask": rendered["timings_ms"]["mask"],
+            "image_write": round(image_write_ms, 3),
+            "total": round(_elapsed_ms(total_started), 3),
+        },
+        "explanation": _build_explanation(rendered["parameters"]),
+    }
+
+
+def prepare_opencv_edit_mask(
+    *,
+    original: np.ndarray,
+    parameters: dict[str, Any] | None,
+    mask_source_path: Path,
+    mask_source_image: np.ndarray,
+) -> tuple[np.ndarray | None, dict[str, Any] | None]:
+    """Resolve the exact feathered mask used by the production renderer."""
+
+    resolved = resolve_opencv_parameters(parameters)
+    if resolved["region"] == "all" or resolved["mask_type"] == "none":
+        return None, None
+    mask, mask_info = _build_region_mask(
+        original,
+        region=resolved["region"],
+        mask_type=resolved["mask_type"],
+        mask_source_path=mask_source_path,
+        mask_source_image=mask_source_image,
+    )
+    if mask is None:
+        raise ValueError(
+            "A validated local edit produced no mask; refusing to widen the "
+            f"edit to the full image (region={resolved['region']!r}, "
+            f"mask_type={resolved['mask_type']!r})."
+        )
+    if mask.shape != original.shape[:2]:
+        mask = cv2.resize(
+            mask,
+            (original.shape[1], original.shape[0]),
+            interpolation=cv2.INTER_LINEAR,
+        )
+    return np.clip(mask.astype(np.float32), 0.0, 1.0), mask_info
+
+
+def render_opencv_image(
+    *,
+    original: np.ndarray,
+    parameters: dict[str, Any] | None,
+    reference: np.ndarray | None = None,
+    mask_source_path: Path,
+    mask_source_image: np.ndarray,
+    prepared_mask: np.ndarray | None = None,
+    prepared_mask_info: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Render one validated OpenCV edit entirely in memory.
+
+    Ordinary edits and contract candidates share this exact pixel path. Scale
+    search may reuse a prepared mask because it never changes edit scope.
+    """
+
+    if not isinstance(original, np.ndarray) or original.ndim != 3:
+        raise ValueError("OpenCV original image must be a BGR image array")
+    if not isinstance(mask_source_image, np.ndarray) or mask_source_image.ndim != 3:
+        raise ValueError("OpenCV mask source must be a BGR image array")
+
     resolve_started = time.perf_counter()
     resolved = resolve_opencv_parameters(parameters)
     if reference is None:
@@ -71,47 +174,41 @@ def create_opencv_result(
         reference=reference,
     )
     adjustments_ms = _elapsed_ms(adjustments_started)
+
     mask_started = time.perf_counter()
-    resolved_mask_source_path = mask_source_path or original_path
-    mask_source_image = original
-    if (
-        resolved["region"] in {"highlights", "shadows"}
-        or resolved["mask_type"] in {
-            "luminance_highlights",
-            "luminance_shadows",
-        }
-    ) and resolved_mask_source_path.resolve() != original_path.resolve():
-        mask_source_image = _read_image(
-            resolved_mask_source_path,
-            "mask source",
+    mask = prepared_mask
+    mask_info = prepared_mask_info
+    if resolved["region"] == "all" or resolved["mask_type"] == "none":
+        mask = None
+        mask_info = None
+        output = adjusted
+    else:
+        if mask is None:
+            mask, mask_info = prepare_opencv_edit_mask(
+                original=original,
+                parameters=resolved,
+                mask_source_path=mask_source_path,
+                mask_source_image=mask_source_image,
+            )
+        if mask.shape != original.shape[:2]:
+            raise ValueError("Prepared OpenCV edit mask size does not match image")
+        output = _blend_region_mask(
+            original=original,
+            adjusted=adjusted,
+            mask=mask,
         )
-    adjusted, mask_info = _apply_region_mask(
-        original=original,
-        adjusted=adjusted,
-        region=resolved["region"],
-        mask_type=resolved["mask_type"],
-        mask_source_path=resolved_mask_source_path,
-        mask_source_image=mask_source_image,
-    )
     mask_ms = _elapsed_ms(mask_started)
 
-    write_started = time.perf_counter()
-    _write_image(result_path, adjusted)
-    image_write_ms = _elapsed_ms(write_started)
-
     return {
-        "engine": "opencv",
+        "image": output,
         "parameters": resolved,
+        "mask": mask,
         "mask_info": mask_info,
         "timings_ms": {
-            "image_read": round(image_read_ms, 3),
             "parameter_resolution": round(parameter_resolution_ms, 3),
             "adjustments": round(adjustments_ms, 3),
             "mask": round(mask_ms, 3),
-            "image_write": round(image_write_ms, 3),
-            "total": round(_elapsed_ms(total_started), 3),
         },
-        "explanation": _build_explanation(resolved),
     }
 
 
@@ -603,11 +700,32 @@ def _apply_region_mask(
             f"mask_type={mask_type!r})."
         )
 
-    blended = (
-        original.astype(np.float32) * (1.0 - mask[:, :, np.newaxis])
-        + adjusted.astype(np.float32) * mask[:, :, np.newaxis]
+    return (
+        _blend_region_mask(
+            original=original,
+            adjusted=adjusted,
+            mask=mask,
+        ),
+        mask_info,
     )
-    return np.clip(blended, 0, 255).astype(np.uint8), mask_info
+
+
+def _blend_region_mask(
+    *,
+    original: np.ndarray,
+    adjusted: np.ndarray,
+    mask: np.ndarray,
+) -> np.ndarray:
+    if original.shape != adjusted.shape:
+        raise ValueError("OpenCV adjusted image size does not match original")
+    if mask.shape != original.shape[:2]:
+        raise ValueError("OpenCV edit mask size does not match original")
+    clipped_mask = np.clip(mask.astype(np.float32), 0.0, 1.0)
+    blended = (
+        original.astype(np.float32) * (1.0 - clipped_mask[:, :, np.newaxis])
+        + adjusted.astype(np.float32) * clipped_mask[:, :, np.newaxis]
+    )
+    return np.clip(blended, 0, 255).astype(np.uint8)
 
 
 def _build_region_mask(

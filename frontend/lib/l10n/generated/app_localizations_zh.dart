@@ -862,6 +862,120 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get errorPhotoGitDraftActive => '請先完成或取消目前的版本操作。';
+
+  @override
+  String contractBadgePassed(int passed, int total) {
+    return '合約 $passed/$total 通過';
+  }
+
+  @override
+  String contractBadgeAdjusted(int scale) {
+    return '為符合限制，幅度已調整至 $scale%';
+  }
+
+  @override
+  String get contractDetailsTitle => '可驗證修圖合約';
+
+  @override
+  String get contractStatusPassed => '原要求幅度通過';
+
+  @override
+  String get contractStatusAdjusted => '安全縮小幅度後通過';
+
+  @override
+  String get contractChecks => '驗證項目';
+
+  @override
+  String get contractConstraints => '系統理解的限制';
+
+  @override
+  String get contractRequestedScale => '要求幅度';
+
+  @override
+  String get contractAppliedScale => '實際幅度';
+
+  @override
+  String get contractThreshold => '門檻';
+
+  @override
+  String get contractThresholdSource => '門檻來源';
+
+  @override
+  String get contractBaseline => '基準值';
+
+  @override
+  String get contractActual => '實測值';
+
+  @override
+  String get contractMetricVersion => '量測版本';
+
+  @override
+  String get contractTargetVersion => '驗證目標';
+
+  @override
+  String get contractParentVersion => 'Parent';
+
+  @override
+  String get contractVerificationTime => '驗證時間';
+
+  @override
+  String get contractVersions => '合約版本';
+
+  @override
+  String get contractRequestedParameters => '要求參數';
+
+  @override
+  String get contractActualParameters => '實際參數';
+
+  @override
+  String get contractPolicyDefault => '版本化預設政策';
+
+  @override
+  String get contractExplicitUser => '使用者明確指定';
+
+  @override
+  String get contractSystemPolicy => '系統安全政策';
+
+  @override
+  String get contractOperatorAtMost => '不得超過';
+
+  @override
+  String get contractOperatorNoWorse => '不得比基準更差';
+
+  @override
+  String get contractCheckPassed => '通過';
+
+  @override
+  String get contractCheckFailed => '未通過';
+
+  @override
+  String get contractUnknownMetric => '未知量測項目';
+
+  @override
+  String get contractNoChecks => '後端未回傳驗證項目資料。';
+
+  @override
+  String contractMilliseconds(String value) {
+    return '$value 毫秒';
+  }
+
+  @override
+  String get errorContractClarification => '有保護條件尚不明確，請補充量測項目、區域或門檻後重試。';
+
+  @override
+  String get errorContractUnsupported => '目前無法驗證這項保護條件或照片區域，因此沒有套用修圖。';
+
+  @override
+  String get errorContractUnsatisfied => '找不到能同時通過所有保護條件且仍有效果的結果，請調整門檻後重試。';
+
+  @override
+  String get errorContractNoChange => '安全結果不會產生可辨識變化，因此沒有新增重複版本。';
+
+  @override
+  String get errorContractConflict => '這個請求識別碼已用於不同修圖內容，請重新送出目前指令。';
+
+  @override
+  String get errorContractSchema => '無法載入合約顯示定義；仍會安全顯示量測識別碼。';
 }
 
 /// The translations for Chinese, as used in Taiwan (`zh_TW`).
@@ -1722,4 +1836,118 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get errorPhotoGitDraftActive => '請先完成或取消目前的版本操作。';
+
+  @override
+  String contractBadgePassed(int passed, int total) {
+    return '合約 $passed/$total 通過';
+  }
+
+  @override
+  String contractBadgeAdjusted(int scale) {
+    return '為符合限制，幅度已調整至 $scale%';
+  }
+
+  @override
+  String get contractDetailsTitle => '可驗證修圖合約';
+
+  @override
+  String get contractStatusPassed => '原要求幅度通過';
+
+  @override
+  String get contractStatusAdjusted => '安全縮小幅度後通過';
+
+  @override
+  String get contractChecks => '驗證項目';
+
+  @override
+  String get contractConstraints => '系統理解的限制';
+
+  @override
+  String get contractRequestedScale => '要求幅度';
+
+  @override
+  String get contractAppliedScale => '實際幅度';
+
+  @override
+  String get contractThreshold => '門檻';
+
+  @override
+  String get contractThresholdSource => '門檻來源';
+
+  @override
+  String get contractBaseline => '基準值';
+
+  @override
+  String get contractActual => '實測值';
+
+  @override
+  String get contractMetricVersion => '量測版本';
+
+  @override
+  String get contractTargetVersion => '驗證目標';
+
+  @override
+  String get contractParentVersion => 'Parent';
+
+  @override
+  String get contractVerificationTime => '驗證時間';
+
+  @override
+  String get contractVersions => '合約版本';
+
+  @override
+  String get contractRequestedParameters => '要求參數';
+
+  @override
+  String get contractActualParameters => '實際參數';
+
+  @override
+  String get contractPolicyDefault => '版本化預設政策';
+
+  @override
+  String get contractExplicitUser => '使用者明確指定';
+
+  @override
+  String get contractSystemPolicy => '系統安全政策';
+
+  @override
+  String get contractOperatorAtMost => '不得超過';
+
+  @override
+  String get contractOperatorNoWorse => '不得比基準更差';
+
+  @override
+  String get contractCheckPassed => '通過';
+
+  @override
+  String get contractCheckFailed => '未通過';
+
+  @override
+  String get contractUnknownMetric => '未知量測項目';
+
+  @override
+  String get contractNoChecks => '後端未回傳驗證項目資料。';
+
+  @override
+  String contractMilliseconds(String value) {
+    return '$value 毫秒';
+  }
+
+  @override
+  String get errorContractClarification => '有保護條件尚不明確，請補充量測項目、區域或門檻後重試。';
+
+  @override
+  String get errorContractUnsupported => '目前無法驗證這項保護條件或照片區域，因此沒有套用修圖。';
+
+  @override
+  String get errorContractUnsatisfied => '找不到能同時通過所有保護條件且仍有效果的結果，請調整門檻後重試。';
+
+  @override
+  String get errorContractNoChange => '安全結果不會產生可辨識變化，因此沒有新增重複版本。';
+
+  @override
+  String get errorContractConflict => '這個請求識別碼已用於不同修圖內容，請重新送出目前指令。';
+
+  @override
+  String get errorContractSchema => '無法載入合約顯示定義；仍會安全顯示量測識別碼。';
 }

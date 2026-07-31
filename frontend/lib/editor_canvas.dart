@@ -1246,6 +1246,7 @@ class _CurrentSummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isPreview = controller.hasUncommittedPreview;
+    final contract = isPreview ? null : controller.selectedEdit?.editContract;
     final colors = context.editorColors;
     return Material(
       key: const Key('current_summary'),
@@ -1265,21 +1266,48 @@ class _CurrentSummary extends StatelessWidget {
           child: Row(
             children: [
               Icon(
-                isPreview ? Icons.pending_outlined : Icons.auto_fix_high,
+                isPreview
+                    ? Icons.pending_outlined
+                    : contract?.isSuccessful == true
+                    ? Icons.verified_user_outlined
+                    : Icons.auto_fix_high,
                 size: 19,
                 color: isPreview ? colors.warning : colors.accentBright,
               ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
-                child: Text(
-                  localizedCurrentSummary(context.l10n, controller),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: colors.textSecondary,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      localizedCurrentSummary(context.l10n, controller),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: colors.textSecondary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    if (contract?.isSuccessful == true) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        localizedContractCompactSummary(
+                          context.l10n,
+                          contract!,
+                        ),
+                        key: const Key('current_contract_badge'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: colors.accentBright,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
               if (controller.selectedEdit != null)

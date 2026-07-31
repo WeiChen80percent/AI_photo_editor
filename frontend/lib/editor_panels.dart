@@ -47,7 +47,6 @@ class PromptPanel extends StatelessWidget {
             minLines: 2,
             maxLines: 4,
             textInputAction: TextInputAction.done,
-            onChanged: controller.setPromptDraft,
             onSubmitted: (_) {
               if (controller.canSubmitPrompt) {
                 onSubmit();
@@ -1654,6 +1653,17 @@ class EditDetailsPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (edit.editContract != null &&
+              !controller.hasUncommittedPreview) ...[
+            _EditContractDetails(
+              metadata: edit.editContract!,
+              schema: controller.editContractSchema,
+              edit: edit,
+              history: controller.history,
+              parameterCatalog: metadataCatalog,
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
           if (edit.photoGit != null) ...[
             _PhotoGitDetails(
               metadata: edit.photoGit!,
@@ -1731,6 +1741,464 @@ class EditDetailsPanel extends StatelessWidget {
       ),
     );
   }
+}
+
+class _EditContractDetails extends StatelessWidget {
+  const _EditContractDetails({
+    required this.metadata,
+    required this.schema,
+    required this.edit,
+    required this.history,
+    required this.parameterCatalog,
+  });
+
+  final EditContractMetadata metadata;
+  final EditContractSchema? schema;
+  final EditHistoryItem edit;
+  final List<EditHistoryItem> history;
+  final ParameterMetadataCatalog parameterCatalog;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final colors = context.editorColors;
+    final isAdjusted = metadata.wasAdjusted;
+    return DecoratedBox(
+      key: const Key('edit_contract_details'),
+      decoration: BoxDecoration(
+        color: colors.accentSoft,
+        borderRadius: BorderRadius.circular(AppRadii.small),
+        border: Border.all(color: colors.accent.withValues(alpha: 0.4)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.verified_user_outlined,
+                  color: colors.accentBright,
+                  size: 19,
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Expanded(
+                  child: Text(
+                    l10n.contractDetailsTitle,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
+                _ContractPassChip(
+                  passed: metadata.checks.every((check) => check.passed),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              isAdjusted
+                  ? l10n.contractStatusAdjusted
+                  : l10n.contractStatusPassed,
+              style: TextStyle(color: colors.textSecondary, fontSize: 12),
+            ),
+            _ContractDetailRow(
+              label: l10n.contractRequestedScale,
+              value: _formatScale(metadata.requestedScale),
+            ),
+            _ContractDetailRow(
+              label: l10n.contractAppliedScale,
+              value: _formatScale(metadata.appliedScale),
+            ),
+            _ContractDetailRow(
+              label: l10n.contractTargetVersion,
+              value: _historyVersion(metadata.targetEditId),
+            ),
+            _ContractDetailRow(
+              label: l10n.contractParentVersion,
+              value: _historyVersion(edit.parentEditId),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            _ContractSectionTitle(l10n.contractConstraints),
+            if (metadata.constraints.isEmpty)
+              Text(
+                l10n.contractNoChecks,
+                style: TextStyle(color: colors.textMuted, fontSize: 11),
+              )
+            else
+              for (final constraint in metadata.constraints)
+                _ContractConstraintCard(constraint: constraint, schema: schema),
+            const SizedBox(height: AppSpacing.md),
+            _ContractSectionTitle(l10n.contractChecks),
+            if (metadata.checks.isEmpty)
+              Text(
+                l10n.contractNoChecks,
+                style: TextStyle(color: colors.textMuted, fontSize: 11),
+              )
+            else
+              for (final check in metadata.checks)
+                _ContractCheckCard(check: check, schema: schema),
+            if (metadata.requestedParameters.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.md),
+              _ContractSectionTitle(l10n.contractRequestedParameters),
+              _ContractParameterList(
+                parameters: metadata.requestedParameters,
+                catalog: parameterCatalog,
+              ),
+            ],
+            if (metadata.actualParameters.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.sm),
+              _ContractSectionTitle(l10n.contractActualParameters),
+              _ContractParameterList(
+                parameters: metadata.actualParameters,
+                catalog: parameterCatalog,
+              ),
+            ],
+            const SizedBox(height: AppSpacing.md),
+            _ContractSectionTitle(l10n.contractVersions),
+            if (metadata.schemaVersion != null)
+              _ContractDetailRow(
+                label: 'Contract',
+                value: metadata.schemaVersion!,
+              ),
+            if (metadata.semanticRegistryVersion != null)
+              _ContractDetailRow(
+                label: 'Semantic registry',
+                value: metadata.semanticRegistryVersion!,
+              ),
+            if (metadata.metricRegistryVersion != null)
+              _ContractDetailRow(
+                label: 'Metric registry',
+                value: metadata.metricRegistryVersion!,
+              ),
+            if (metadata.searchPolicyVersion != null)
+              _ContractDetailRow(
+                label: 'Search policy',
+                value: metadata.searchPolicyVersion!,
+              ),
+            if (metadata.timings.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.sm),
+              _ContractSectionTitle(l10n.contractVerificationTime),
+              for (final timing in metadata.timings.entries)
+                if (timing.value is num)
+                  _ContractDetailRow(
+                    label: _humanizeContractIdentifier(timing.key),
+                    value: l10n.contractMilliseconds(
+                      (timing.value as num).toStringAsFixed(1),
+                    ),
+                  ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _historyVersion(String? editId) {
+    if (editId == null || editId == EditorController.originalParentSentinel) {
+      return editId == null ? '—' : 'Original';
+    }
+    final index = history.indexWhere((item) => item.editId == editId);
+    return index < 0 ? editId : 'v${index + 1}';
+  }
+
+  String _formatScale(double? scale) {
+    return scale == null ? '—' : '${(scale * 100).round()}%';
+  }
+}
+
+class _ContractSectionTitle extends StatelessWidget {
+  const _ContractSectionTitle(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: context.editorColors.textSecondary,
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+class _ContractConstraintCard extends StatelessWidget {
+  const _ContractConstraintCard({
+    required this.constraint,
+    required this.schema,
+  });
+
+  final EditContractConstraint constraint;
+  final EditContractSchema? schema;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final label = localizedContractMetricLabel(
+      l10n,
+      schema,
+      constraint.metricId,
+    );
+    final description = localizedContractMetricDescription(
+      l10n,
+      schema,
+      constraint.metricId,
+    );
+    return _ContractCard(
+      key: Key('contract_constraint_${constraint.constraintId}'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
+          if (description.isNotEmpty)
+            Text(
+              description,
+              style: TextStyle(
+                color: context.editorColors.textMuted,
+                fontSize: 11,
+              ),
+            ),
+          if (constraint.sourceText?.trim().isNotEmpty == true)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                '“${constraint.sourceText!.trim()}”',
+                style: TextStyle(
+                  color: context.editorColors.textSecondary,
+                  fontSize: 11,
+                ),
+              ),
+            ),
+          _ContractDetailRow(
+            label: localizedRegionLabel(l10n, constraint.subjectRegion),
+            value:
+                '${localizedContractOperator(l10n, constraint.operator)} · '
+                '${localizedContractValue(l10n, schema, constraint.unit, constraint.threshold)}',
+          ),
+          _ContractDetailRow(
+            label: l10n.contractThresholdSource,
+            value: localizedContractThresholdSource(
+              l10n,
+              constraint.thresholdSource,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ContractCheckCard extends StatelessWidget {
+  const _ContractCheckCard({required this.check, required this.schema});
+
+  final EditContractCheck check;
+  final EditContractSchema? schema;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return _ContractCard(
+      key: Key('contract_check_${check.constraintId}'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  localizedContractMetricLabel(l10n, schema, check.metricId),
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
+              _ContractPassChip(passed: check.passed),
+            ],
+          ),
+          _ContractDetailRow(
+            label: l10n.contractThreshold,
+            value:
+                '${localizedContractOperator(l10n, check.operator)} · '
+                '${localizedContractValue(l10n, schema, check.unit, check.effectiveThreshold)}',
+          ),
+          _ContractDetailRow(
+            label: l10n.contractThresholdSource,
+            value: localizedContractThresholdSource(
+              l10n,
+              check.thresholdSource,
+            ),
+          ),
+          _ContractDetailRow(
+            label: l10n.contractBaseline,
+            value: localizedContractValue(
+              l10n,
+              schema,
+              check.unit,
+              check.baselineValue,
+            ),
+          ),
+          _ContractDetailRow(
+            label: l10n.contractActual,
+            value: localizedContractValue(
+              l10n,
+              schema,
+              check.unit,
+              check.candidateValue,
+            ),
+          ),
+          _ContractDetailRow(
+            label: l10n.contractMetricVersion,
+            value: check.metricVersion.isEmpty ? '—' : check.metricVersion,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ContractCard extends StatelessWidget {
+  const _ContractCard({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: context.editorColors.surface.withValues(alpha: 0.72),
+          borderRadius: BorderRadius.circular(AppRadii.small),
+          border: Border.all(color: context.editorColors.border),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.sm),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+class _ContractPassChip extends StatelessWidget {
+  const _ContractPassChip({required this.passed});
+
+  final bool passed;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = passed
+        ? context.editorColors.success
+        : context.editorColors.error;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(passed ? Icons.check : Icons.close, color: color, size: 12),
+            const SizedBox(width: 3),
+            Text(
+              passed
+                  ? context.l10n.contractCheckPassed
+                  : context.l10n.contractCheckFailed,
+              style: TextStyle(
+                color: color,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ContractDetailRow extends StatelessWidget {
+  const _ContractDetailRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 5),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: context.editorColors.textMuted,
+                fontSize: 11,
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.xs),
+          Flexible(
+            flex: 2,
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: TextStyle(
+                color: context.editorColors.textSecondary,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ContractParameterList extends StatelessWidget {
+  const _ContractParameterList({
+    required this.parameters,
+    required this.catalog,
+  });
+
+  final Map<String, dynamic> parameters;
+  final ParameterMetadataCatalog catalog;
+
+  @override
+  Widget build(BuildContext context) {
+    final entries = parameters.entries.where((entry) => entry.value is num);
+    return Column(
+      children: [
+        for (final entry in entries)
+          _ContractDetailRow(
+            label: localizedParameterLabel(
+              context.l10n,
+              entry.key,
+              fallback: catalog.metadataFor(entry.key)?.label,
+            ),
+            value:
+                catalog
+                    .metadataFor(entry.key)
+                    ?.formatValue((entry.value as num).toDouble()) ??
+                (entry.value as num).toStringAsFixed(3),
+          ),
+      ],
+    );
+  }
+}
+
+String _humanizeContractIdentifier(String value) {
+  final text = value.trim().replaceAll(RegExp(r'[_-]+'), ' ');
+  return text.isEmpty ? value : text[0].toUpperCase() + text.substring(1);
 }
 
 class _PhotoGitDetails extends StatelessWidget {
@@ -2602,6 +3070,15 @@ class HistoryTile extends StatelessWidget {
                             isRoot: item.parentEditId == null,
                             parentVersion: parentVersion,
                           ),
+                          if (item.editContract?.isSuccessful == true)
+                            _HistoryProvenanceBadge(
+                              key: Key('history_contract_badge_${item.editId}'),
+                              icon: Icons.verified_user_outlined,
+                              label: localizedContractCompactSummary(
+                                context.l10n,
+                                item.editContract!,
+                              ),
+                            ),
                           if (sourceVersion != null)
                             _HistoryProvenanceBadge(
                               icon: Icons.call_merge,
@@ -2649,7 +3126,11 @@ class HistoryTile extends StatelessWidget {
 }
 
 class _HistoryProvenanceBadge extends StatelessWidget {
-  const _HistoryProvenanceBadge({required this.icon, required this.label});
+  const _HistoryProvenanceBadge({
+    super.key,
+    required this.icon,
+    required this.label,
+  });
 
   final IconData icon;
   final String label;

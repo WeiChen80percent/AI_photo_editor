@@ -898,6 +898,372 @@ List<Map<String, dynamic>> _mapList(dynamic value) {
       .toList(growable: false);
 }
 
+class EditContractUnitSchema {
+  const EditContractUnitSchema({
+    required this.unitId,
+    required this.displayPrecision,
+    required this.labels,
+  });
+
+  final String unitId;
+  final int displayPrecision;
+  final Map<String, String> labels;
+
+  factory EditContractUnitSchema.fromJson(Map<String, dynamic> json) {
+    return EditContractUnitSchema(
+      unitId: _stringValue(json['unit_id']) ?? '',
+      displayPrecision: _nullableIntValue(json['display_precision']) ?? 2,
+      labels: _localizedStringMap(json['labels']),
+    );
+  }
+}
+
+class EditContractMetricSchema {
+  const EditContractMetricSchema({
+    required this.metricId,
+    required this.metricVersion,
+    required this.unit,
+    required this.labels,
+    required this.descriptions,
+  });
+
+  final String metricId;
+  final String metricVersion;
+  final String unit;
+  final Map<String, String> labels;
+  final Map<String, String> descriptions;
+
+  factory EditContractMetricSchema.fromJson(Map<String, dynamic> json) {
+    return EditContractMetricSchema(
+      metricId: _stringValue(json['metric_id']) ?? '',
+      metricVersion: _stringValue(json['metric_version']) ?? '',
+      unit: _stringValue(json['unit']) ?? '',
+      labels: _localizedStringMap(json['labels']),
+      descriptions: _localizedStringMap(json['descriptions']),
+    );
+  }
+}
+
+/// Public display metadata exposed by `/edit/contracts/schema`.
+///
+/// The UI indexes definitions by identifier instead of switching on metric
+/// names, so adding a backend metric does not require parser or panel changes.
+class EditContractSchema {
+  const EditContractSchema({
+    required this.metricRegistryVersion,
+    required this.metrics,
+    required this.units,
+  });
+
+  final String metricRegistryVersion;
+  final List<EditContractMetricSchema> metrics;
+  final List<EditContractUnitSchema> units;
+
+  EditContractMetricSchema? metricFor(String metricId) {
+    for (final metric in metrics) {
+      if (metric.metricId == metricId) {
+        return metric;
+      }
+    }
+    return null;
+  }
+
+  EditContractUnitSchema? unitFor(String unitId) {
+    for (final unit in units) {
+      if (unit.unitId == unitId) {
+        return unit;
+      }
+    }
+    return null;
+  }
+
+  factory EditContractSchema.fromJson(Map<String, dynamic> json) {
+    return EditContractSchema(
+      metricRegistryVersion:
+          _stringValue(json['metric_registry_version']) ?? '',
+      metrics: _mapList(json['metrics'])
+          .map(EditContractMetricSchema.fromJson)
+          .where((metric) => metric.metricId.isNotEmpty)
+          .toList(growable: false),
+      units: _mapList(json['units'])
+          .map(EditContractUnitSchema.fromJson)
+          .where((unit) => unit.unitId.isNotEmpty)
+          .toList(growable: false),
+    );
+  }
+}
+
+/// A hard, measurable condition attached to an edit contract.
+///
+/// Metric identifiers intentionally remain strings. The backend registry can
+/// add metrics without requiring a Flutter release, and unknown metrics still
+/// remain inspectable instead of failing response parsing.
+class EditContractConstraint {
+  const EditContractConstraint({
+    required this.constraintId,
+    required this.metricId,
+    required this.metricVersion,
+    required this.subjectRegion,
+    required this.maskType,
+    required this.operator,
+    required this.threshold,
+    required this.unit,
+    required this.thresholdSource,
+    required this.referenceMode,
+    required this.source,
+    required this.hard,
+    required this.capabilityRequirements,
+    this.profileId,
+    this.sourceText,
+    this.sourceStart,
+    this.sourceEnd,
+    this.language,
+    this.confidence,
+    this.sourceEvidence,
+    this.evidence = const <Map<String, dynamic>>[],
+  });
+
+  final String constraintId;
+  final String metricId;
+  final String metricVersion;
+  final String subjectRegion;
+  final String maskType;
+  final String operator;
+  final double? threshold;
+  final String unit;
+  final String thresholdSource;
+  final String referenceMode;
+  final String source;
+  final bool hard;
+  final List<String> capabilityRequirements;
+  final String? profileId;
+  final String? sourceText;
+  final int? sourceStart;
+  final int? sourceEnd;
+  final String? language;
+  final double? confidence;
+  final Map<String, dynamic>? sourceEvidence;
+  final List<Map<String, dynamic>> evidence;
+
+  factory EditContractConstraint.fromJson(Map<String, dynamic> json) {
+    return EditContractConstraint(
+      constraintId: _stringValue(json['constraint_id']) ?? '',
+      metricId: _stringValue(json['metric_id']) ?? 'unknown_metric',
+      metricVersion: _stringValue(json['metric_version']) ?? '',
+      subjectRegion: _stringValue(json['subject_region']) ?? 'all',
+      maskType: _stringValue(json['mask_type']) ?? 'none',
+      operator: _stringValue(json['operator']) ?? '<=',
+      threshold: _nullableDoubleValue(json['threshold']),
+      unit: _stringValue(json['unit']) ?? '',
+      thresholdSource:
+          _stringValue(json['threshold_source']) ?? 'policy_default',
+      referenceMode: _stringValue(json['reference_mode']) ?? 'absolute_outcome',
+      source: _stringValue(json['source']) ?? 'policy',
+      hard: _nullableBoolValue(json['hard']) ?? true,
+      capabilityRequirements: _stringList(json['capability_requirements']),
+      profileId: _stringValue(json['profile_id']),
+      sourceText: _stringValue(json['source_text']),
+      sourceStart: _nullableIntValue(json['source_start']),
+      sourceEnd: _nullableIntValue(json['source_end']),
+      language: _stringValue(json['language']),
+      confidence: _nullableDoubleValue(json['confidence']),
+      sourceEvidence: json['source_evidence'] is Map
+          ? Map<String, dynamic>.from(json['source_evidence'] as Map)
+          : null,
+      evidence: _mapList(json['evidence']),
+    );
+  }
+}
+
+class EditContractCheck {
+  const EditContractCheck({
+    required this.constraintId,
+    required this.metricId,
+    required this.metricVersion,
+    required this.operator,
+    required this.unit,
+    required this.policyThreshold,
+    required this.effectiveThreshold,
+    required this.baselineValue,
+    required this.candidateValue,
+    required this.thresholdSource,
+    required this.passed,
+    required this.details,
+  });
+
+  final String constraintId;
+  final String metricId;
+  final String metricVersion;
+  final String operator;
+  final String unit;
+  final double? policyThreshold;
+  final double? effectiveThreshold;
+  final double? baselineValue;
+  final double? candidateValue;
+  final String thresholdSource;
+  final bool passed;
+  final Map<String, dynamic> details;
+
+  factory EditContractCheck.fromJson(Map<String, dynamic> json) {
+    return EditContractCheck(
+      constraintId: _stringValue(json['constraint_id']) ?? '',
+      metricId: _stringValue(json['metric_id']) ?? 'unknown_metric',
+      metricVersion: _stringValue(json['metric_version']) ?? '',
+      operator: _stringValue(json['operator']) ?? '<=',
+      unit: _stringValue(json['unit']) ?? '',
+      policyThreshold: _nullableDoubleValue(json['policy_threshold']),
+      effectiveThreshold: _nullableDoubleValue(json['effective_threshold']),
+      baselineValue: _nullableDoubleValue(json['baseline_value']),
+      candidateValue: _nullableDoubleValue(json['candidate_value']),
+      thresholdSource:
+          _stringValue(json['threshold_source']) ?? 'policy_default',
+      passed: _nullableBoolValue(json['passed']) ?? false,
+      details: _mapValue(json['details']),
+    );
+  }
+}
+
+class EditContractAttempt {
+  const EditContractAttempt({
+    required this.scale,
+    required this.checks,
+    required this.passed,
+    required this.renderMs,
+    required this.verificationMs,
+    this.failureReason,
+  });
+
+  final double? scale;
+  final List<EditContractCheck> checks;
+  final bool passed;
+  final double? renderMs;
+  final double? verificationMs;
+  final String? failureReason;
+
+  factory EditContractAttempt.fromJson(Map<String, dynamic> json) {
+    return EditContractAttempt(
+      scale: _nullableDoubleValue(json['scale']),
+      checks: _mapList(
+        json['checks'],
+      ).map(EditContractCheck.fromJson).toList(growable: false),
+      passed: _nullableBoolValue(json['passed']) ?? false,
+      renderMs: _nullableDoubleValue(json['render_ms']),
+      verificationMs: _nullableDoubleValue(json['verification_ms']),
+      failureReason: _stringValue(json['failure_reason']),
+    );
+  }
+}
+
+class EditContractMetadata {
+  const EditContractMetadata({
+    required this.status,
+    required this.contractHash,
+    required this.schemaVersion,
+    required this.semanticRegistryVersion,
+    required this.metricRegistryVersion,
+    required this.parserVersion,
+    required this.searchPolicyVersion,
+    required this.targetEditId,
+    required this.requestedScale,
+    required this.appliedScale,
+    required this.constraints,
+    required this.checks,
+    required this.attempts,
+    required this.timings,
+    required this.requestedParameters,
+    required this.actualParameters,
+    required this.requestedEditPlan,
+    this.selectedTargetBaselinePath,
+    this.renderAnchorPath,
+    this.maskSourcePath,
+    this.clientRequestId,
+    this.failureReason,
+  });
+
+  final String status;
+  final String? contractHash;
+  final String? schemaVersion;
+  final String? semanticRegistryVersion;
+  final String? metricRegistryVersion;
+  final String? parserVersion;
+  final String? searchPolicyVersion;
+  final String? targetEditId;
+  final double? requestedScale;
+  final double? appliedScale;
+  final List<EditContractConstraint> constraints;
+  final List<EditContractCheck> checks;
+  final List<EditContractAttempt> attempts;
+  final Map<String, dynamic> timings;
+  final Map<String, dynamic> requestedParameters;
+  final Map<String, dynamic> actualParameters;
+  final Map<String, dynamic> requestedEditPlan;
+  final String? selectedTargetBaselinePath;
+  final String? renderAnchorPath;
+  final String? maskSourcePath;
+  final String? clientRequestId;
+  final String? failureReason;
+
+  bool get isSuccessful => status == 'passed' || status == 'adjusted';
+
+  bool get wasAdjusted =>
+      status == 'adjusted' ||
+      (appliedScale != null &&
+          requestedScale != null &&
+          appliedScale! < requestedScale! - 0.000001);
+
+  int get passedCheckCount => checks.where((check) => check.passed).length;
+
+  factory EditContractMetadata.fromJson(Map<String, dynamic> json) {
+    final contractIr = _mapValue(json['contract_ir']);
+    return EditContractMetadata(
+      status: (_stringValue(json['status']) ?? 'unknown').toLowerCase(),
+      contractHash: _stringValue(json['contract_hash']),
+      schemaVersion: _stringValue(contractIr['schema_version']),
+      semanticRegistryVersion: _stringValue(
+        contractIr['semantic_registry_version'],
+      ),
+      metricRegistryVersion: _stringValue(
+        contractIr['metric_registry_version'],
+      ),
+      parserVersion: _stringValue(contractIr['parser_version']),
+      searchPolicyVersion: _stringValue(json['search_policy_version']),
+      targetEditId: _stringValue(json['target_edit_id']),
+      requestedScale: _nullableDoubleValue(json['requested_scale']),
+      appliedScale: _nullableDoubleValue(json['applied_scale']),
+      constraints: _mapList(
+        contractIr['constraints'],
+      ).map(EditContractConstraint.fromJson).toList(growable: false),
+      checks: _mapList(
+        json['checks'],
+      ).map(EditContractCheck.fromJson).toList(growable: false),
+      attempts: _mapList(
+        json['attempts'],
+      ).map(EditContractAttempt.fromJson).toList(growable: false),
+      timings: _mapValue(json['timings']),
+      requestedParameters: _mapValue(json['requested_parameter_vector']),
+      actualParameters: _mapValue(json['actual_parameter_vector']),
+      requestedEditPlan: _mapValue(json['requested_edit_plan']),
+      selectedTargetBaselinePath: _stringValue(
+        json['selected_target_baseline_path'],
+      ),
+      renderAnchorPath: _stringValue(json['render_anchor_path']),
+      maskSourcePath: _stringValue(json['mask_source_path']),
+      clientRequestId: _stringValue(json['client_request_id']),
+      failureReason: _stringValue(json['failure_reason']),
+    );
+  }
+}
+
+Map<String, String> _localizedStringMap(dynamic value) {
+  if (value is! Map) {
+    return const <String, String>{};
+  }
+  return <String, String>{
+    for (final entry in value.entries)
+      if (entry.value != null) entry.key.toString(): entry.value.toString(),
+  };
+}
+
 class EditHistoryItem {
   const EditHistoryItem({
     required this.sessionId,
@@ -919,6 +1285,7 @@ class EditHistoryItem {
     this.style,
     this.adaptive = const <String, dynamic>{},
     this.photoGit,
+    this.editContract,
   });
 
   final String sessionId;
@@ -940,6 +1307,7 @@ class EditHistoryItem {
   final StyleMetadata? style;
   final Map<String, dynamic> adaptive;
   final PhotoGitMetadata? photoGit;
+  final EditContractMetadata? editContract;
 
   factory EditHistoryItem.fromJson(
     Map<String, dynamic> json, {
@@ -988,6 +1356,11 @@ class EditHistoryItem {
       photoGit: json['photo_git'] is Map
           ? PhotoGitMetadata.fromJson(
               Map<String, dynamic>.from(json['photo_git'] as Map),
+            )
+          : null,
+      editContract: json['edit_contract'] is Map
+          ? EditContractMetadata.fromJson(
+              Map<String, dynamic>.from(json['edit_contract'] as Map),
             )
           : null,
     );

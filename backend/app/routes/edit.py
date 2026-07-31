@@ -1,5 +1,7 @@
+import copy
 import re
 import shutil
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -13,12 +15,23 @@ from app.services.adaptive_adjustment import (
     resolve_adaptive_adjustment,
 )
 from app.services.edit_engines import create_engine_result, normalize_engine_name
+from app.services.edit_contract_registry import get_default_metric_registry
+from app.services.edit_contract_schema import EditContractError
+from app.services.edit_contract_semantic_adapter import (
+    ContractSemanticAttempt,
+    parse_edit_contract_prompt,
+)
+from app.services.edit_contract_service import EditContractService
 from app.services.edit_history import (
+    EditHistoryConflict,
     EditHistoryInvalidIdentifier,
     EditHistoryNotFound,
     EditHistoryStore,
 )
 from app.services.english_prompt_contract import MAX_ENGLISH_PROMPT_LENGTH
+from app.services.grounded_contract_provider import (
+    get_default_grounded_contract_provider,
+)
 from app.services.edit_intent_resolver import resolve_edit_intent
 from app.services.edit_plan import build_reference_edit_plan
 from app.services.edit_schema import manual_parameter_schema
@@ -64,6 +77,9 @@ PHOTO_GIT_SERVICE = PhotoGitService(
     preview_root=PHOTO_GIT_PREVIEWS_DIR,
     results_root=RESULTS_DIR,
 )
+EDIT_CONTRACT_REGISTRY = get_default_metric_registry()
+EDIT_CONTRACT_SERVICE = EditContractService(registry=EDIT_CONTRACT_REGISTRY)
+GROUNDED_CONTRACT_PROVIDER = get_default_grounded_contract_provider()
 
 
 class ManualEditRequest(BaseModel):
@@ -83,6 +99,7 @@ async def upload_images(
     session_id: str | None = Form(None),
     parent_edit_id: str | None = Form(None),
     engine: str = Form("opencv"),
+    client_request_id: str | None = Form(None),
 ):
     prompt_text = prompt.strip()
     if len(prompt_text) > MAX_ENGLISH_PROMPT_LENGTH:
@@ -102,6 +119,19 @@ async def upload_images(
     has_reference = reference_image is not None
     requested_session_id = session_id.strip() if session_id else None
     requested_parent_edit_id = parent_edit_id.strip() if parent_edit_id else None
+    requested_client_request_id = (
+        client_request_id.strip() if client_request_id else None
+    )
+    if requested_client_request_id is not None and not (
+        1 <= len(requested_client_request_id) <= 128
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "invalid_client_request_id",
+                "message": "client_request_id 長度必須介於 1 到 128 字元。",
+            },
+        )
     if requested_session_id and SESSION_ID_PATTERN.fullmatch(requested_session_id) is None:
         raise HTTPException(status_code=400, detail="Invalid session_id format.")
     if (
@@ -217,12 +247,41 @@ async def upload_images(
             with open(reference_path, "wb") as f:
                 f.write(reference_bytes)
 
+        contract_attempt: ContractSemanticAttempt | None = None
+        if edit_mode == "prompt":
+            contract_attempt = parse_edit_contract_prompt(
+                prompt_text,
+                metric_registry=EDIT_CONTRACT_REGISTRY,
+                engine=engine_name,
+                grounded_provider=GROUNDED_CONTRACT_PROVIDER,
+            )
+            if contract_attempt.error is not None:
+                raise HTTPException(
+                    status_code=contract_attempt.error.status_code,
+                    detail=contract_attempt.error.as_dict(),
+                )
+
+        selected_target_saved_path = base_saved_path
+        selected_target_path = base_path
+        selected_target_edit_id = (
+            requested_parent_edit_id
+            if requested_parent_edit_id
+            else ORIGINAL_PARENT_SENTINEL
+        )
+        is_contract_prompt = bool(
+            contract_attempt is not None and contract_attempt.accepted
+        )
+
         adaptive = None
         adaptive_explanation = None
         semantic_shadow_payload = None
         if edit_mode == "prompt":
             try:
-                style_prompt_result = try_resolve_style_prompt(prompt_text)
+                style_prompt_result = (
+                    None
+                    if is_contract_prompt
+                    else try_resolve_style_prompt(prompt_text)
+                )
             except StyleSelectionError as exc:
                 raise HTTPException(
                     status_code=exc.status_code,
@@ -260,21 +319,46 @@ async def upload_images(
                 style_plan["style_source_edit_id"] = history_parent_edit_id
                 style_plan["style_anchor_image_path"] = base_saved_path
             else:
-                semantic_preflight = preflight_adaptive_semantic_prompt(
-                    prompt=prompt_text,
-                    engine_name=engine_name,
-                )
-                if semantic_preflight.semantic_attempt is not None:
-                    semantic_shadow = observe_grounded_semantic_shadow(
+                if is_contract_prompt:
+                    if (
+                        contract_attempt is None
+                        or contract_attempt.contract_ir is None
+                        or contract_attempt.operation_semantic_attempt is None
+                    ):
+                        raise HTTPException(
+                            status_code=500,
+                            detail={
+                                "code": "contract_semantic_state_invalid",
+                                "message": "合約語意狀態不完整，未建立修圖版本。",
+                            },
+                        )
+                    semantic_attempt = contract_attempt.operation_semantic_attempt
+                    semantic_ir = semantic_attempt.accepted_ir
+                    prompt_result = {
+                        "prompt": prompt_text,
+                        "parser_source": "edit_contract_semantic",
+                        "fallback_reason": None,
+                        "semantic_ir": semantic_ir.as_dict(),
+                        "semantic_parser_version": semantic_ir.parser_version,
+                        "semantic_decision_source": semantic_ir.decision_source,
+                    }
+                else:
+                    semantic_preflight = preflight_adaptive_semantic_prompt(
                         prompt=prompt_text,
-                        deterministic_attempt=semantic_preflight.semantic_attempt,
-                        engine=engine_name,
+                        engine_name=engine_name,
                     )
-                    if semantic_shadow.enabled:
-                        semantic_shadow_payload = semantic_shadow.as_dict()
-                prompt_result = semantic_preflight.prompt_result
-                if not semantic_preflight.bypass_intent_resolver:
-                    prompt_result = resolve_edit_intent(prompt_text)
+                    semantic_attempt = semantic_preflight.semantic_attempt
+                    if semantic_attempt is not None:
+                        semantic_shadow = observe_grounded_semantic_shadow(
+                            prompt=prompt_text,
+                            deterministic_attempt=semantic_attempt,
+                            engine=engine_name,
+                        )
+                        if semantic_shadow.enabled:
+                            semantic_shadow_payload = semantic_shadow.as_dict()
+                    prompt_result = semantic_preflight.prompt_result
+                    if not semantic_preflight.bypass_intent_resolver:
+                        prompt_result = resolve_edit_intent(prompt_text)
                 try:
                     adaptive_result = resolve_adaptive_adjustment(
                         prompt_result=prompt_result,
@@ -282,7 +366,7 @@ async def upload_images(
                         parent_record=parent_record,
                         default_base_image_path=base_saved_path,
                         engine_name=engine_name,
-                        semantic_attempt=semantic_preflight.semantic_attempt,
+                        semantic_attempt=semantic_attempt,
                     )
                 except AdaptiveAdjustmentError as exc:
                     detail = {"code": exc.code, "message": str(exc)}
@@ -297,6 +381,56 @@ async def upload_images(
                 prompt_result = adaptive_result.prompt_result
                 adaptive = adaptive_result.adaptive
                 adaptive_explanation = adaptive_result.explanation
+                if is_contract_prompt:
+                    if contract_attempt is None or contract_attempt.contract_ir is None:
+                        raise HTTPException(
+                            status_code=500,
+                            detail={"code": "contract_semantic_state_invalid"},
+                        )
+                    contract_semantic_ir = (
+                        contract_attempt.contract_ir.semantic_ir.as_dict()
+                    )
+                    prompt_result["semantic_ir"] = copy.deepcopy(
+                        contract_semantic_ir
+                    )
+                    prompt_result["semantic_parser_version"] = (
+                        contract_attempt.contract_ir.semantic_ir.parser_version
+                    )
+                    prompt_result["semantic_decision_source"] = (
+                        contract_attempt.contract_ir.semantic_ir.decision_source
+                    )
+                    edit_plan = prompt_result.get("edit_plan")
+                    if isinstance(edit_plan, dict):
+                        edit_plan["semantic_ir"] = copy.deepcopy(
+                            contract_semantic_ir
+                        )
+                        edit_plan["semantic_parser_version"] = prompt_result[
+                            "semantic_parser_version"
+                        ]
+                        edit_plan["semantic_decision_source"] = prompt_result[
+                            "semantic_decision_source"
+                        ]
+                        plan_adaptation = edit_plan.get("adaptation")
+                        if isinstance(plan_adaptation, dict):
+                            plan_adaptation["semantic_ir"] = copy.deepcopy(
+                                contract_semantic_ir
+                            )
+                            plan_adaptation["semantic_parser_version"] = (
+                                prompt_result["semantic_parser_version"]
+                            )
+                            plan_adaptation["semantic_decision_source"] = (
+                                prompt_result["semantic_decision_source"]
+                            )
+                    if isinstance(adaptive, dict):
+                        adaptive["semantic_ir"] = copy.deepcopy(
+                            contract_semantic_ir
+                        )
+                        adaptive["semantic_parser_version"] = prompt_result[
+                            "semantic_parser_version"
+                        ]
+                        adaptive["semantic_decision_source"] = prompt_result[
+                            "semantic_decision_source"
+                        ]
                 if adaptive_result.render_base_image_path != base_saved_path:
                     base_saved_path = adaptive_result.render_base_image_path
                     base_path = _safe_backend_file(
@@ -315,16 +449,50 @@ async def upload_images(
                 "fallback_reason": None,
             }
 
+        contract_report = None
         try:
-            process_result = create_engine_result(
-                engine_name=engine_name,
-                original_path=base_path,
-                reference_path=reference_path,
-                result_path=result_path,
-                edit_plan=prompt_result["edit_plan"],
-                mask_source_path=original_path,
-            )
+            if is_contract_prompt:
+                if contract_attempt is None or contract_attempt.contract_ir is None:
+                    raise EditContractError(
+                        code="contract_semantic_state_invalid",
+                        message="合約語意狀態不完整，未建立修圖版本。",
+                        disposition="rejected",
+                        status_code=500,
+                    )
+                contract_execution = EDIT_CONTRACT_SERVICE.execute(
+                    contract_ir=contract_attempt.contract_ir,
+                    prompt_result=prompt_result,
+                    adaptive=adaptive,
+                    selected_target_path=selected_target_path,
+                    selected_target_saved_path=selected_target_saved_path,
+                    target_edit_id=selected_target_edit_id,
+                    render_anchor_path=base_path,
+                    render_anchor_saved_path=base_saved_path,
+                    mask_source_path=original_path,
+                    mask_source_saved_path=original_saved_path,
+                    result_path=result_path,
+                    engine_name=engine_name,
+                )
+                prompt_result = contract_execution.prompt_result
+                adaptive = contract_execution.adaptive
+                process_result = contract_execution.process_result
+                contract_report = contract_execution.report
+                adaptive_explanation = prompt_result.get("explanation")
+            else:
+                process_result = create_engine_result(
+                    engine_name=engine_name,
+                    original_path=base_path,
+                    reference_path=reference_path,
+                    result_path=result_path,
+                    edit_plan=prompt_result["edit_plan"],
+                    mask_source_path=original_path,
+                )
             _validate_completed_render(result_path, process_result)
+        except EditContractError as exc:
+            raise HTTPException(
+                status_code=exc.status_code,
+                detail=exc.as_dict(),
+            ) from exc
         except SemanticTargetNotFoundError as e:
             raise HTTPException(
                 status_code=422,
@@ -377,6 +545,13 @@ async def upload_images(
         else:
             active_style = None
 
+        edit_contract_metadata = None
+        if contract_report is not None:
+            edit_contract_metadata = {
+                **contract_report.as_dict(),
+                "client_request_id": requested_client_request_id,
+            }
+
         history_record = HISTORY_STORE.build_record(
             session_id=effective_session_id,
             edit_id=edit_id,
@@ -400,6 +575,7 @@ async def upload_images(
             processing_timings=process_result.get("timings_ms"),
             adaptive=adaptive,
             style=active_style,
+            edit_contract=edit_contract_metadata,
         )
 
         response_payload = {
@@ -426,6 +602,7 @@ async def upload_images(
             "resolved_intent": prompt_result["resolved_intent"],
             "preset_name": prompt_result.get("preset_name"),
             "style": active_style,
+            "edit_contract": edit_contract_metadata,
             "parser_source": prompt_result["parser_source"],
             "fallback_reason": prompt_result["fallback_reason"],
             "explanation": explanation,
@@ -435,7 +612,31 @@ async def upload_images(
             # it must never become controller input or immutable edit history.
             response_payload["semantic_shadow"] = semantic_shadow_payload
 
-        HISTORY_STORE.save_edit(history_record)
+        if edit_contract_metadata is not None and requested_client_request_id:
+            try:
+                _, persisted_record, created = (
+                    HISTORY_STORE.save_edit_request_idempotent(
+                        history_record,
+                        namespace="edit_contract",
+                        client_request_id=requested_client_request_id,
+                        request_hash=contract_report.contract_hash,
+                    )
+                )
+            except EditHistoryConflict as exc:
+                raise HTTPException(
+                    status_code=409,
+                    detail={
+                        "code": "contract_request_conflict",
+                        "message": str(exc),
+                    },
+                ) from exc
+            if not created:
+                return _history_record_response(
+                    persisted_record,
+                    idempotent_replay=True,
+                )
+        else:
+            HISTORY_STORE.save_edit(history_record)
         history_committed = True
         return response_payload
     finally:
@@ -453,6 +654,11 @@ def get_edit_session(session_id: str):
         raise HTTPException(status_code=400, detail=str(e))
     except EditHistoryNotFound as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.get("/edit/contracts/schema")
+def get_edit_contract_schema():
+    return EDIT_CONTRACT_REGISTRY.as_schema_payload()
 
 
 @router.post("/edit/photo-git/plan")
@@ -553,6 +759,33 @@ def _semantic_target_http_error(exc: SemanticTargetNotFoundError) -> HTTPExcepti
             "mask_info": exc.mask_info,
         },
     )
+
+
+def _history_record_response(
+    record: Mapping[str, Any],
+    *,
+    idempotent_replay: bool,
+) -> dict[str, Any]:
+    result_saved_path = str(record.get("result_image_path") or "")
+    parameters = record.get("engine_parameters")
+    if not isinstance(parameters, dict):
+        parameters = dict(record.get("parameters") or {})
+    return {
+        **copy.deepcopy(dict(record)),
+        "message": "Existing verified edit returned for idempotent request",
+        "task_id": record.get("edit_id"),
+        "original_filename": None,
+        "reference_filename": None,
+        "original_saved_path": record.get("original_image_path"),
+        "base_image_path": record.get("base_image_path"),
+        "reference_saved_path": record.get("reference_image_path"),
+        "result_saved_path": result_saved_path,
+        "result_url": f"/{result_saved_path}",
+        "engine_parameters": parameters,
+        "parameters": parameters,
+        "prompt": record.get("user_prompt"),
+        "idempotent_replay": idempotent_replay,
+    }
 
 
 def _safe_backend_file(relative_path: str, label: str) -> Path:
