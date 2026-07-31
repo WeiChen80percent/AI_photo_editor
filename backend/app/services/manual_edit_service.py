@@ -250,10 +250,18 @@ class ManualEditService:
                 "Manual adjustment v1 only supports OpenCV source edits",
             )
         source_mode = str(source.get("edit_mode") or "")
-        if source_mode not in {"prompt", "manual"}:
+        if source_mode not in {
+            "prompt",
+            "manual",
+            "photo_git_merge",
+            "photo_git_revert",
+        }:
             raise ManualEditError(
                 "manual_source_mode_unsupported",
-                "Manual adjustment v1 supports prompt or manual source edits only",
+                (
+                    "Manual adjustment v1 supports prompt, manual, "
+                    "or Photo Git source edits only"
+                ),
             )
 
         try:
@@ -268,10 +276,15 @@ class ManualEditService:
             isinstance(source_plan, Mapping)
             and str(source_plan.get("type") or "") == "style"
         )
-        if source_is_style:
+        source_is_photo_git = source_mode in {
+            "photo_git_merge",
+            "photo_git_revert",
+        }
+        source_is_visual_anchor = source_is_style or source_is_photo_git
+        if source_is_visual_anchor:
             # A style result becomes the immutable visual anchor for manual
-            # micro-adjustments.  Reusing the pre-style base here would drop
-            # the recipe/LUT and keep only its public parameter envelope.
+            # micro-adjustments. The same rule applies to a Photo Git composite:
+            # reusing its pre-render anchor would drop other merged scopes.
             base_saved_path = str(source.get("result_image_path") or "")
         original_path = self._safe_backend_path(original_saved_path, "original image")
         base_path = self._safe_backend_path(base_saved_path, "base image")
@@ -283,19 +296,23 @@ class ManualEditService:
                 "Source edit does not contain reusable OpenCV parameters",
             )
         canonical: dict[str, Any] = NEUTRAL_OPENCV_PARAMETERS.copy()
-        if not source_is_style:
+        if not source_is_visual_anchor:
             canonical.update(validate_edit_parameters(source_parameters))
         canonical.update(overrides)
         canonical["reference_tint"] = 0.0
         raw_region = (
-            None if source_is_style else source_parameters.get("region")
+            None
+            if source_is_visual_anchor
+            else source_parameters.get("region")
         ) or (
             source_plan.get("region")
             if isinstance(source_plan, Mapping)
             else None
         )
         raw_mask_type = (
-            None if source_is_style else source_parameters.get("mask_type")
+            None
+            if source_is_visual_anchor
+            else source_parameters.get("mask_type")
         ) or (
             source_plan.get("mask_type")
             if isinstance(source_plan, Mapping)

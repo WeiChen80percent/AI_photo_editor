@@ -219,6 +219,33 @@ class _EditorScreenState extends State<EditorScreen> {
     EditorTool tool, {
     required bool isExpanded,
   }) async {
+    if (tool != EditorTool.history && _controller.hasPhotoGitDraft) {
+      final discard = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) {
+          final l10n = dialogContext.l10n;
+          return AlertDialog(
+            title: Text(l10n.discardDraftTitle),
+            content: Text(l10n.discardPhotoGitForTool),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: Text(l10n.actionBack),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: Text(l10n.actionDiscardAndSwitch),
+              ),
+            ],
+          );
+        },
+      );
+      if (discard != true || !mounted) {
+        return;
+      }
+      _controller.discardPhotoGitDraft();
+    }
+
     if (isExpanded && _controller.activeTool == tool) {
       _controller.setActiveTool(null);
       return;

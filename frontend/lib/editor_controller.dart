@@ -69,9 +69,24 @@ class EditorController extends ChangeNotifier {
   bool isCommittingManual = false;
   bool manualAdvancedExpanded = false;
 
+  PhotoGitOperation photoGitOperation = PhotoGitOperation.merge;
+  String photoGitInstruction = '';
+  String? photoGitSourceEditId;
+  String? photoGitRevertEditId;
+  String? photoGitRegion;
+  String? photoGitParameter;
+  Map<String, String> photoGitResolutions = <String, String>{};
+  PhotoGitPlan? photoGitPlan;
+  PhotoGitPreview? photoGitPreview;
+  bool isPlanningPhotoGit = false;
+  bool isPreviewingPhotoGit = false;
+  bool isCommittingPhotoGit = false;
+
   Timer? _previewTimer;
   http.Client? _previewClient;
   int _previewSequence = 0;
+  int _photoGitRequestSequence = 0;
+  String? _photoGitClientRequestId;
   bool _disposed = false;
 
   bool get hasOriginal =>
@@ -80,10 +95,15 @@ class EditorController extends ChangeNotifier {
   bool get hasResult => currentResultUrl != null;
 
   String? get currentResultUrl =>
-      manualPreview?.resultUrl ?? selectedEdit?.resultUrl;
+      photoGitPreview?.resultUrl ??
+      manualPreview?.resultUrl ??
+      selectedEdit?.resultUrl;
 
   EditHistoryItem? get comparisonParentEdit {
-    final parentEditId = hasUncommittedPreview
+    if (photoGitPreview != null) {
+      return _findEdit(photoGitPreview!.targetEditId);
+    }
+    final parentEditId = manualPreview != null && manualIsDirty
         ? manualSourceEditId
         : selectedEdit?.parentEditId;
     if (parentEditId == null || parentEditId == originalParentSentinel) {
@@ -119,7 +139,103 @@ class EditorController extends ChangeNotifier {
   ParameterMetadataCatalog get parameterMetadataCatalog =>
       metadataCatalogFor(selectedEdit);
 
-  bool get hasUncommittedPreview => manualPreview != null && manualIsDirty;
+  bool get hasUncommittedPreview =>
+      photoGitPreview != null || (manualPreview != null && manualIsDirty);
+
+  bool get hasPhotoGitDraft =>
+      photoGitSourceEditId != null ||
+      photoGitRevertEditId != null ||
+      photoGitInstruction.trim().isNotEmpty ||
+      photoGitRegion != null ||
+      photoGitParameter != null ||
+      photoGitResolutions.isNotEmpty ||
+      photoGitPlan != null ||
+      photoGitPreview != null;
+
+  bool get hasPendingDraft => manualIsDirty || hasPhotoGitDraft;
+
+  EditHistoryItem? get photoGitTargetEdit => selectedEdit;
+
+  List<EditHistoryItem> get photoGitSourceCandidates {
+    final targetId = selectedEditId;
+    return history
+        .where(
+          (edit) =>
+              edit.editId != targetId && _isPhotoGitCapableMode(edit.editMode),
+        )
+        .toList(growable: false);
+  }
+
+  List<EditHistoryItem> get photoGitRevertCandidates {
+    final target = selectedEdit;
+    if (target == null) {
+      return const <EditHistoryItem>[];
+    }
+    final result = <EditHistoryItem>[];
+    final visited = <String>{};
+    EditHistoryItem? current = target;
+    while (current != null && visited.add(current.editId)) {
+      if (current.editMode == 'prompt' || current.editMode == 'manual') {
+        result.add(current);
+      }
+      final parentId = current.parentEditId;
+      if (parentId == null || parentId == originalParentSentinel) {
+        break;
+      }
+      current = _findEdit(parentId);
+    }
+    return result;
+  }
+
+  List<PhotoGitSelector> get photoGitSelectors {
+    if (photoGitRegion == null && photoGitParameter == null) {
+      return const <PhotoGitSelector>[];
+    }
+    return <PhotoGitSelector>[
+      PhotoGitSelector(
+        region: photoGitRegion,
+        parameters: photoGitParameter == null
+            ? const <String>[]
+            : <String>[photoGitParameter!],
+      ),
+    ];
+  }
+
+  bool get canPlanPhotoGit {
+    if (isPlanningPhotoGit ||
+        isPreviewingPhotoGit ||
+        isCommittingPhotoGit ||
+        manualIsDirty ||
+        sessionId == null ||
+        selectedEdit == null) {
+      return false;
+    }
+    final hasScope =
+        photoGitInstruction.trim().isNotEmpty || photoGitSelectors.isNotEmpty;
+    if (!hasScope) {
+      return false;
+    }
+    return photoGitOperation == PhotoGitOperation.merge
+        ? photoGitSourceEditId != null
+        : photoGitRevertEditId != null;
+  }
+
+  bool get canPreviewPhotoGit =>
+      !isPlanningPhotoGit &&
+      !isPreviewingPhotoGit &&
+      !isCommittingPhotoGit &&
+      photoGitPlan?.isReady == true &&
+      photoGitPlan?.hasUnresolvedConflicts == false;
+
+  bool get canCommitPhotoGit =>
+      !isPlanningPhotoGit &&
+      !isPreviewingPhotoGit &&
+      !isCommittingPhotoGit &&
+      photoGitPreview != null &&
+      photoGitPreview!.planHash == photoGitPlan?.planHash &&
+      photoGitPlan?.isReady == true;
+
+  bool get isRenderingPreview => isPreviewing || isPreviewingPhotoGit;
 
   bool get manualIsDirty {
     if (manualSourceEditId == null || manualValues.isEmpty) {
@@ -136,11 +252,13 @@ class EditorController extends ChangeNotifier {
 
   bool get canSubmitPrompt =>
       !isProcessing &&
+      !hasPhotoGitDraft &&
       promptDraft.trim().isNotEmpty &&
       (hasOriginal || selectedEdit != null);
 
   bool get canSubmitReference =>
       !isProcessing &&
+      !hasPhotoGitDraft &&
       referenceImageBytes != null &&
       (hasOriginal || selectedEdit != null);
 
@@ -172,12 +290,19 @@ class EditorController extends ChangeNotifier {
 
   bool get canOpenManual {
     final edit = selectedEdit;
-    return edit != null &&
+    return !hasPhotoGitDraft &&
+        edit != null &&
         edit.engine.toLowerCase() == 'opencv' &&
-        (edit.editMode == 'prompt' || edit.editMode == 'manual');
+        (edit.editMode == 'prompt' ||
+            edit.editMode == 'manual' ||
+            edit.editMode == 'photo_git_merge' ||
+            edit.editMode == 'photo_git_revert');
   }
 
   String get manualDisabledReason {
+    if (hasPhotoGitDraft) {
+      return '請先完成或取消目前的版本操作，再進入手動調整。';
+    }
     final edit = selectedEdit;
     if (edit == null) {
       return '請先完成一次指令修圖，再進入手動調整。';
@@ -192,6 +317,9 @@ class EditorController extends ChangeNotifier {
   }
 
   String get manualDisabledCode {
+    if (hasPhotoGitDraft) {
+      return 'photo_git_draft_active';
+    }
     final edit = selectedEdit;
     if (edit == null) {
       return 'manual_need_prompt';
@@ -234,6 +362,268 @@ class EditorController extends ChangeNotifier {
         ? '等效 $parameters'
         : parameters;
     return '$previewLabel$styleLabel$target · $parameterLabel';
+  }
+
+  void setPhotoGitOperation(PhotoGitOperation operation) {
+    if (photoGitOperation == operation) {
+      return;
+    }
+    photoGitOperation = operation;
+    photoGitSourceEditId = null;
+    photoGitRevertEditId = null;
+    _invalidatePhotoGitPlan();
+    _clearError();
+    _clearStatus();
+    _notify();
+  }
+
+  void setPhotoGitSource(String? editId) {
+    if (photoGitSourceEditId == editId) {
+      return;
+    }
+    photoGitSourceEditId = editId;
+    photoGitRevertEditId = null;
+    _invalidatePhotoGitPlan();
+    _clearError();
+    _clearStatus();
+    _notify();
+  }
+
+  void setPhotoGitRevertStep(String? editId) {
+    if (photoGitRevertEditId == editId) {
+      return;
+    }
+    photoGitRevertEditId = editId;
+    photoGitSourceEditId = null;
+    _invalidatePhotoGitPlan();
+    _clearError();
+    _clearStatus();
+    _notify();
+  }
+
+  void setPhotoGitInstruction(String value) {
+    if (photoGitInstruction == value) {
+      return;
+    }
+    photoGitInstruction = value;
+    _invalidatePhotoGitPlan();
+    _clearError();
+    _clearStatus();
+    _notify();
+  }
+
+  void setPhotoGitRegion(String? region) {
+    if (photoGitRegion == region) {
+      return;
+    }
+    photoGitRegion = region;
+    _invalidatePhotoGitPlan();
+    _clearError();
+    _clearStatus();
+    _notify();
+  }
+
+  void setPhotoGitParameter(String? parameter) {
+    if (photoGitParameter == parameter) {
+      return;
+    }
+    photoGitParameter = parameter;
+    _invalidatePhotoGitPlan();
+    _clearError();
+    _clearStatus();
+    _notify();
+  }
+
+  Future<bool> analyzePhotoGit() async {
+    final currentSession = sessionId;
+    final request = _buildPhotoGitRequest();
+    if (currentSession == null || request == null || !canPlanPhotoGit) {
+      _setError('請選擇版本並指定要操作的區域或參數。', 'photo_git_request_incomplete');
+      _notify();
+      return false;
+    }
+    isPlanningPhotoGit = true;
+    photoGitPreview = null;
+    _photoGitClientRequestId = null;
+    _clearError();
+    _setStatus('正在分析版本差異…', 'photo_git_planning');
+    _notify();
+    try {
+      final plan = await _api.planPhotoGit(
+        sessionId: currentSession,
+        request: request,
+      );
+      photoGitPlan = plan;
+      photoGitResolutions = <String, String>{
+        for (final conflict in plan.conflicts)
+          if (conflict.resolvedChoice != null)
+            conflict.conflictId: conflict.resolvedChoice!,
+      };
+      if (plan.status == 'conflict') {
+        _setStatus(plan.message, 'photo_git_conflicts_found');
+      } else if (plan.status == 'no_change') {
+        _setStatus(plan.message, 'photo_git_no_change');
+      } else {
+        _setStatus(plan.message, 'photo_git_plan_ready');
+      }
+      return plan.isReady;
+    } on ApiException catch (error) {
+      if (error.code == 'photo_git_plan_stale') {
+        photoGitPlan = null;
+        photoGitPreview = null;
+        _photoGitClientRequestId = null;
+      }
+      _setApiError(error);
+      _clearStatus();
+      return false;
+    } catch (error) {
+      _setError(
+        '版本分析失敗：$error',
+        'photo_git_plan_failed',
+        arguments: <String, Object?>{'error': error.runtimeType.toString()},
+      );
+      _clearStatus();
+      return false;
+    } finally {
+      isPlanningPhotoGit = false;
+      _notify();
+    }
+  }
+
+  Future<bool> resolvePhotoGitConflict(String conflictId, String choice) async {
+    PhotoGitConflict? conflict;
+    for (final item in photoGitPlan?.conflicts ?? const <PhotoGitConflict>[]) {
+      if (item.conflictId == conflictId) {
+        conflict = item;
+        break;
+      }
+    }
+    if (conflict == null || !conflict.allowedChoices.contains(choice)) {
+      return false;
+    }
+    photoGitResolutions = <String, String>{
+      ...photoGitResolutions,
+      conflictId: choice,
+    };
+    photoGitPlan = null;
+    photoGitPreview = null;
+    _photoGitClientRequestId = null;
+    _notify();
+    return analyzePhotoGit();
+  }
+
+  Future<bool> previewPhotoGit() async {
+    final currentSession = sessionId;
+    final request = _buildPhotoGitRequest();
+    final plan = photoGitPlan;
+    if (currentSession == null ||
+        request == null ||
+        plan == null ||
+        !canPreviewPhotoGit) {
+      return false;
+    }
+    isPreviewingPhotoGit = true;
+    _clearError();
+    _setStatus('正在產生版本預覽…', 'photo_git_previewing');
+    _notify();
+    try {
+      final preview = await _api.previewPhotoGit(
+        sessionId: currentSession,
+        request: request,
+        planHash: plan.planHash,
+      );
+      if (photoGitPlan?.planHash != preview.planHash) {
+        return false;
+      }
+      photoGitPreview = preview;
+      comparisonView = ComparisonView.compare;
+      comparisonBaseline = ComparisonBaseline.parent;
+      _ensureComparisonState();
+      _setStatus('預覽已就緒，請比較後再建立版本。', 'photo_git_preview_ready');
+      return true;
+    } on ApiException catch (error) {
+      if (error.code == 'photo_git_plan_stale') {
+        photoGitPlan = null;
+        photoGitPreview = null;
+        _photoGitClientRequestId = null;
+      }
+      _setApiError(error);
+      _clearStatus();
+      return false;
+    } catch (error) {
+      _setError(
+        '版本預覽失敗：$error',
+        'photo_git_preview_failed',
+        arguments: <String, Object?>{'error': error.runtimeType.toString()},
+      );
+      _clearStatus();
+      return false;
+    } finally {
+      isPreviewingPhotoGit = false;
+      _notify();
+    }
+  }
+
+  Future<bool> commitPhotoGit() async {
+    final currentSession = sessionId;
+    final request = _buildPhotoGitRequest();
+    final plan = photoGitPlan;
+    if (currentSession == null ||
+        request == null ||
+        plan == null ||
+        !canCommitPhotoGit) {
+      return false;
+    }
+    isCommittingPhotoGit = true;
+    _photoGitClientRequestId ??=
+        'flutter_photo_git_${DateTime.now().microsecondsSinceEpoch}_'
+        '${++_photoGitRequestSequence}';
+    final requestId = _photoGitClientRequestId!;
+    _clearError();
+    _setStatus('正在建立可追蹤版本…', 'photo_git_committing');
+    _notify();
+    try {
+      final item = await _api.commitPhotoGit(
+        sessionId: currentSession,
+        request: request,
+        planHash: plan.planHash,
+        clientRequestId: requestId,
+      );
+      _applyCommittedItem(item);
+      await refreshHistory(preferredEditId: item.editId, quiet: true);
+      _clearPhotoGitDraft(notify: false);
+      _setStatus('版本已建立並加入歷史紀錄。', 'photo_git_committed');
+      comparisonView = ComparisonView.result;
+      return true;
+    } on ApiException catch (error) {
+      if (error.code == 'photo_git_plan_stale') {
+        photoGitPlan = null;
+        photoGitPreview = null;
+        _photoGitClientRequestId = null;
+      }
+      _setApiError(error);
+      _clearStatus();
+      return false;
+    } catch (error) {
+      _setError(
+        '建立版本失敗：$error',
+        'photo_git_commit_failed',
+        arguments: <String, Object?>{'error': error.runtimeType.toString()},
+      );
+      _clearStatus();
+      return false;
+    } finally {
+      isCommittingPhotoGit = false;
+      _notify();
+    }
+  }
+
+  void discardPhotoGitDraft() {
+    _clearPhotoGitDraft(notify: false);
+    _clearError();
+    _clearStatus();
+    _ensureComparisonState();
+    _notify();
   }
 
   void setActiveTool(EditorTool? tool) {
@@ -283,6 +673,7 @@ class EditorController extends ChangeNotifier {
 
   void setOriginalImage(Uint8List bytes) {
     _cancelPreview(clearDraft: true);
+    _clearPhotoGitDraft(notify: false);
     originalImageBytes = bytes;
     originalImageUrl = null;
     referenceImageBytes = null;
@@ -300,6 +691,7 @@ class EditorController extends ChangeNotifier {
 
   void clearOriginalImage() {
     _cancelPreview(clearDraft: true);
+    _clearPhotoGitDraft(notify: false);
     originalImageBytes = null;
     originalImageUrl = null;
     referenceImageBytes = null;
@@ -446,6 +838,11 @@ class EditorController extends ChangeNotifier {
     if (isProcessing) {
       return false;
     }
+    if (hasPhotoGitDraft) {
+      _setError('請先完成或取消目前的版本操作。', 'photo_git_draft_active');
+      _notify();
+      return false;
+    }
     final canContinue = sessionId != null && selectedEditId != null;
     if (!canContinue && originalImageBytes == null) {
       _setError('請先選擇原始圖片。', 'original_required');
@@ -549,8 +946,15 @@ class EditorController extends ChangeNotifier {
   }
 
   bool selectHistoryItem(EditHistoryItem item, {bool discardDraft = false}) {
-    if (manualIsDirty && manualSourceEditId != item.editId && !discardDraft) {
+    final switchingAwayFromPhotoGitTarget =
+        hasPhotoGitDraft && selectedEditId != item.editId;
+    if (((manualIsDirty && manualSourceEditId != item.editId) ||
+            switchingAwayFromPhotoGitTarget) &&
+        !discardDraft) {
       return false;
+    }
+    if (discardDraft && switchingAwayFromPhotoGitTarget) {
+      _clearPhotoGitDraft(notify: false);
     }
     if (manualSourceEditId != item.editId) {
       _cancelPreview(clearDraft: true);
@@ -567,10 +971,11 @@ class EditorController extends ChangeNotifier {
   }
 
   bool selectOriginalAsBase({bool discardDraft = false}) {
-    if (manualIsDirty && !discardDraft) {
+    if (hasPendingDraft && !discardDraft) {
       return false;
     }
     _cancelPreview(clearDraft: true);
+    _clearPhotoGitDraft(notify: false);
     selectedEdit = null;
     selectedEditId = originalParentSentinel;
     comparisonView = ComparisonView.original;
@@ -872,6 +1277,19 @@ class EditorController extends ChangeNotifier {
         );
       case 'manual_source_mode_unsupported':
         return '參考圖結果目前不能手動調整，請選擇指令或手動版本。';
+      case 'photo_git_scope_required':
+      case 'photo_git_scope_unclear':
+      case 'photo_git_scope_ambiguous':
+        return '請用文字或選項指定要操作的區域或參數。';
+      case 'photo_git_conflict':
+        return '仍有版本衝突未決定，請逐項選擇後再試一次。';
+      case 'photo_git_plan_stale':
+        return '版本內容已變更，請重新分析後再預覽。';
+      case 'photo_git_no_change':
+        return '所選內容與目前版本相同，不會建立重複版本。';
+      case 'photo_git_version_unsupported':
+      case 'photo_git_recipe_unsupported':
+        return '這個版本缺少可安全重算的來源資訊，無法進行此操作。';
       case 'network_error':
         return '無法連線到修圖後端，請確認後端已啟動。';
       default:
@@ -920,6 +1338,63 @@ class EditorController extends ChangeNotifier {
     return contexts.isEmpty ? base : '$base（涉及：${contexts.join('、')}）';
   }
 
+  PhotoGitRequest? _buildPhotoGitRequest() {
+    final targetId = selectedEditId;
+    if (targetId == null || targetId == originalParentSentinel) {
+      return null;
+    }
+    return PhotoGitRequest(
+      operation: photoGitOperation,
+      targetEditId: targetId,
+      sourceEditId: photoGitOperation == PhotoGitOperation.merge
+          ? photoGitSourceEditId
+          : null,
+      revertEditId: photoGitOperation == PhotoGitOperation.selectiveRevert
+          ? photoGitRevertEditId
+          : null,
+      instruction: photoGitInstruction,
+      selectors: photoGitSelectors,
+      resolutions: photoGitResolutions,
+    );
+  }
+
+  void _invalidatePhotoGitPlan() {
+    photoGitPlan = null;
+    photoGitPreview = null;
+    photoGitResolutions = <String, String>{};
+    _photoGitClientRequestId = null;
+    comparisonView = selectedEdit == null
+        ? ComparisonView.original
+        : ComparisonView.result;
+    _ensureComparisonState();
+  }
+
+  void _clearPhotoGitDraft({required bool notify}) {
+    photoGitOperation = PhotoGitOperation.merge;
+    photoGitInstruction = '';
+    photoGitSourceEditId = null;
+    photoGitRevertEditId = null;
+    photoGitRegion = null;
+    photoGitParameter = null;
+    photoGitResolutions = <String, String>{};
+    photoGitPlan = null;
+    photoGitPreview = null;
+    isPlanningPhotoGit = false;
+    isPreviewingPhotoGit = false;
+    isCommittingPhotoGit = false;
+    _photoGitClientRequestId = null;
+    if (notify) {
+      _notify();
+    }
+  }
+
+  static bool _isPhotoGitCapableMode(String editMode) {
+    return editMode == 'prompt' ||
+        editMode == 'manual' ||
+        editMode == 'photo_git_merge' ||
+        editMode == 'photo_git_revert';
+  }
+
   void _cancelPreview({required bool clearDraft}) {
     _previewTimer?.cancel();
     _previewTimer = null;
@@ -947,6 +1422,7 @@ class EditorController extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     _cancelPreview(clearDraft: true);
+    _clearPhotoGitDraft(notify: false);
     if (_api case final ApiService service) {
       service.close();
     }

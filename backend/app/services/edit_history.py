@@ -21,6 +21,10 @@ class EditHistoryInvalidIdentifier(EditHistoryError):
     pass
 
 
+class EditHistoryConflict(EditHistoryError):
+    pass
+
+
 _SESSION_ID_PATTERN = re.compile(r"^session_[0-9a-f]{32}$")
 _EDIT_ID_PATTERN = re.compile(r"^edit_[0-9a-f]{32}$")
 
@@ -63,13 +67,66 @@ class EditHistoryStore:
 
             session["updated_at"] = record["created_at"]
             session["edits"].append(record)
-            self.storage_dir.mkdir(parents=True, exist_ok=True)
-            session_path = self._session_path(session_id)
-            temp_path = session_path.with_suffix(".json.tmp")
-            with open(temp_path, "w", encoding="utf-8") as f:
-                json.dump(session, f, ensure_ascii=False, indent=2)
-            temp_path.replace(session_path)
+            self._write_session_atomic(session_id, session)
             return session
+
+    def save_edit_idempotent(
+        self,
+        record: dict[str, Any],
+        *,
+        client_request_id: str,
+        plan_hash: str,
+    ) -> tuple[dict[str, Any], dict[str, Any], bool]:
+        """Append once for one Photo Git client request.
+
+        Returns ``(session, persisted_record, created)``. Repeating the same
+        client request and plan returns the original record without appending.
+        Reusing a request id for a different plan is rejected.
+        """
+
+        session_id = self._validate_session_id(record.get("session_id"))
+        self._validate_edit_id(record.get("edit_id"))
+        parent_edit_id = record.get("parent_edit_id")
+        if parent_edit_id is not None:
+            self._validate_edit_id(parent_edit_id)
+        normalized_request_id = str(client_request_id or "").strip()
+        normalized_plan_hash = str(plan_hash or "").strip()
+        if not normalized_request_id or not normalized_plan_hash:
+            raise EditHistoryConflict(
+                "Photo Git idempotency metadata is required"
+            )
+
+        with self._session_lock(session_id):
+            try:
+                session = self.load_session(session_id)
+            except EditHistoryNotFound:
+                session = {
+                    "session_id": session_id,
+                    "created_at": record["created_at"],
+                    "edits": [],
+                }
+            for existing in session.get("edits", []):
+                metadata = (
+                    existing.get("photo_git")
+                    if isinstance(existing, dict)
+                    else None
+                )
+                if (
+                    not isinstance(metadata, dict)
+                    or str(metadata.get("client_request_id") or "")
+                    != normalized_request_id
+                ):
+                    continue
+                if str(metadata.get("plan_hash") or "") != normalized_plan_hash:
+                    raise EditHistoryConflict(
+                        "client_request_id was already used for another Photo Git plan"
+                    )
+                return session, existing, False
+
+            session["updated_at"] = record["created_at"]
+            session.setdefault("edits", []).append(record)
+            self._write_session_atomic(session_id, session)
+            return session, record, True
 
     def find_edit(self, session_id: str, edit_id: str) -> dict[str, Any]:
         edit_id = self._validate_edit_id(edit_id)
@@ -108,6 +165,7 @@ class EditHistoryStore:
         processing_timings: dict[str, Any] | None = None,
         adaptive: dict[str, Any] | None = None,
         style: dict[str, Any] | None = None,
+        photo_git: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         return {
             "session_id": session_id,
@@ -129,6 +187,7 @@ class EditHistoryStore:
             "processing_timings": processing_timings,
             "adaptive": adaptive,
             "style": style,
+            "photo_git": photo_git,
             "parameters": parameters,
             "preset_name": preset_name,
             "explanation": explanation,
@@ -140,6 +199,25 @@ class EditHistoryStore:
     def _session_path(self, session_id: str) -> Path:
         normalized = self._validate_session_id(session_id)
         return self.storage_dir / f"{normalized}.json"
+
+    def _write_session_atomic(
+        self,
+        session_id: str,
+        session: dict[str, Any],
+    ) -> None:
+        self.storage_dir.mkdir(parents=True, exist_ok=True)
+        session_path = self._session_path(session_id)
+        temp_path = session_path.with_suffix(".json.tmp")
+        try:
+            with open(temp_path, "w", encoding="utf-8") as f:
+                json.dump(session, f, ensure_ascii=False, indent=2)
+            temp_path.replace(session_path)
+        finally:
+            try:
+                if temp_path.exists():
+                    temp_path.unlink()
+            except OSError:
+                pass
 
     @staticmethod
     def _validate_session_id(session_id: Any) -> str:

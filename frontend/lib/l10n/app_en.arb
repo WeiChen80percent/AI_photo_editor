@@ -54,10 +54,11 @@
   "discardDraftTitle": "Discard unapplied adjustments?",
   "discardDraftForHistory": "Switching history versions will discard the current manual adjustment draft.",
   "discardDraftForOriginal": "Returning to the original to create a new branch will discard the current manual adjustment draft.",
+  "discardPhotoGitForTool": "Opening another tool will discard the current version operation and its preview.",
   "actionBack": "Back",
   "actionDiscardAndSwitch": "Discard and switch",
   "replaceOriginalTitle": "Change original photo?",
-  "replaceOriginalMessage": "Changing it clears the current session and any unapplied manual draft.",
+  "replaceOriginalMessage": "Changing it clears the current session, unapplied manual draft, and unfinished version operation.",
   "actionCancel": "Cancel",
   "actionReplaceImage": "Change photo",
   "imagePickFailed": "Could not choose image: {error}",
@@ -69,7 +70,7 @@
     }
   },
   "clearWorkTitle": "Clear current work?",
-  "clearWorkMessage": "The screen returns to its initial state. History already saved by the backend is not deleted.",
+  "clearWorkMessage": "The screen returns to its initial state and unfinished drafts are discarded. History already saved by the backend is not deleted.",
   "actionClearScreen": "Clear screen",
   "promptEditTitle": "Prompt edit",
   "promptBranchFromOriginal": "Create a new history branch from the original",
@@ -375,5 +376,87 @@
       }
     }
   },
-  "backendInvalidResponse": "The backend returned an unrecognized data format."
+  "backendInvalidResponse": "The backend returned an unrecognized data format.",
+  "photoGitTitle": "Version operations",
+  "photoGitSubtitle": "Merge or selectively undo tracked edits",
+  "photoGitUnavailable": "Select an OpenCV history version to use version operations.",
+  "photoGitManualDraftBlocked": "Finish or discard the manual adjustment draft before starting a version operation.",
+  "photoGitMerge": "Merge versions",
+  "photoGitSelectiveRevert": "Selective undo",
+  "photoGitDeterministic": "Deterministic version plan",
+  "photoGitTarget": "Target",
+  "photoGitSource": "Source",
+  "photoGitRevertStep": "Step to undo",
+  "photoGitChooseSource": "Choose another version",
+  "photoGitChooseRevertStep": "Choose a step from the target lineage",
+  "photoGitInstruction": "Scope description",
+  "photoGitMergeHint": "For example: bring in only the sky saturation",
+  "photoGitRevertHint": "For example: undo only this step's saturation",
+  "photoGitScopeAssist": "Optional scope shortcuts",
+  "photoGitAnyRegion": "Any region",
+  "photoGitAnyParameter": "Any parameter",
+  "photoGitAnalyze": "Analyze changes",
+  "photoGitAnalyzing": "Analyzing…",
+  "photoGitPlanSummary": "Plan summary",
+  "photoGitAdded": "Added",
+  "photoGitRemoved": "Removed",
+  "photoGitConflicts": "Conflicts",
+  "photoGitNoContribution": "No matching tracked change.",
+  "photoGitConflictHelp": "Resolve every conflict before previewing.",
+  "photoGitKeepTarget": "Keep target",
+  "photoGitUseSource": "Use source",
+  "photoGitReplayLater": "Undo and replay later edits",
+  "photoGitPreview": "Create preview",
+  "photoGitPreviewing": "Rendering preview…",
+  "photoGitCommit": "Create version",
+  "photoGitCommitting": "Creating version…",
+  "photoGitCancel": "Cancel operation",
+  "photoGitMergedFrom": "Merged from",
+  "photoGitRevertedFrom": "Undid effects from",
+  "photoGitCommonAncestor": "Common ancestor",
+  "photoGitSchema": "Recipe version",
+  "photoGitPlanHash": "Plan",
+  "photoGitResolutions": "Conflict decisions",
+  "photoGitTargetValue": "Target value",
+  "photoGitSourceValue": "Source value",
+  "photoGitLaterChanges": "Later edits",
+  "statusPhotoGitPlanning": "Analyzing version differences…",
+  "statusPhotoGitConflictsFound": "Conflicts found. Choose a result for each one.",
+  "statusPhotoGitNoChange": "The selected scope would not change the target.",
+  "statusPhotoGitPlanReady": "The version plan is ready.",
+  "statusPhotoGitPreviewing": "Rendering the version preview…",
+  "statusPhotoGitPreviewReady": "Preview ready. Compare it before creating the version.",
+  "statusPhotoGitCommitting": "Creating a tracked version…",
+  "statusPhotoGitCommitted": "The version was added to history.",
+  "errorPhotoGitRequestIncomplete": "Choose a version and specify a region or parameter.",
+  "errorPhotoGitPlan": "Version analysis failed: {error}",
+  "@errorPhotoGitPlan": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "errorPhotoGitPreview": "Version preview failed: {error}",
+  "@errorPhotoGitPreview": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "errorPhotoGitCommit": "Could not create the version: {error}",
+  "@errorPhotoGitCommit": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "errorPhotoGitScope": "Specify a supported region or parameter in text or with a shortcut.",
+  "errorPhotoGitConflict": "Some conflicts are unresolved. Choose each result and try again.",
+  "errorPhotoGitStale": "The version changed. Analyze it again before previewing.",
+  "errorPhotoGitNoChange": "The selected content matches the target, so no duplicate version was created.",
+  "errorPhotoGitUnsupported": "This version does not contain enough tracked information for a safe operation.",
+  "errorPhotoGitDraftActive": "Finish or cancel the current version operation first."
 }

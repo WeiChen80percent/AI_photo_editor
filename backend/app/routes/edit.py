@@ -23,6 +23,12 @@ from app.services.edit_intent_resolver import resolve_edit_intent
 from app.services.edit_plan import build_reference_edit_plan
 from app.services.edit_schema import manual_parameter_schema
 from app.services.manual_edit_service import ManualEditError, ManualEditService
+from app.services.photo_git_schema import (
+    PhotoGitCommitRequest,
+    PhotoGitExecutionRequest,
+    PhotoGitPlanRequest,
+)
+from app.services.photo_git_service import PhotoGitError, PhotoGitService
 from app.services.semantic_mask_service import SemanticTargetNotFoundError
 from app.services.semantic_shadow_mode import observe_grounded_semantic_shadow
 from app.services.style_registry import (
@@ -41,6 +47,7 @@ UPLOAD_DIR = BASE_DIR / "storage" / "uploads"
 RESULTS_DIR = BASE_DIR / "storage" / "results"
 SESSIONS_DIR = BASE_DIR / "storage" / "sessions"
 MANUAL_PREVIEWS_DIR = BASE_DIR / "storage" / "manual_previews"
+PHOTO_GIT_PREVIEWS_DIR = BASE_DIR / "storage" / "photo_git_previews"
 ORIGINAL_PARENT_SENTINEL = "original"
 SESSION_ID_PATTERN = re.compile(r"^session_[0-9a-f]{32}$")
 EDIT_ID_PATTERN = re.compile(r"^edit_[0-9a-f]{32}$")
@@ -49,6 +56,12 @@ MANUAL_EDIT_SERVICE = ManualEditService(
     backend_dir=BASE_DIR,
     history_store=HISTORY_STORE,
     preview_root=MANUAL_PREVIEWS_DIR,
+    results_root=RESULTS_DIR,
+)
+PHOTO_GIT_SERVICE = PhotoGitService(
+    backend_dir=BASE_DIR,
+    history_store=HISTORY_STORE,
+    preview_root=PHOTO_GIT_PREVIEWS_DIR,
     results_root=RESULTS_DIR,
 )
 
@@ -442,6 +455,30 @@ def get_edit_session(session_id: str):
         raise HTTPException(status_code=404, detail=str(e))
 
 
+@router.post("/edit/photo-git/plan")
+def plan_photo_git(request: PhotoGitPlanRequest):
+    try:
+        return PHOTO_GIT_SERVICE.plan(request)
+    except PhotoGitError as exc:
+        raise _photo_git_http_error(exc) from exc
+
+
+@router.post("/edit/photo-git/preview")
+def preview_photo_git(request: PhotoGitExecutionRequest):
+    try:
+        return PHOTO_GIT_SERVICE.preview(request)
+    except PhotoGitError as exc:
+        raise _photo_git_http_error(exc) from exc
+
+
+@router.post("/edit/photo-git/commit")
+def commit_photo_git(request: PhotoGitCommitRequest):
+    try:
+        return PHOTO_GIT_SERVICE.commit(request)
+    except PhotoGitError as exc:
+        raise _photo_git_http_error(exc) from exc
+
+
 @router.get("/edit/styles")
 def get_style_catalog():
     try:
@@ -496,6 +533,15 @@ def _manual_edit_http_error(exc: ManualEditError) -> HTTPException:
         status_code=exc.status_code,
         detail={"code": exc.code, "message": str(exc)},
     )
+
+
+def _photo_git_http_error(exc: PhotoGitError) -> HTTPException:
+    detail: dict[str, Any] = {
+        "code": exc.code,
+        "message": str(exc),
+    }
+    detail.update(exc.details)
+    return HTTPException(status_code=exc.status_code, detail=detail)
 
 
 def _semantic_target_http_error(exc: SemanticTargetNotFoundError) -> HTTPException:

@@ -149,6 +149,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get discardDraftForOriginal => '回到原圖建立新分支會捨棄目前手動調整草稿。';
 
   @override
+  String get discardPhotoGitForTool => '開啟其他工具會捨棄目前的版本操作與預覽。';
+
+  @override
   String get actionBack => '返回';
 
   @override
@@ -158,7 +161,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get replaceOriginalTitle => '更換原始圖片？';
 
   @override
-  String get replaceOriginalMessage => '更換後會清除目前 session 與未套用的手動草稿。';
+  String get replaceOriginalMessage => '更換後會清除目前 session、未套用的手動草稿與未完成的版本操作。';
 
   @override
   String get actionCancel => '取消';
@@ -175,7 +178,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get clearWorkTitle => '清除目前工作？';
 
   @override
-  String get clearWorkMessage => '畫面會回到初始狀態，後端已保存的歷史不會被刪除。';
+  String get clearWorkMessage => '畫面會回到初始狀態並捨棄未完成的草稿，後端已保存的歷史不會被刪除。';
 
   @override
   String get actionClearScreen => '清除畫面';
@@ -670,6 +673,195 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get backendInvalidResponse => '後端回傳了無法辨識的資料格式。';
+
+  @override
+  String get photoGitTitle => '版本操作';
+
+  @override
+  String get photoGitSubtitle => '合併或選擇性撤銷可追蹤調整';
+
+  @override
+  String get photoGitUnavailable => '請先選取一個 OpenCV 歷史版本，再使用版本操作。';
+
+  @override
+  String get photoGitManualDraftBlocked => '請先完成或捨棄手動調整草稿，再開始版本操作。';
+
+  @override
+  String get photoGitMerge => '版本合併';
+
+  @override
+  String get photoGitSelectiveRevert => '選擇性撤銷';
+
+  @override
+  String get photoGitDeterministic => '確定性版本計畫';
+
+  @override
+  String get photoGitTarget => '目標版本';
+
+  @override
+  String get photoGitSource => '來源版本';
+
+  @override
+  String get photoGitRevertStep => '待撤銷步驟';
+
+  @override
+  String get photoGitChooseSource => '選擇另一個版本';
+
+  @override
+  String get photoGitChooseRevertStep => '從目標版本的祖先鏈選擇步驟';
+
+  @override
+  String get photoGitInstruction => '操作範圍';
+
+  @override
+  String get photoGitMergeHint => '例如：只帶入天空的飽和度';
+
+  @override
+  String get photoGitRevertHint => '例如：只撤銷這一步的飽和度';
+
+  @override
+  String get photoGitScopeAssist => '可選範圍捷徑';
+
+  @override
+  String get photoGitAnyRegion => '不限區域';
+
+  @override
+  String get photoGitAnyParameter => '不限參數';
+
+  @override
+  String get photoGitAnalyze => '分析變更';
+
+  @override
+  String get photoGitAnalyzing => '分析中…';
+
+  @override
+  String get photoGitPlanSummary => '計畫摘要';
+
+  @override
+  String get photoGitAdded => '將加入';
+
+  @override
+  String get photoGitRemoved => '將移除';
+
+  @override
+  String get photoGitConflicts => '衝突';
+
+  @override
+  String get photoGitNoContribution => '沒有符合範圍的可追蹤變更。';
+
+  @override
+  String get photoGitConflictHelp => '所有衝突完成選擇後才能預覽。';
+
+  @override
+  String get photoGitKeepTarget => '保留目標版本';
+
+  @override
+  String get photoGitUseSource => '採用來源版本';
+
+  @override
+  String get photoGitReplayLater => '撤銷後重播後續調整';
+
+  @override
+  String get photoGitPreview => '產生預覽';
+
+  @override
+  String get photoGitPreviewing => '正在產生預覽…';
+
+  @override
+  String get photoGitCommit => '確認建立版本';
+
+  @override
+  String get photoGitCommitting => '正在建立版本…';
+
+  @override
+  String get photoGitCancel => '取消版本操作';
+
+  @override
+  String get photoGitMergedFrom => '合併自';
+
+  @override
+  String get photoGitRevertedFrom => '撤銷自';
+
+  @override
+  String get photoGitCommonAncestor => '共同祖先';
+
+  @override
+  String get photoGitSchema => 'Recipe 版本';
+
+  @override
+  String get photoGitPlanHash => '計畫';
+
+  @override
+  String get photoGitResolutions => '衝突決策';
+
+  @override
+  String get photoGitTargetValue => '目標值';
+
+  @override
+  String get photoGitSourceValue => '來源值';
+
+  @override
+  String get photoGitLaterChanges => '後續修改';
+
+  @override
+  String get statusPhotoGitPlanning => '正在分析版本差異…';
+
+  @override
+  String get statusPhotoGitConflictsFound => '發現衝突，請逐項選擇結果。';
+
+  @override
+  String get statusPhotoGitNoChange => '所選範圍不會改變目標版本。';
+
+  @override
+  String get statusPhotoGitPlanReady => '版本計畫已就緒。';
+
+  @override
+  String get statusPhotoGitPreviewing => '正在產生版本預覽…';
+
+  @override
+  String get statusPhotoGitPreviewReady => '預覽已就緒，請比較後再建立版本。';
+
+  @override
+  String get statusPhotoGitCommitting => '正在建立可追蹤版本…';
+
+  @override
+  String get statusPhotoGitCommitted => '版本已加入歷史紀錄。';
+
+  @override
+  String get errorPhotoGitRequestIncomplete => '請選擇版本並指定要操作的區域或參數。';
+
+  @override
+  String errorPhotoGitPlan(String error) {
+    return '版本分析失敗：$error';
+  }
+
+  @override
+  String errorPhotoGitPreview(String error) {
+    return '版本預覽失敗：$error';
+  }
+
+  @override
+  String errorPhotoGitCommit(String error) {
+    return '建立版本失敗：$error';
+  }
+
+  @override
+  String get errorPhotoGitScope => '請用文字或捷徑指定支援的區域或參數。';
+
+  @override
+  String get errorPhotoGitConflict => '仍有版本衝突未決定，請逐項選擇後再試一次。';
+
+  @override
+  String get errorPhotoGitStale => '版本內容已變更，請重新分析後再預覽。';
+
+  @override
+  String get errorPhotoGitNoChange => '所選內容與目標版本相同，不會建立重複版本。';
+
+  @override
+  String get errorPhotoGitUnsupported => '這個版本缺少可安全重算的來源資訊，無法進行此操作。';
+
+  @override
+  String get errorPhotoGitDraftActive => '請先完成或取消目前的版本操作。';
 }
 
 /// The translations for Chinese, as used in Taiwan (`zh_TW`).
@@ -817,6 +1009,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get discardDraftForOriginal => '回到原圖建立新分支會捨棄目前手動調整草稿。';
 
   @override
+  String get discardPhotoGitForTool => '開啟其他工具會捨棄目前的版本操作與預覽。';
+
+  @override
   String get actionBack => '返回';
 
   @override
@@ -826,7 +1021,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get replaceOriginalTitle => '更換原始圖片？';
 
   @override
-  String get replaceOriginalMessage => '更換後會清除目前 session 與未套用的手動草稿。';
+  String get replaceOriginalMessage => '更換後會清除目前 session、未套用的手動草稿與未完成的版本操作。';
 
   @override
   String get actionCancel => '取消';
@@ -843,7 +1038,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get clearWorkTitle => '清除目前工作？';
 
   @override
-  String get clearWorkMessage => '畫面會回到初始狀態，後端已保存的歷史不會被刪除。';
+  String get clearWorkMessage => '畫面會回到初始狀態並捨棄未完成的草稿，後端已保存的歷史不會被刪除。';
 
   @override
   String get actionClearScreen => '清除畫面';
@@ -1338,4 +1533,193 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get backendInvalidResponse => '後端回傳了無法辨識的資料格式。';
+
+  @override
+  String get photoGitTitle => '版本操作';
+
+  @override
+  String get photoGitSubtitle => '合併或選擇性撤銷可追蹤調整';
+
+  @override
+  String get photoGitUnavailable => '請先選取一個 OpenCV 歷史版本，再使用版本操作。';
+
+  @override
+  String get photoGitManualDraftBlocked => '請先完成或捨棄手動調整草稿，再開始版本操作。';
+
+  @override
+  String get photoGitMerge => '版本合併';
+
+  @override
+  String get photoGitSelectiveRevert => '選擇性撤銷';
+
+  @override
+  String get photoGitDeterministic => '確定性版本計畫';
+
+  @override
+  String get photoGitTarget => '目標版本';
+
+  @override
+  String get photoGitSource => '來源版本';
+
+  @override
+  String get photoGitRevertStep => '待撤銷步驟';
+
+  @override
+  String get photoGitChooseSource => '選擇另一個版本';
+
+  @override
+  String get photoGitChooseRevertStep => '從目標版本的祖先鏈選擇步驟';
+
+  @override
+  String get photoGitInstruction => '操作範圍';
+
+  @override
+  String get photoGitMergeHint => '例如：只帶入天空的飽和度';
+
+  @override
+  String get photoGitRevertHint => '例如：只撤銷這一步的飽和度';
+
+  @override
+  String get photoGitScopeAssist => '可選範圍捷徑';
+
+  @override
+  String get photoGitAnyRegion => '不限區域';
+
+  @override
+  String get photoGitAnyParameter => '不限參數';
+
+  @override
+  String get photoGitAnalyze => '分析變更';
+
+  @override
+  String get photoGitAnalyzing => '分析中…';
+
+  @override
+  String get photoGitPlanSummary => '計畫摘要';
+
+  @override
+  String get photoGitAdded => '將加入';
+
+  @override
+  String get photoGitRemoved => '將移除';
+
+  @override
+  String get photoGitConflicts => '衝突';
+
+  @override
+  String get photoGitNoContribution => '沒有符合範圍的可追蹤變更。';
+
+  @override
+  String get photoGitConflictHelp => '所有衝突完成選擇後才能預覽。';
+
+  @override
+  String get photoGitKeepTarget => '保留目標版本';
+
+  @override
+  String get photoGitUseSource => '採用來源版本';
+
+  @override
+  String get photoGitReplayLater => '撤銷後重播後續調整';
+
+  @override
+  String get photoGitPreview => '產生預覽';
+
+  @override
+  String get photoGitPreviewing => '正在產生預覽…';
+
+  @override
+  String get photoGitCommit => '確認建立版本';
+
+  @override
+  String get photoGitCommitting => '正在建立版本…';
+
+  @override
+  String get photoGitCancel => '取消版本操作';
+
+  @override
+  String get photoGitMergedFrom => '合併自';
+
+  @override
+  String get photoGitRevertedFrom => '撤銷自';
+
+  @override
+  String get photoGitCommonAncestor => '共同祖先';
+
+  @override
+  String get photoGitSchema => 'Recipe 版本';
+
+  @override
+  String get photoGitPlanHash => '計畫';
+
+  @override
+  String get photoGitResolutions => '衝突決策';
+
+  @override
+  String get photoGitTargetValue => '目標值';
+
+  @override
+  String get photoGitSourceValue => '來源值';
+
+  @override
+  String get photoGitLaterChanges => '後續修改';
+
+  @override
+  String get statusPhotoGitPlanning => '正在分析版本差異…';
+
+  @override
+  String get statusPhotoGitConflictsFound => '發現衝突，請逐項選擇結果。';
+
+  @override
+  String get statusPhotoGitNoChange => '所選範圍不會改變目標版本。';
+
+  @override
+  String get statusPhotoGitPlanReady => '版本計畫已就緒。';
+
+  @override
+  String get statusPhotoGitPreviewing => '正在產生版本預覽…';
+
+  @override
+  String get statusPhotoGitPreviewReady => '預覽已就緒，請比較後再建立版本。';
+
+  @override
+  String get statusPhotoGitCommitting => '正在建立可追蹤版本…';
+
+  @override
+  String get statusPhotoGitCommitted => '版本已加入歷史紀錄。';
+
+  @override
+  String get errorPhotoGitRequestIncomplete => '請選擇版本並指定要操作的區域或參數。';
+
+  @override
+  String errorPhotoGitPlan(String error) {
+    return '版本分析失敗：$error';
+  }
+
+  @override
+  String errorPhotoGitPreview(String error) {
+    return '版本預覽失敗：$error';
+  }
+
+  @override
+  String errorPhotoGitCommit(String error) {
+    return '建立版本失敗：$error';
+  }
+
+  @override
+  String get errorPhotoGitScope => '請用文字或捷徑指定支援的區域或參數。';
+
+  @override
+  String get errorPhotoGitConflict => '仍有版本衝突未決定，請逐項選擇後再試一次。';
+
+  @override
+  String get errorPhotoGitStale => '版本內容已變更，請重新分析後再預覽。';
+
+  @override
+  String get errorPhotoGitNoChange => '所選內容與目標版本相同，不會建立重複版本。';
+
+  @override
+  String get errorPhotoGitUnsupported => '這個版本缺少可安全重算的來源資訊，無法進行此操作。';
+
+  @override
+  String get errorPhotoGitDraftActive => '請先完成或取消目前的版本操作。';
 }

@@ -36,6 +36,24 @@ abstract class EditorApi {
     required Map<String, double> parameterOverrides,
     required String clientRequestId,
   });
+
+  Future<PhotoGitPlan> planPhotoGit({
+    required String sessionId,
+    required PhotoGitRequest request,
+  });
+
+  Future<PhotoGitPreview> previewPhotoGit({
+    required String sessionId,
+    required PhotoGitRequest request,
+    required String planHash,
+  });
+
+  Future<EditHistoryItem> commitPhotoGit({
+    required String sessionId,
+    required PhotoGitRequest request,
+    required String planHash,
+    required String clientRequestId,
+  });
 }
 
 class ApiException implements Exception {
@@ -188,6 +206,46 @@ class ApiService implements EditorApi {
       'client_request_id': clientRequestId,
     });
     return ManualEditResponse.fromJson(response, buildImageUrl: buildImageUrl);
+  }
+
+  @override
+  Future<PhotoGitPlan> planPhotoGit({
+    required String sessionId,
+    required PhotoGitRequest request,
+  }) async {
+    final response = await _postJson(
+      '/edit/photo-git/plan',
+      request.toJson(sessionId),
+    );
+    return PhotoGitPlan.fromJson(response, buildImageUrl: buildImageUrl);
+  }
+
+  @override
+  Future<PhotoGitPreview> previewPhotoGit({
+    required String sessionId,
+    required PhotoGitRequest request,
+    required String planHash,
+  }) async {
+    final response = await _postJson('/edit/photo-git/preview', {
+      ...request.toJson(sessionId),
+      'plan_hash': planHash,
+    });
+    return PhotoGitPreview.fromJson(response, buildImageUrl: buildImageUrl);
+  }
+
+  @override
+  Future<EditHistoryItem> commitPhotoGit({
+    required String sessionId,
+    required PhotoGitRequest request,
+    required String planHash,
+    required String clientRequestId,
+  }) async {
+    final response = await _postJson('/edit/photo-git/commit', {
+      ...request.toJson(sessionId),
+      'plan_hash': planHash,
+      'client_request_id': clientRequestId,
+    });
+    return EditHistoryItem.fromJson(response, buildImageUrl: buildImageUrl);
   }
 
   @override

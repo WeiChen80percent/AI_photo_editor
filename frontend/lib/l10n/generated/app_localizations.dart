@@ -375,6 +375,12 @@ abstract class AppLocalizations {
   /// **'Returning to the original to create a new branch will discard the current manual adjustment draft.'**
   String get discardDraftForOriginal;
 
+  /// No description provided for @discardPhotoGitForTool.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening another tool will discard the current version operation and its preview.'**
+  String get discardPhotoGitForTool;
+
   /// No description provided for @actionBack.
   ///
   /// In en, this message translates to:
@@ -396,7 +402,7 @@ abstract class AppLocalizations {
   /// No description provided for @replaceOriginalMessage.
   ///
   /// In en, this message translates to:
-  /// **'Changing it clears the current session and any unapplied manual draft.'**
+  /// **'Changing it clears the current session, unapplied manual draft, and unfinished version operation.'**
   String get replaceOriginalMessage;
 
   /// No description provided for @actionCancel.
@@ -426,7 +432,7 @@ abstract class AppLocalizations {
   /// No description provided for @clearWorkMessage.
   ///
   /// In en, this message translates to:
-  /// **'The screen returns to its initial state. History already saved by the backend is not deleted.'**
+  /// **'The screen returns to its initial state and unfinished drafts are discarded. History already saved by the backend is not deleted.'**
   String get clearWorkMessage;
 
   /// No description provided for @actionClearScreen.
@@ -1340,6 +1346,372 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The backend returned an unrecognized data format.'**
   String get backendInvalidResponse;
+
+  /// No description provided for @photoGitTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Version operations'**
+  String get photoGitTitle;
+
+  /// No description provided for @photoGitSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge or selectively undo tracked edits'**
+  String get photoGitSubtitle;
+
+  /// No description provided for @photoGitUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Select an OpenCV history version to use version operations.'**
+  String get photoGitUnavailable;
+
+  /// No description provided for @photoGitManualDraftBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish or discard the manual adjustment draft before starting a version operation.'**
+  String get photoGitManualDraftBlocked;
+
+  /// No description provided for @photoGitMerge.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge versions'**
+  String get photoGitMerge;
+
+  /// No description provided for @photoGitSelectiveRevert.
+  ///
+  /// In en, this message translates to:
+  /// **'Selective undo'**
+  String get photoGitSelectiveRevert;
+
+  /// No description provided for @photoGitDeterministic.
+  ///
+  /// In en, this message translates to:
+  /// **'Deterministic version plan'**
+  String get photoGitDeterministic;
+
+  /// No description provided for @photoGitTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Target'**
+  String get photoGitTarget;
+
+  /// No description provided for @photoGitSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Source'**
+  String get photoGitSource;
+
+  /// No description provided for @photoGitRevertStep.
+  ///
+  /// In en, this message translates to:
+  /// **'Step to undo'**
+  String get photoGitRevertStep;
+
+  /// No description provided for @photoGitChooseSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose another version'**
+  String get photoGitChooseSource;
+
+  /// No description provided for @photoGitChooseRevertStep.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a step from the target lineage'**
+  String get photoGitChooseRevertStep;
+
+  /// No description provided for @photoGitInstruction.
+  ///
+  /// In en, this message translates to:
+  /// **'Scope description'**
+  String get photoGitInstruction;
+
+  /// No description provided for @photoGitMergeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'For example: bring in only the sky saturation'**
+  String get photoGitMergeHint;
+
+  /// No description provided for @photoGitRevertHint.
+  ///
+  /// In en, this message translates to:
+  /// **'For example: undo only this step\'s saturation'**
+  String get photoGitRevertHint;
+
+  /// No description provided for @photoGitScopeAssist.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional scope shortcuts'**
+  String get photoGitScopeAssist;
+
+  /// No description provided for @photoGitAnyRegion.
+  ///
+  /// In en, this message translates to:
+  /// **'Any region'**
+  String get photoGitAnyRegion;
+
+  /// No description provided for @photoGitAnyParameter.
+  ///
+  /// In en, this message translates to:
+  /// **'Any parameter'**
+  String get photoGitAnyParameter;
+
+  /// No description provided for @photoGitAnalyze.
+  ///
+  /// In en, this message translates to:
+  /// **'Analyze changes'**
+  String get photoGitAnalyze;
+
+  /// No description provided for @photoGitAnalyzing.
+  ///
+  /// In en, this message translates to:
+  /// **'Analyzing…'**
+  String get photoGitAnalyzing;
+
+  /// No description provided for @photoGitPlanSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan summary'**
+  String get photoGitPlanSummary;
+
+  /// No description provided for @photoGitAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Added'**
+  String get photoGitAdded;
+
+  /// No description provided for @photoGitRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Removed'**
+  String get photoGitRemoved;
+
+  /// No description provided for @photoGitConflicts.
+  ///
+  /// In en, this message translates to:
+  /// **'Conflicts'**
+  String get photoGitConflicts;
+
+  /// No description provided for @photoGitNoContribution.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching tracked change.'**
+  String get photoGitNoContribution;
+
+  /// No description provided for @photoGitConflictHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolve every conflict before previewing.'**
+  String get photoGitConflictHelp;
+
+  /// No description provided for @photoGitKeepTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep target'**
+  String get photoGitKeepTarget;
+
+  /// No description provided for @photoGitUseSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Use source'**
+  String get photoGitUseSource;
+
+  /// No description provided for @photoGitReplayLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo and replay later edits'**
+  String get photoGitReplayLater;
+
+  /// No description provided for @photoGitPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Create preview'**
+  String get photoGitPreview;
+
+  /// No description provided for @photoGitPreviewing.
+  ///
+  /// In en, this message translates to:
+  /// **'Rendering preview…'**
+  String get photoGitPreviewing;
+
+  /// No description provided for @photoGitCommit.
+  ///
+  /// In en, this message translates to:
+  /// **'Create version'**
+  String get photoGitCommit;
+
+  /// No description provided for @photoGitCommitting.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating version…'**
+  String get photoGitCommitting;
+
+  /// No description provided for @photoGitCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel operation'**
+  String get photoGitCancel;
+
+  /// No description provided for @photoGitMergedFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'Merged from'**
+  String get photoGitMergedFrom;
+
+  /// No description provided for @photoGitRevertedFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'Undid effects from'**
+  String get photoGitRevertedFrom;
+
+  /// No description provided for @photoGitCommonAncestor.
+  ///
+  /// In en, this message translates to:
+  /// **'Common ancestor'**
+  String get photoGitCommonAncestor;
+
+  /// No description provided for @photoGitSchema.
+  ///
+  /// In en, this message translates to:
+  /// **'Recipe version'**
+  String get photoGitSchema;
+
+  /// No description provided for @photoGitPlanHash.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan'**
+  String get photoGitPlanHash;
+
+  /// No description provided for @photoGitResolutions.
+  ///
+  /// In en, this message translates to:
+  /// **'Conflict decisions'**
+  String get photoGitResolutions;
+
+  /// No description provided for @photoGitTargetValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Target value'**
+  String get photoGitTargetValue;
+
+  /// No description provided for @photoGitSourceValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Source value'**
+  String get photoGitSourceValue;
+
+  /// No description provided for @photoGitLaterChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Later edits'**
+  String get photoGitLaterChanges;
+
+  /// No description provided for @statusPhotoGitPlanning.
+  ///
+  /// In en, this message translates to:
+  /// **'Analyzing version differences…'**
+  String get statusPhotoGitPlanning;
+
+  /// No description provided for @statusPhotoGitConflictsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Conflicts found. Choose a result for each one.'**
+  String get statusPhotoGitConflictsFound;
+
+  /// No description provided for @statusPhotoGitNoChange.
+  ///
+  /// In en, this message translates to:
+  /// **'The selected scope would not change the target.'**
+  String get statusPhotoGitNoChange;
+
+  /// No description provided for @statusPhotoGitPlanReady.
+  ///
+  /// In en, this message translates to:
+  /// **'The version plan is ready.'**
+  String get statusPhotoGitPlanReady;
+
+  /// No description provided for @statusPhotoGitPreviewing.
+  ///
+  /// In en, this message translates to:
+  /// **'Rendering the version preview…'**
+  String get statusPhotoGitPreviewing;
+
+  /// No description provided for @statusPhotoGitPreviewReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview ready. Compare it before creating the version.'**
+  String get statusPhotoGitPreviewReady;
+
+  /// No description provided for @statusPhotoGitCommitting.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating a tracked version…'**
+  String get statusPhotoGitCommitting;
+
+  /// No description provided for @statusPhotoGitCommitted.
+  ///
+  /// In en, this message translates to:
+  /// **'The version was added to history.'**
+  String get statusPhotoGitCommitted;
+
+  /// No description provided for @errorPhotoGitRequestIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a version and specify a region or parameter.'**
+  String get errorPhotoGitRequestIncomplete;
+
+  /// No description provided for @errorPhotoGitPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Version analysis failed: {error}'**
+  String errorPhotoGitPlan(String error);
+
+  /// No description provided for @errorPhotoGitPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Version preview failed: {error}'**
+  String errorPhotoGitPreview(String error);
+
+  /// No description provided for @errorPhotoGitCommit.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not create the version: {error}'**
+  String errorPhotoGitCommit(String error);
+
+  /// No description provided for @errorPhotoGitScope.
+  ///
+  /// In en, this message translates to:
+  /// **'Specify a supported region or parameter in text or with a shortcut.'**
+  String get errorPhotoGitScope;
+
+  /// No description provided for @errorPhotoGitConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'Some conflicts are unresolved. Choose each result and try again.'**
+  String get errorPhotoGitConflict;
+
+  /// No description provided for @errorPhotoGitStale.
+  ///
+  /// In en, this message translates to:
+  /// **'The version changed. Analyze it again before previewing.'**
+  String get errorPhotoGitStale;
+
+  /// No description provided for @errorPhotoGitNoChange.
+  ///
+  /// In en, this message translates to:
+  /// **'The selected content matches the target, so no duplicate version was created.'**
+  String get errorPhotoGitNoChange;
+
+  /// No description provided for @errorPhotoGitUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This version does not contain enough tracked information for a safe operation.'**
+  String get errorPhotoGitUnsupported;
+
+  /// No description provided for @errorPhotoGitDraftActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish or cancel the current version operation first.'**
+  String get errorPhotoGitDraftActive;
 }
 
 class _AppLocalizationsDelegate

@@ -11,6 +11,7 @@ from app.services.edit_schema import (
     require_region_mask_pair,
     validate_edit_parameters,
 )
+from app.services.opencv_parameter_mapper import NEUTRAL_OPENCV_PARAMETERS
 from app.services.render_contract import OPENCV_RENDER_CONTRACT
 from app.services.semantic_mask_service import get_semantic_region_mask
 
@@ -111,6 +112,104 @@ def create_opencv_result(
             "total": round(_elapsed_ms(total_started), 3),
         },
         "explanation": _build_explanation(resolved),
+    }
+
+
+def create_opencv_composite_result(
+    *,
+    anchor_path: Path,
+    result_path: Path,
+    scopes: list[dict[str, Any]],
+    mask_source_path: Path | None = None,
+) -> dict[str, Any]:
+    """Render a deterministic multi-scope recipe in one image transaction.
+
+    The anchor is decoded once, each validated scope is applied in memory, and
+    only the final image is encoded. Semantic and luminance masks always use
+    the immutable session original supplied through ``mask_source_path``.
+    """
+
+    if not scopes:
+        raise ValueError("Photo Git composite render requires at least one scope")
+    total_started = time.perf_counter()
+    read_started = time.perf_counter()
+    anchor = _read_image(anchor_path, "Photo Git anchor")
+    resolved_mask_source_path = mask_source_path or anchor_path
+    mask_source_image = (
+        anchor
+        if resolved_mask_source_path.resolve() == anchor_path.resolve()
+        else _read_image(resolved_mask_source_path, "Photo Git mask source")
+    )
+    image_read_ms = _elapsed_ms(read_started)
+
+    current = anchor.copy()
+    rendered_scopes: list[dict[str, Any]] = []
+    mask_infos: list[dict[str, Any]] = []
+    render_started = time.perf_counter()
+    for index, raw_scope in enumerate(scopes):
+        if not isinstance(raw_scope, dict):
+            raise ValueError(f"Invalid Photo Git scope at index {index}")
+        parameters = NEUTRAL_OPENCV_PARAMETERS.copy()
+        parameters.update(dict(raw_scope.get("parameters") or {}))
+        parameters["region"] = raw_scope.get("region")
+        parameters["mask_type"] = raw_scope.get("mask_type")
+        resolved = resolve_opencv_parameters(parameters)
+        resolved["reference_tint"] = 0.0
+
+        adjusted = apply_opencv_global_adjustments(current, resolved)
+        current, mask_info = _apply_region_mask(
+            original=current,
+            adjusted=adjusted,
+            region=resolved["region"],
+            mask_type=resolved["mask_type"],
+            mask_source_path=resolved_mask_source_path,
+            mask_source_image=mask_source_image,
+        )
+        rendered_scopes.append(
+            {
+                "scope_id": raw_scope.get("scope_id")
+                or f"{resolved['region']}|{resolved['mask_type']}",
+                "region": resolved["region"],
+                "mask_type": resolved["mask_type"],
+                "parameters": {
+                    key: value
+                    for key, value in resolved.items()
+                    if key not in {"region", "mask_type", "reference_tint"}
+                },
+            }
+        )
+        if mask_info is not None:
+            mask_infos.append(
+                {
+                    "scope_id": rendered_scopes[-1]["scope_id"],
+                    **dict(mask_info),
+                }
+            )
+    render_ms = _elapsed_ms(render_started)
+
+    write_started = time.perf_counter()
+    _write_image(result_path, current)
+    image_write_ms = _elapsed_ms(write_started)
+    neutral = resolve_opencv_parameters(NEUTRAL_OPENCV_PARAMETERS)
+    return {
+        "engine": "opencv",
+        "parameters": neutral,
+        "scopes": rendered_scopes,
+        "mask_info": {
+            "target": "composite",
+            "scope_count": len(rendered_scopes),
+            "scopes": mask_infos,
+        },
+        "timings_ms": {
+            "image_read": round(image_read_ms, 3),
+            "scope_render": round(render_ms, 3),
+            "image_write": round(image_write_ms, 3),
+            "total": round(_elapsed_ms(total_started), 3),
+        },
+        "explanation": (
+            f"Photo Git composite rendered {len(rendered_scopes)} scope(s) "
+            "from one immutable anchor."
+        ),
     }
 
 

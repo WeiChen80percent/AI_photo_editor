@@ -92,15 +92,19 @@ class _EditorCanvasState extends State<EditorCanvas> {
 
   Widget _buildSideBySide(EditorController controller) {
     final l10n = context.l10n;
+    final isPhotoGitPreview = controller.photoGitPreview != null;
+    final targetEdit = controller.comparisonParentEdit;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Expanded(
           child: _ImageStage(
             key: const Key('original_image'),
-            label: l10n.labelOriginal,
-            bytes: controller.originalImageBytes,
-            imageUrl: controller.originalImageUrl,
+            label: isPhotoGitPreview ? l10n.photoGitTarget : l10n.labelOriginal,
+            bytes: isPhotoGitPreview ? null : controller.originalImageBytes,
+            imageUrl: isPhotoGitPreview
+                ? targetEdit?.resultUrl
+                : controller.originalImageUrl,
           ),
         ),
         const SizedBox(width: AppSpacing.sm),
@@ -112,7 +116,8 @@ class _EditorCanvasState extends State<EditorCanvas> {
                 : l10n.labelResult,
             imageUrl: controller.currentResultUrl,
             emptyLabel: l10n.resultAppearsHere,
-            isProcessing: controller.isProcessing || controller.isPreviewing,
+            isProcessing:
+                controller.isProcessing || controller.isRenderingPreview,
           ),
         ),
       ],
@@ -147,7 +152,7 @@ class _EditorCanvasState extends State<EditorCanvas> {
                     : l10n.labelResult,
                 isProcessing:
                     view != ComparisonView.original &&
-                    (controller.isProcessing || controller.isPreviewing),
+                    (controller.isProcessing || controller.isRenderingPreview),
               ),
             ),
             Positioned.fill(

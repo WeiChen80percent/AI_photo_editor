@@ -638,6 +638,266 @@ class StyleCatalog {
   }
 }
 
+enum PhotoGitOperation {
+  merge('merge'),
+  selectiveRevert('selective_revert');
+
+  const PhotoGitOperation(this.wireValue);
+
+  final String wireValue;
+
+  static PhotoGitOperation fromWire(String? value) {
+    return value == 'selective_revert'
+        ? PhotoGitOperation.selectiveRevert
+        : PhotoGitOperation.merge;
+  }
+}
+
+class PhotoGitSelector {
+  const PhotoGitSelector({
+    this.region,
+    this.maskType,
+    this.parameters = const <String>[],
+  });
+
+  final String? region;
+  final String? maskType;
+  final List<String> parameters;
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    if (region != null) 'region': region,
+    if (maskType != null) 'mask_type': maskType,
+    if (parameters.isNotEmpty) 'parameters': parameters,
+  };
+}
+
+class PhotoGitRequest {
+  const PhotoGitRequest({
+    required this.operation,
+    required this.targetEditId,
+    this.sourceEditId,
+    this.revertEditId,
+    this.instruction = '',
+    this.selectors = const <PhotoGitSelector>[],
+    this.resolutions = const <String, String>{},
+  });
+
+  final PhotoGitOperation operation;
+  final String targetEditId;
+  final String? sourceEditId;
+  final String? revertEditId;
+  final String instruction;
+  final List<PhotoGitSelector> selectors;
+  final Map<String, String> resolutions;
+
+  Map<String, dynamic> toJson(String sessionId) => <String, dynamic>{
+    'session_id': sessionId,
+    'operation': operation.wireValue,
+    'target_edit_id': targetEditId,
+    if (sourceEditId != null) 'source_edit_id': sourceEditId,
+    if (revertEditId != null) 'revert_edit_id': revertEditId,
+    'instruction': instruction.trim(),
+    'selectors': selectors.map((selector) => selector.toJson()).toList(),
+    'resolutions': resolutions,
+  };
+}
+
+class PhotoGitConflict {
+  const PhotoGitConflict({
+    required this.conflictId,
+    required this.type,
+    required this.region,
+    required this.parameter,
+    required this.allowedChoices,
+    this.maskType,
+    this.ancestorValue,
+    this.targetValue,
+    this.sourceValue,
+    this.laterEditIds = const <String>[],
+    this.resolvedChoice,
+  });
+
+  final String conflictId;
+  final String type;
+  final String region;
+  final String? maskType;
+  final String parameter;
+  final List<String> allowedChoices;
+  final dynamic ancestorValue;
+  final dynamic targetValue;
+  final dynamic sourceValue;
+  final List<String> laterEditIds;
+  final String? resolvedChoice;
+
+  bool get isResolved =>
+      resolvedChoice != null && allowedChoices.contains(resolvedChoice);
+
+  factory PhotoGitConflict.fromJson(Map<String, dynamic> json) {
+    return PhotoGitConflict(
+      conflictId: _stringValue(json['conflict_id']) ?? '',
+      type: _stringValue(json['type']) ?? 'merge',
+      region: _stringValue(json['region']) ?? 'all',
+      maskType: _stringValue(json['mask_type']),
+      parameter: _stringValue(json['parameter']) ?? '',
+      allowedChoices: _stringList(json['allowed_choices']),
+      ancestorValue: json['ancestor_value'],
+      targetValue: json['target_value'],
+      sourceValue: json['source_value'],
+      laterEditIds: _stringList(json['later_edit_ids']),
+      resolvedChoice: _stringValue(json['resolved_choice']),
+    );
+  }
+}
+
+class PhotoGitPlan {
+  const PhotoGitPlan({
+    required this.status,
+    required this.operation,
+    required this.targetEditId,
+    required this.planHash,
+    required this.message,
+    this.sourceEditIds = const <String>[],
+    this.revertEditId,
+    this.commonAncestorEditId,
+    this.targetResultUrl,
+    this.appliedContributions = const <Map<String, dynamic>>[],
+    this.removedContributions = const <Map<String, dynamic>>[],
+    this.conflicts = const <PhotoGitConflict>[],
+  });
+
+  final String status;
+  final PhotoGitOperation operation;
+  final String targetEditId;
+  final List<String> sourceEditIds;
+  final String? revertEditId;
+  final String? commonAncestorEditId;
+  final String planHash;
+  final String message;
+  final String? targetResultUrl;
+  final List<Map<String, dynamic>> appliedContributions;
+  final List<Map<String, dynamic>> removedContributions;
+  final List<PhotoGitConflict> conflicts;
+
+  bool get isReady => status == 'ready';
+  bool get hasUnresolvedConflicts =>
+      conflicts.any((conflict) => !conflict.isResolved);
+
+  factory PhotoGitPlan.fromJson(
+    Map<String, dynamic> json, {
+    required ImageUrlBuilder buildImageUrl,
+  }) {
+    final targetResultPath = _stringValue(json['target_result_url']);
+    return PhotoGitPlan(
+      status: _stringValue(json['status']) ?? 'unsupported',
+      operation: PhotoGitOperation.fromWire(_stringValue(json['operation'])),
+      targetEditId: _stringValue(json['target_edit_id']) ?? '',
+      sourceEditIds: _stringList(json['source_edit_ids']),
+      revertEditId: _stringValue(json['revert_edit_id']),
+      commonAncestorEditId: _stringValue(json['common_ancestor_edit_id']),
+      planHash: _stringValue(json['plan_hash']) ?? '',
+      message: _stringValue(json['message']) ?? '',
+      targetResultUrl: targetResultPath == null
+          ? null
+          : buildImageUrl(targetResultPath),
+      appliedContributions: _mapList(json['applied_contributions']),
+      removedContributions: _mapList(json['removed_contributions']),
+      conflicts: _mapList(
+        json['conflicts'],
+      ).map(PhotoGitConflict.fromJson).toList(growable: false),
+    );
+  }
+}
+
+class PhotoGitPreview {
+  const PhotoGitPreview({
+    required this.planHash,
+    required this.resultUrl,
+    required this.targetEditId,
+    this.targetResultUrl,
+  });
+
+  final String planHash;
+  final String resultUrl;
+  final String targetEditId;
+  final String? targetResultUrl;
+
+  factory PhotoGitPreview.fromJson(
+    Map<String, dynamic> json, {
+    required ImageUrlBuilder buildImageUrl,
+  }) {
+    final resultPath =
+        _stringValue(json['result_url']) ??
+        _stringValue(json['result_saved_path']);
+    if (resultPath == null) {
+      throw const FormatException('Photo Git preview is missing a result path');
+    }
+    final targetPath = _stringValue(json['target_result_url']);
+    return PhotoGitPreview(
+      planHash: _stringValue(json['plan_hash']) ?? '',
+      resultUrl: buildImageUrl(resultPath),
+      targetEditId: _stringValue(json['target_edit_id']) ?? '',
+      targetResultUrl: targetPath == null ? null : buildImageUrl(targetPath),
+    );
+  }
+}
+
+class PhotoGitMetadata {
+  const PhotoGitMetadata({
+    required this.operation,
+    required this.targetEditId,
+    required this.sourceEditIds,
+    required this.appliedContributions,
+    required this.removedContributions,
+    required this.conflicts,
+    required this.resolutions,
+    this.revertedEditId,
+    this.commonAncestorEditId,
+    this.schemaVersion,
+    this.rendererVersion,
+    this.planHash,
+  });
+
+  final PhotoGitOperation operation;
+  final String targetEditId;
+  final List<String> sourceEditIds;
+  final String? revertedEditId;
+  final String? commonAncestorEditId;
+  final String? schemaVersion;
+  final String? rendererVersion;
+  final String? planHash;
+  final List<Map<String, dynamic>> appliedContributions;
+  final List<Map<String, dynamic>> removedContributions;
+  final List<Map<String, dynamic>> conflicts;
+  final Map<String, dynamic> resolutions;
+
+  factory PhotoGitMetadata.fromJson(Map<String, dynamic> json) {
+    return PhotoGitMetadata(
+      operation: PhotoGitOperation.fromWire(_stringValue(json['operation'])),
+      targetEditId: _stringValue(json['target_edit_id']) ?? '',
+      sourceEditIds: _stringList(json['source_edit_ids']),
+      revertedEditId: _stringValue(json['reverted_edit_id']),
+      commonAncestorEditId: _stringValue(json['common_ancestor_edit_id']),
+      schemaVersion: _stringValue(json['schema_version']),
+      rendererVersion: _stringValue(json['renderer_version']),
+      planHash: _stringValue(json['plan_hash']),
+      appliedContributions: _mapList(json['applied_contributions']),
+      removedContributions: _mapList(json['removed_contributions']),
+      conflicts: _mapList(json['conflicts']),
+      resolutions: _mapValue(json['resolutions']),
+    );
+  }
+}
+
+List<Map<String, dynamic>> _mapList(dynamic value) {
+  if (value is! List) {
+    return const <Map<String, dynamic>>[];
+  }
+  return value
+      .whereType<Map>()
+      .map((item) => Map<String, dynamic>.from(item))
+      .toList(growable: false);
+}
+
 class EditHistoryItem {
   const EditHistoryItem({
     required this.sessionId,
@@ -658,6 +918,7 @@ class EditHistoryItem {
     required this.presetName,
     this.style,
     this.adaptive = const <String, dynamic>{},
+    this.photoGit,
   });
 
   final String sessionId;
@@ -678,6 +939,7 @@ class EditHistoryItem {
   final String? presetName;
   final StyleMetadata? style;
   final Map<String, dynamic> adaptive;
+  final PhotoGitMetadata? photoGit;
 
   factory EditHistoryItem.fromJson(
     Map<String, dynamic> json, {
@@ -723,6 +985,11 @@ class EditHistoryItem {
             )
           : null,
       adaptive: _mapValue(json['adaptive']),
+      photoGit: json['photo_git'] is Map
+          ? PhotoGitMetadata.fromJson(
+              Map<String, dynamic>.from(json['photo_git'] as Map),
+            )
+          : null,
     );
   }
 
@@ -872,6 +1139,10 @@ class EditHistoryItem {
       return '風格';
     }
     switch (editMode) {
+      case 'photo_git_merge':
+        return '版本合併';
+      case 'photo_git_revert':
+        return '選擇性撤銷';
       case 'manual':
         return '手動調整';
       case 'reference':
@@ -882,6 +1153,12 @@ class EditHistoryItem {
   }
 
   String get displayTitle {
+    if (editMode == 'photo_git_merge') {
+      return prompt.isEmpty ? '版本合併' : prompt;
+    }
+    if (editMode == 'photo_git_revert') {
+      return prompt.isEmpty ? '選擇性撤銷' : prompt;
+    }
     if (resolvedIntent == 'apply_style' && style != null) {
       return '${style!.displayName} · ${(style!.strength * 100).round()}%';
     }
@@ -896,6 +1173,9 @@ class EditHistoryItem {
 
   bool get isDirectStyleEdit =>
       resolvedIntent == 'apply_style' && style != null;
+
+  bool get isPhotoGit =>
+      editMode == 'photo_git_merge' || editMode == 'photo_git_revert';
 
   Map<String, dynamic> parametersForDisplay(
     ParameterMetadataCatalog metadataCatalog,

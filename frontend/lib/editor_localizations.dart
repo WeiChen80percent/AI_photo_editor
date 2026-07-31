@@ -70,6 +70,7 @@ String localizedParserSourceLabel(AppLocalizations l10n, String? source) {
     'semantic_registry' => l10n.parserRules,
     'adaptive_v2_deterministic' => l10n.parserRules,
     'style_catalog' => l10n.parserRules,
+    'photo_git_deterministic' => l10n.photoGitDeterministic,
     null || '' => '',
     final value => value,
   };
@@ -117,6 +118,8 @@ String localizedEditModeLabel(AppLocalizations l10n, EditHistoryItem edit) {
     return l10n.modeStyle;
   }
   return switch (edit.editMode) {
+    'photo_git_merge' => l10n.photoGitMerge,
+    'photo_git_revert' => l10n.photoGitSelectiveRevert,
     'manual' || 'manual_preview' => l10n.modeManual,
     'reference' => l10n.modeReference,
     _ => l10n.modePrompt,
@@ -131,6 +134,12 @@ String localizedEditDisplayTitle(AppLocalizations l10n, EditHistoryItem edit) {
   }
   if (edit.editMode == 'manual') {
     return l10n.manualEditDisplayTitle;
+  }
+  if (edit.editMode == 'photo_git_merge') {
+    return edit.prompt.isEmpty ? l10n.photoGitMerge : edit.prompt;
+  }
+  if (edit.editMode == 'photo_git_revert') {
+    return edit.prompt.isEmpty ? l10n.photoGitSelectiveRevert : edit.prompt;
   }
   if (edit.editMode == 'reference') {
     return l10n.referenceEditDisplayTitle;
@@ -289,6 +298,26 @@ String localizedPresentationMessage(
     'open_manual_failed' => l10n.errorOpenManual(error),
     'manual_preview_failed' => l10n.errorManualPreview(error),
     'manual_commit_failed' => l10n.errorManualCommit(error),
+    'photo_git_request_incomplete' => l10n.errorPhotoGitRequestIncomplete,
+    'photo_git_planning' => l10n.statusPhotoGitPlanning,
+    'photo_git_conflicts_found' => l10n.statusPhotoGitConflictsFound,
+    'photo_git_no_change' => l10n.statusPhotoGitNoChange,
+    'photo_git_plan_ready' => l10n.statusPhotoGitPlanReady,
+    'photo_git_plan_failed' => l10n.errorPhotoGitPlan(error),
+    'photo_git_previewing' => l10n.statusPhotoGitPreviewing,
+    'photo_git_preview_ready' => l10n.statusPhotoGitPreviewReady,
+    'photo_git_preview_failed' => l10n.errorPhotoGitPreview(error),
+    'photo_git_committing' => l10n.statusPhotoGitCommitting,
+    'photo_git_committed' => l10n.statusPhotoGitCommitted,
+    'photo_git_commit_failed' => l10n.errorPhotoGitCommit(error),
+    'photo_git_scope_required' ||
+    'photo_git_scope_unclear' ||
+    'photo_git_scope_ambiguous' => l10n.errorPhotoGitScope,
+    'photo_git_conflict' => l10n.errorPhotoGitConflict,
+    'photo_git_plan_stale' => l10n.errorPhotoGitStale,
+    'photo_git_version_unsupported' ||
+    'photo_git_recipe_unsupported' => l10n.errorPhotoGitUnsupported,
+    'photo_git_draft_active' => l10n.errorPhotoGitDraftActive,
     'style_selection_ambiguous' => l10n.errorStyleAmbiguous,
     'style_compound_not_supported' => l10n.errorStyleCompound,
     'style_asset_invalid' || 'style_version_mismatch' => l10n.errorStyleAsset,

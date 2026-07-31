@@ -156,6 +156,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Returning to the original to create a new branch will discard the current manual adjustment draft.';
 
   @override
+  String get discardPhotoGitForTool =>
+      'Opening another tool will discard the current version operation and its preview.';
+
+  @override
   String get actionBack => 'Back';
 
   @override
@@ -166,7 +170,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get replaceOriginalMessage =>
-      'Changing it clears the current session and any unapplied manual draft.';
+      'Changing it clears the current session, unapplied manual draft, and unfinished version operation.';
 
   @override
   String get actionCancel => 'Cancel';
@@ -184,7 +188,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get clearWorkMessage =>
-      'The screen returns to its initial state. History already saved by the backend is not deleted.';
+      'The screen returns to its initial state and unfinished drafts are discarded. History already saved by the backend is not deleted.';
 
   @override
   String get actionClearScreen => 'Clear screen';
@@ -712,4 +716,209 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get backendInvalidResponse =>
       'The backend returned an unrecognized data format.';
+
+  @override
+  String get photoGitTitle => 'Version operations';
+
+  @override
+  String get photoGitSubtitle => 'Merge or selectively undo tracked edits';
+
+  @override
+  String get photoGitUnavailable =>
+      'Select an OpenCV history version to use version operations.';
+
+  @override
+  String get photoGitManualDraftBlocked =>
+      'Finish or discard the manual adjustment draft before starting a version operation.';
+
+  @override
+  String get photoGitMerge => 'Merge versions';
+
+  @override
+  String get photoGitSelectiveRevert => 'Selective undo';
+
+  @override
+  String get photoGitDeterministic => 'Deterministic version plan';
+
+  @override
+  String get photoGitTarget => 'Target';
+
+  @override
+  String get photoGitSource => 'Source';
+
+  @override
+  String get photoGitRevertStep => 'Step to undo';
+
+  @override
+  String get photoGitChooseSource => 'Choose another version';
+
+  @override
+  String get photoGitChooseRevertStep =>
+      'Choose a step from the target lineage';
+
+  @override
+  String get photoGitInstruction => 'Scope description';
+
+  @override
+  String get photoGitMergeHint =>
+      'For example: bring in only the sky saturation';
+
+  @override
+  String get photoGitRevertHint =>
+      'For example: undo only this step\'s saturation';
+
+  @override
+  String get photoGitScopeAssist => 'Optional scope shortcuts';
+
+  @override
+  String get photoGitAnyRegion => 'Any region';
+
+  @override
+  String get photoGitAnyParameter => 'Any parameter';
+
+  @override
+  String get photoGitAnalyze => 'Analyze changes';
+
+  @override
+  String get photoGitAnalyzing => 'Analyzing…';
+
+  @override
+  String get photoGitPlanSummary => 'Plan summary';
+
+  @override
+  String get photoGitAdded => 'Added';
+
+  @override
+  String get photoGitRemoved => 'Removed';
+
+  @override
+  String get photoGitConflicts => 'Conflicts';
+
+  @override
+  String get photoGitNoContribution => 'No matching tracked change.';
+
+  @override
+  String get photoGitConflictHelp =>
+      'Resolve every conflict before previewing.';
+
+  @override
+  String get photoGitKeepTarget => 'Keep target';
+
+  @override
+  String get photoGitUseSource => 'Use source';
+
+  @override
+  String get photoGitReplayLater => 'Undo and replay later edits';
+
+  @override
+  String get photoGitPreview => 'Create preview';
+
+  @override
+  String get photoGitPreviewing => 'Rendering preview…';
+
+  @override
+  String get photoGitCommit => 'Create version';
+
+  @override
+  String get photoGitCommitting => 'Creating version…';
+
+  @override
+  String get photoGitCancel => 'Cancel operation';
+
+  @override
+  String get photoGitMergedFrom => 'Merged from';
+
+  @override
+  String get photoGitRevertedFrom => 'Undid effects from';
+
+  @override
+  String get photoGitCommonAncestor => 'Common ancestor';
+
+  @override
+  String get photoGitSchema => 'Recipe version';
+
+  @override
+  String get photoGitPlanHash => 'Plan';
+
+  @override
+  String get photoGitResolutions => 'Conflict decisions';
+
+  @override
+  String get photoGitTargetValue => 'Target value';
+
+  @override
+  String get photoGitSourceValue => 'Source value';
+
+  @override
+  String get photoGitLaterChanges => 'Later edits';
+
+  @override
+  String get statusPhotoGitPlanning => 'Analyzing version differences…';
+
+  @override
+  String get statusPhotoGitConflictsFound =>
+      'Conflicts found. Choose a result for each one.';
+
+  @override
+  String get statusPhotoGitNoChange =>
+      'The selected scope would not change the target.';
+
+  @override
+  String get statusPhotoGitPlanReady => 'The version plan is ready.';
+
+  @override
+  String get statusPhotoGitPreviewing => 'Rendering the version preview…';
+
+  @override
+  String get statusPhotoGitPreviewReady =>
+      'Preview ready. Compare it before creating the version.';
+
+  @override
+  String get statusPhotoGitCommitting => 'Creating a tracked version…';
+
+  @override
+  String get statusPhotoGitCommitted => 'The version was added to history.';
+
+  @override
+  String get errorPhotoGitRequestIncomplete =>
+      'Choose a version and specify a region or parameter.';
+
+  @override
+  String errorPhotoGitPlan(String error) {
+    return 'Version analysis failed: $error';
+  }
+
+  @override
+  String errorPhotoGitPreview(String error) {
+    return 'Version preview failed: $error';
+  }
+
+  @override
+  String errorPhotoGitCommit(String error) {
+    return 'Could not create the version: $error';
+  }
+
+  @override
+  String get errorPhotoGitScope =>
+      'Specify a supported region or parameter in text or with a shortcut.';
+
+  @override
+  String get errorPhotoGitConflict =>
+      'Some conflicts are unresolved. Choose each result and try again.';
+
+  @override
+  String get errorPhotoGitStale =>
+      'The version changed. Analyze it again before previewing.';
+
+  @override
+  String get errorPhotoGitNoChange =>
+      'The selected content matches the target, so no duplicate version was created.';
+
+  @override
+  String get errorPhotoGitUnsupported =>
+      'This version does not contain enough tracked information for a safe operation.';
+
+  @override
+  String get errorPhotoGitDraftActive =>
+      'Finish or cancel the current version operation first.';
 }

@@ -806,69 +806,813 @@ class HistoryPanel extends StatelessWidget {
             message: _localizedControllerError(context, controller)!,
             isError: true,
           ),
-        if (items.isNotEmpty)
-          Padding(
+        Expanded(
+          child: ListView(
+            controller: scrollController,
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.md,
               AppSpacing.sm,
               AppSpacing.md,
-              0,
+              AppSpacing.lg,
             ),
-            child: OutlinedButton.icon(
-              key: const Key('history_original_branch'),
-              onPressed: onSelectOriginal,
-              icon: const Icon(Icons.account_tree_outlined, size: 18),
-              label: Text(
-                controller.isOriginalBaseSelected
-                    ? l10n.selectedOriginalNewBranch
-                    : l10n.createBranchFromOriginal,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ),
-        Expanded(
-          child: items.isEmpty
-              ? _UnavailablePanel(
-                  icon: Icons.history,
-                  message: l10n.emptyHistory,
-                )
-              : ListView.separated(
-                  controller: scrollController,
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md,
-                    AppSpacing.sm,
-                    AppSpacing.md,
-                    AppSpacing.lg,
+            children: [
+              _PhotoGitPanel(controller: controller),
+              if (items.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.sm),
+                OutlinedButton.icon(
+                  key: const Key('history_original_branch'),
+                  onPressed: onSelectOriginal,
+                  icon: const Icon(Icons.account_tree_outlined, size: 18),
+                  label: Text(
+                    controller.isOriginalBaseSelected
+                        ? l10n.selectedOriginalNewBranch
+                        : l10n.createBranchFromOriginal,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  itemCount: items.length,
-                  separatorBuilder: (_, _) =>
-                      const SizedBox(height: AppSpacing.xs),
-                  itemBuilder: (context, index) {
-                    final item = items[index];
-                    final originalIndex = controller.history.indexWhere(
-                      (entry) => entry.editId == item.editId,
-                    );
-                    final parentIndex = item.parentEditId == null
-                        ? -1
-                        : controller.history.indexWhere(
-                            (entry) => entry.editId == item.parentEditId,
-                          );
-                    return HistoryTile(
-                      key: Key('history_${item.editId}'),
-                      item: item,
-                      metadataCatalog: controller.metadataCatalogFor(item),
-                      version: originalIndex + 1,
-                      parentVersion: parentIndex < 0 ? null : parentIndex + 1,
-                      selected: item.editId == controller.selectedEditId,
-                      onTap: () => onSelect(item),
-                    );
-                  },
                 ),
+                const SizedBox(height: AppSpacing.sm),
+              ],
+              if (items.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
+                  child: _UnavailablePanel(
+                    icon: Icons.history,
+                    message: l10n.emptyHistory,
+                  ),
+                )
+              else
+                for (var index = 0; index < items.length; index++) ...[
+                  if (index > 0) const SizedBox(height: AppSpacing.xs),
+                  _buildHistoryTile(items[index]),
+                ],
+            ],
+          ),
         ),
       ],
     );
   }
+
+  Widget _buildHistoryTile(EditHistoryItem item) {
+    final originalIndex = controller.history.indexWhere(
+      (entry) => entry.editId == item.editId,
+    );
+    final parentIndex = item.parentEditId == null
+        ? -1
+        : controller.history.indexWhere(
+            (entry) => entry.editId == item.parentEditId,
+          );
+    final sourceIds = item.photoGit?.sourceEditIds;
+    final sourceId = sourceIds == null || sourceIds.isEmpty
+        ? null
+        : sourceIds.first;
+    final sourceIndex = sourceId == null
+        ? -1
+        : controller.history.indexWhere((entry) => entry.editId == sourceId);
+    final revertedId = item.photoGit?.revertedEditId;
+    final revertedIndex = revertedId == null
+        ? -1
+        : controller.history.indexWhere((entry) => entry.editId == revertedId);
+    return HistoryTile(
+      key: Key('history_${item.editId}'),
+      item: item,
+      metadataCatalog: controller.metadataCatalogFor(item),
+      version: originalIndex + 1,
+      parentVersion: parentIndex < 0 ? null : parentIndex + 1,
+      sourceVersion: sourceIndex < 0 ? null : sourceIndex + 1,
+      revertedVersion: revertedIndex < 0 ? null : revertedIndex + 1,
+      selected: item.editId == controller.selectedEditId,
+      onTap: () => onSelect(item),
+    );
+  }
+}
+
+class _PhotoGitPanel extends StatefulWidget {
+  const _PhotoGitPanel({required this.controller});
+
+  final EditorController controller;
+
+  @override
+  State<_PhotoGitPanel> createState() => _PhotoGitPanelState();
+}
+
+class _PhotoGitPanelState extends State<_PhotoGitPanel> {
+  late final TextEditingController _instructionController;
+
+  static const _regions = <String>[
+    'all',
+    'sky',
+    'person',
+    'background',
+    'highlights',
+    'shadows',
+  ];
+
+  static const _parameters = <String>[
+    'brightness',
+    'contrast',
+    'saturation',
+    'temperature',
+    'clarity',
+    'dehaze',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _instructionController = TextEditingController(
+      text: widget.controller.photoGitInstruction,
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant _PhotoGitPanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final value = widget.controller.photoGitInstruction;
+    if (_instructionController.text != value) {
+      _instructionController.value = TextEditingValue(
+        text: value,
+        selection: TextSelection.collapsed(offset: value.length),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _instructionController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = widget.controller;
+    final l10n = context.l10n;
+    final target = controller.photoGitTargetEdit;
+    final enabled =
+        target != null &&
+        target.engine.toLowerCase() == 'opencv' &&
+        controller.sessionId != null &&
+        !controller.manualIsDirty;
+    return Card(
+      key: const Key('photo_git_panel'),
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: ExpansionTile(
+        key: const Key('photo_git_expansion'),
+        initiallyExpanded: controller.hasPhotoGitDraft,
+        leading: const Icon(Icons.merge_type),
+        title: Text(
+          l10n.photoGitTitle,
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+        subtitle: Text(l10n.photoGitSubtitle),
+        childrenPadding: const EdgeInsets.fromLTRB(
+          AppSpacing.sm,
+          0,
+          AppSpacing.sm,
+          AppSpacing.sm,
+        ),
+        children: [
+          if (!enabled)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+              child: Text(
+                controller.manualIsDirty
+                    ? l10n.photoGitManualDraftBlocked
+                    : l10n.photoGitUnavailable,
+                style: TextStyle(
+                  color: context.editorColors.textMuted,
+                  fontSize: 12,
+                ),
+              ),
+            )
+          else ...[
+            _TargetVersionRow(
+              label: l10n.photoGitTarget,
+              value: _versionLabel(context, target),
+              imageUrl: target.resultUrl,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            SegmentedButton<PhotoGitOperation>(
+              key: const Key('photo_git_operation'),
+              segments: <ButtonSegment<PhotoGitOperation>>[
+                ButtonSegment<PhotoGitOperation>(
+                  value: PhotoGitOperation.merge,
+                  icon: const Icon(Icons.call_merge, size: 18),
+                  label: Text(l10n.photoGitMerge),
+                ),
+                ButtonSegment<PhotoGitOperation>(
+                  value: PhotoGitOperation.selectiveRevert,
+                  icon: const Icon(Icons.undo, size: 18),
+                  label: Text(l10n.photoGitSelectiveRevert),
+                ),
+              ],
+              selected: <PhotoGitOperation>{controller.photoGitOperation},
+              onSelectionChanged: controller.isCommittingPhotoGit
+                  ? null
+                  : (selection) {
+                      controller.setPhotoGitOperation(selection.first);
+                    },
+              showSelectedIcon: false,
+              style: const ButtonStyle(visualDensity: VisualDensity.compact),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            if (controller.photoGitOperation == PhotoGitOperation.merge)
+              _buildSourcePicker(context)
+            else
+              _buildRevertPicker(context),
+            const SizedBox(height: AppSpacing.sm),
+            TextField(
+              key: const Key('photo_git_instruction'),
+              controller: _instructionController,
+              minLines: 2,
+              maxLines: 3,
+              enabled: !controller.isCommittingPhotoGit,
+              onChanged: controller.setPhotoGitInstruction,
+              decoration: InputDecoration(
+                labelText: l10n.photoGitInstruction,
+                hintText:
+                    controller.photoGitOperation == PhotoGitOperation.merge
+                    ? l10n.photoGitMergeHint
+                    : l10n.photoGitRevertHint,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                l10n.photoGitScopeAssist,
+                style: TextStyle(
+                  color: context.editorColors.textSecondary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            _buildScopeChips(context),
+            const SizedBox(height: AppSpacing.sm),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                key: const Key('photo_git_analyze'),
+                onPressed: controller.canPlanPhotoGit
+                    ? controller.analyzePhotoGit
+                    : null,
+                icon: controller.isPlanningPhotoGit
+                    ? const SizedBox.square(
+                        dimension: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.manage_search),
+                label: Text(
+                  controller.isPlanningPhotoGit
+                      ? l10n.photoGitAnalyzing
+                      : l10n.photoGitAnalyze,
+                ),
+              ),
+            ),
+            if (controller.photoGitPlan != null) ...[
+              const SizedBox(height: AppSpacing.sm),
+              _PhotoGitPlanCard(
+                controller: controller,
+                versionLabel: (editId) => _versionLabelForId(context, editId),
+              ),
+            ],
+            if (controller.photoGitPlan != null) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Wrap(
+                spacing: AppSpacing.xs,
+                runSpacing: AppSpacing.xs,
+                children: [
+                  OutlinedButton.icon(
+                    key: const Key('photo_git_preview'),
+                    onPressed: controller.canPreviewPhotoGit
+                        ? controller.previewPhotoGit
+                        : null,
+                    icon: controller.isPreviewingPhotoGit
+                        ? const SizedBox.square(
+                            dimension: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.preview_outlined),
+                    label: Text(
+                      controller.isPreviewingPhotoGit
+                          ? l10n.photoGitPreviewing
+                          : l10n.photoGitPreview,
+                    ),
+                  ),
+                  FilledButton.icon(
+                    key: const Key('photo_git_commit'),
+                    onPressed: controller.canCommitPhotoGit
+                        ? controller.commitPhotoGit
+                        : null,
+                    icon: controller.isCommittingPhotoGit
+                        ? const SizedBox.square(
+                            dimension: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.add_task),
+                    label: Text(
+                      controller.isCommittingPhotoGit
+                          ? l10n.photoGitCommitting
+                          : l10n.photoGitCommit,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            if (controller.hasPhotoGitDraft) ...[
+              const SizedBox(height: AppSpacing.xs),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  key: const Key('photo_git_cancel'),
+                  onPressed: controller.isCommittingPhotoGit
+                      ? null
+                      : controller.discardPhotoGitDraft,
+                  icon: const Icon(Icons.close, size: 18),
+                  label: Text(l10n.photoGitCancel),
+                ),
+              ),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSourcePicker(BuildContext context) {
+    final controller = widget.controller;
+    final candidates = controller.photoGitSourceCandidates;
+    return DropdownButtonFormField<String>(
+      key: ValueKey<String>(
+        'photo_git_source_${controller.photoGitSourceEditId}',
+      ),
+      initialValue:
+          candidates.any(
+            (edit) => edit.editId == controller.photoGitSourceEditId,
+          )
+          ? controller.photoGitSourceEditId
+          : null,
+      isExpanded: true,
+      decoration: InputDecoration(labelText: context.l10n.photoGitSource),
+      hint: Text(context.l10n.photoGitChooseSource),
+      items: [
+        for (final edit in candidates)
+          DropdownMenuItem<String>(
+            value: edit.editId,
+            child: Text(
+              _versionLabel(context, edit),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+      ],
+      onChanged: candidates.isEmpty || controller.isCommittingPhotoGit
+          ? null
+          : controller.setPhotoGitSource,
+    );
+  }
+
+  Widget _buildRevertPicker(BuildContext context) {
+    final controller = widget.controller;
+    final candidates = controller.photoGitRevertCandidates;
+    return DropdownButtonFormField<String>(
+      key: ValueKey<String>(
+        'photo_git_revert_${controller.photoGitRevertEditId}',
+      ),
+      initialValue:
+          candidates.any(
+            (edit) => edit.editId == controller.photoGitRevertEditId,
+          )
+          ? controller.photoGitRevertEditId
+          : null,
+      isExpanded: true,
+      decoration: InputDecoration(labelText: context.l10n.photoGitRevertStep),
+      hint: Text(context.l10n.photoGitChooseRevertStep),
+      items: [
+        for (final edit in candidates)
+          DropdownMenuItem<String>(
+            value: edit.editId,
+            child: Text(
+              _versionLabel(context, edit),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+      ],
+      onChanged: candidates.isEmpty || controller.isCommittingPhotoGit
+          ? null
+          : controller.setPhotoGitRevertStep,
+    );
+  }
+
+  Widget _buildScopeChips(BuildContext context) {
+    final controller = widget.controller;
+    final l10n = context.l10n;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: 5,
+          runSpacing: 3,
+          children: [
+            ChoiceChip(
+              key: const Key('photo_git_region_any'),
+              label: Text(l10n.photoGitAnyRegion),
+              selected: controller.photoGitRegion == null,
+              onSelected: (_) => controller.setPhotoGitRegion(null),
+            ),
+            for (final region in _regions)
+              ChoiceChip(
+                key: Key('photo_git_region_$region'),
+                label: Text(localizedRegionLabel(l10n, region)),
+                selected: controller.photoGitRegion == region,
+                onSelected: (selected) =>
+                    controller.setPhotoGitRegion(selected ? region : null),
+              ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Wrap(
+          spacing: 5,
+          runSpacing: 3,
+          children: [
+            ChoiceChip(
+              key: const Key('photo_git_parameter_any'),
+              label: Text(l10n.photoGitAnyParameter),
+              selected: controller.photoGitParameter == null,
+              onSelected: (_) => controller.setPhotoGitParameter(null),
+            ),
+            for (final parameter in _parameters)
+              ChoiceChip(
+                key: Key('photo_git_parameter_$parameter'),
+                label: Text(localizedParameterLabel(l10n, parameter)),
+                selected: controller.photoGitParameter == parameter,
+                onSelected: (selected) => controller.setPhotoGitParameter(
+                  selected ? parameter : null,
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  String _versionLabel(BuildContext context, EditHistoryItem edit) {
+    final index = widget.controller.history.indexWhere(
+      (item) => item.editId == edit.editId,
+    );
+    final version = index < 0 ? '?' : '${index + 1}';
+    return 'v$version · ${localizedEditDisplayTitle(context.l10n, edit)}';
+  }
+
+  String _versionLabelForId(BuildContext context, String? editId) {
+    if (editId == null || editId == EditorController.originalParentSentinel) {
+      return context.l10n.labelOriginal;
+    }
+    for (final edit in widget.controller.history) {
+      if (edit.editId == editId) {
+        return _versionLabel(context, edit);
+      }
+    }
+    return editId;
+  }
+}
+
+class _TargetVersionRow extends StatelessWidget {
+  const _TargetVersionRow({
+    required this.label,
+    required this.value,
+    required this.imageUrl,
+  });
+
+  final String label;
+  final String value;
+  final String imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(AppRadii.small),
+          child: Image.network(
+            imageUrl,
+            width: 44,
+            height: 44,
+            fit: BoxFit.cover,
+            errorBuilder: (_, _, _) => const SizedBox.square(
+              dimension: 44,
+              child: Icon(Icons.image_not_supported_outlined),
+            ),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  color: context.editorColors.textMuted,
+                  fontSize: 11,
+                ),
+              ),
+              Text(
+                value,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PhotoGitPlanCard extends StatelessWidget {
+  const _PhotoGitPlanCard({
+    required this.controller,
+    required this.versionLabel,
+  });
+
+  final EditorController controller;
+  final String Function(String? editId) versionLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final plan = controller.photoGitPlan!;
+    final l10n = context.l10n;
+    final colors = context.editorColors;
+    return DecoratedBox(
+      key: const Key('photo_git_plan'),
+      decoration: BoxDecoration(
+        color: colors.surfaceSoft,
+        borderRadius: BorderRadius.circular(AppRadii.small),
+        border: Border.all(color: colors.border),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              l10n.photoGitPlanSummary,
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 4),
+            Text(switch (plan.status) {
+              'conflict' => l10n.statusPhotoGitConflictsFound,
+              'no_change' => l10n.statusPhotoGitNoChange,
+              _ => l10n.statusPhotoGitPlanReady,
+            }, style: TextStyle(color: colors.textSecondary, fontSize: 12)),
+            const SizedBox(height: AppSpacing.xs),
+            Wrap(
+              spacing: AppSpacing.xs,
+              runSpacing: 4,
+              children: [
+                _PlanCountChip(
+                  icon: Icons.add_circle_outline,
+                  label:
+                      '${l10n.photoGitAdded} ${plan.appliedContributions.length}',
+                ),
+                _PlanCountChip(
+                  icon: Icons.remove_circle_outline,
+                  label:
+                      '${l10n.photoGitRemoved} ${plan.removedContributions.length}',
+                ),
+                _PlanCountChip(
+                  icon: Icons.warning_amber_outlined,
+                  label: '${l10n.photoGitConflicts} ${plan.conflicts.length}',
+                ),
+              ],
+            ),
+            if (plan.appliedContributions.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.xs),
+              _ContributionList(
+                title: l10n.photoGitAdded,
+                contributions: plan.appliedContributions,
+              ),
+            ],
+            if (plan.removedContributions.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.xs),
+              _ContributionList(
+                title: l10n.photoGitRemoved,
+                contributions: plan.removedContributions,
+              ),
+            ],
+            if (plan.conflicts.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                l10n.photoGitConflictHelp,
+                style: TextStyle(color: colors.textSecondary, fontSize: 12),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              for (final conflict in plan.conflicts) ...[
+                _PhotoGitConflictCard(
+                  conflict: conflict,
+                  controller: controller,
+                  versionLabel: versionLabel,
+                ),
+                const SizedBox(height: AppSpacing.xs),
+              ],
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PlanCountChip extends StatelessWidget {
+  const _PlanCountChip({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: context.editorColors.border),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14),
+            const SizedBox(width: 4),
+            Text(label, style: const TextStyle(fontSize: 11)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ContributionList extends StatelessWidget {
+  const _ContributionList({required this.title, required this.contributions});
+
+  final String title;
+  final List<Map<String, dynamic>> contributions;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            color: context.editorColors.textMuted,
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        for (final contribution in contributions.take(5))
+          Padding(
+            padding: const EdgeInsets.only(top: 3),
+            child: Text(
+              '• ${_localizedContribution(context, contribution)}',
+              style: TextStyle(
+                color: context.editorColors.textSecondary,
+                fontSize: 11,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _PhotoGitConflictCard extends StatelessWidget {
+  const _PhotoGitConflictCard({
+    required this.conflict,
+    required this.controller,
+    required this.versionLabel,
+  });
+
+  final PhotoGitConflict conflict;
+  final EditorController controller;
+  final String Function(String? editId) versionLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final selected =
+        controller.photoGitResolutions[conflict.conflictId] ??
+        conflict.resolvedChoice;
+    final dependency = conflict.type == 'dependency';
+    return DecoratedBox(
+      key: Key('photo_git_conflict_${conflict.conflictId}'),
+      decoration: BoxDecoration(
+        color: context.editorColors.surfaceRaised,
+        borderRadius: BorderRadius.circular(AppRadii.small),
+        border: Border.all(
+          color: context.editorColors.warning.withValues(alpha: 0.55),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xs),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${localizedRegionLabel(l10n, conflict.region)} · '
+              '${localizedParameterLabel(l10n, conflict.parameter)}',
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+            ),
+            if (!dependency) ...[
+              const SizedBox(height: 3),
+              Text(
+                '${l10n.photoGitTargetValue}: '
+                '${_formatPhotoGitValue(conflict.targetValue)} · '
+                '${l10n.photoGitSourceValue}: '
+                '${_formatPhotoGitValue(conflict.sourceValue)}',
+                style: TextStyle(
+                  color: context.editorColors.textSecondary,
+                  fontSize: 11,
+                ),
+              ),
+            ] else if (conflict.laterEditIds.isNotEmpty) ...[
+              const SizedBox(height: 3),
+              Text(
+                '${l10n.photoGitLaterChanges}: '
+                '${conflict.laterEditIds.map(versionLabel).join(', ')}',
+                style: TextStyle(
+                  color: context.editorColors.textSecondary,
+                  fontSize: 11,
+                ),
+              ),
+            ],
+            const SizedBox(height: 4),
+            Wrap(
+              spacing: 5,
+              runSpacing: 3,
+              children: [
+                for (final choice in conflict.allowedChoices)
+                  ChoiceChip(
+                    key: Key(
+                      'photo_git_resolution_${conflict.conflictId}_$choice',
+                    ),
+                    label: Text(switch (choice) {
+                      'source' => l10n.photoGitUseSource,
+                      'replay' => l10n.photoGitReplayLater,
+                      _ => l10n.photoGitKeepTarget,
+                    }),
+                    selected: selected == choice,
+                    onSelected: controller.isPlanningPhotoGit
+                        ? null
+                        : (value) {
+                            if (value) {
+                              controller.resolvePhotoGitConflict(
+                                conflict.conflictId,
+                                choice,
+                              );
+                            }
+                          },
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+String _localizedContribution(
+  BuildContext context,
+  Map<String, dynamic> contribution,
+) {
+  final region = localizedRegionLabel(
+    context.l10n,
+    contribution['region']?.toString() ?? 'all',
+  );
+  final parameter = localizedParameterLabel(
+    context.l10n,
+    contribution['parameter']?.toString() ?? '',
+  );
+  final before = _formatPhotoGitValue(contribution['before_value']);
+  final after = _formatPhotoGitValue(contribution['after_value']);
+  return '$region · $parameter  $before → $after';
+}
+
+String _formatPhotoGitValue(dynamic value) {
+  if (value is num) {
+    final number = value.toDouble();
+    return number == number.roundToDouble()
+        ? number.toStringAsFixed(0)
+        : number.toStringAsFixed(2);
+  }
+  return value?.toString() ?? '—';
 }
 
 class EditDetailsPanel extends StatelessWidget {
@@ -910,6 +1654,13 @@ class EditDetailsPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (edit.photoGit != null) ...[
+            _PhotoGitDetails(
+              metadata: edit.photoGit!,
+              history: controller.history,
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
           if (edit.style != null) ...[
             _StyleDetails(style: edit.style!),
             const SizedBox(height: AppSpacing.md),
@@ -976,6 +1727,183 @@ class EditDetailsPanel extends StatelessWidget {
               context.l10n.noManualParameters,
               style: TextStyle(color: context.editorColors.textMuted),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PhotoGitDetails extends StatelessWidget {
+  const _PhotoGitDetails({required this.metadata, required this.history});
+
+  final PhotoGitMetadata metadata;
+  final List<EditHistoryItem> history;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final isMerge = metadata.operation == PhotoGitOperation.merge;
+    final source = metadata.sourceEditIds.isEmpty
+        ? null
+        : metadata.sourceEditIds.first;
+    return DecoratedBox(
+      key: const Key('photo_git_details'),
+      decoration: BoxDecoration(
+        color: context.editorColors.accentSoft,
+        borderRadius: BorderRadius.circular(AppRadii.small),
+        border: Border.all(
+          color: context.editorColors.accent.withValues(alpha: 0.35),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  isMerge ? Icons.call_merge : Icons.undo,
+                  color: context.editorColors.accentBright,
+                  size: 18,
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Text(
+                  isMerge ? l10n.photoGitMerge : l10n.photoGitSelectiveRevert,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            _PhotoGitDetailRow(
+              label: l10n.photoGitTarget,
+              value: _historyVersion(context, metadata.targetEditId),
+            ),
+            if (source != null)
+              _PhotoGitDetailRow(
+                label: l10n.photoGitSource,
+                value: _historyVersion(context, source),
+              ),
+            if (metadata.revertedEditId != null)
+              _PhotoGitDetailRow(
+                label: l10n.photoGitRevertStep,
+                value: _historyVersion(context, metadata.revertedEditId!),
+              ),
+            if (metadata.commonAncestorEditId != null)
+              _PhotoGitDetailRow(
+                label: l10n.photoGitCommonAncestor,
+                value: _historyVersion(context, metadata.commonAncestorEditId!),
+              ),
+            _PhotoGitDetailRow(
+              label: l10n.photoGitAdded,
+              value: metadata.appliedContributions.isEmpty
+                  ? '0'
+                  : metadata.appliedContributions
+                        .take(4)
+                        .map((item) => _localizedContribution(context, item))
+                        .join('\n'),
+            ),
+            _PhotoGitDetailRow(
+              label: l10n.photoGitRemoved,
+              value: metadata.removedContributions.isEmpty
+                  ? '0'
+                  : metadata.removedContributions
+                        .take(4)
+                        .map((item) => _localizedContribution(context, item))
+                        .join('\n'),
+            ),
+            if (metadata.resolutions.isNotEmpty)
+              _PhotoGitDetailRow(
+                label: l10n.photoGitResolutions,
+                value: metadata.resolutions.entries
+                    .map(
+                      (entry) =>
+                          '${_localizedConflictScope(context, entry.key)}: '
+                          '${_localizedResolution(context, entry.value)}',
+                    )
+                    .join('\n'),
+              ),
+            if (metadata.schemaVersion != null)
+              _PhotoGitDetailRow(
+                label: l10n.photoGitSchema,
+                value: metadata.schemaVersion!,
+              ),
+            if (metadata.planHash != null)
+              _PhotoGitDetailRow(
+                label: l10n.photoGitPlanHash,
+                value: metadata.planHash!.substring(
+                  0,
+                  metadata.planHash!.length.clamp(0, 12),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _historyVersion(BuildContext context, String editId) {
+    if (editId == EditorController.originalParentSentinel) {
+      return context.l10n.labelOriginal;
+    }
+    final index = history.indexWhere((edit) => edit.editId == editId);
+    return index < 0 ? editId : 'v${index + 1}';
+  }
+
+  String _localizedConflictScope(BuildContext context, String conflictId) {
+    final rawScope = conflictId.contains(':')
+        ? conflictId.substring(conflictId.indexOf(':') + 1)
+        : conflictId;
+    final parts = rawScope.split('|');
+    if (parts.length < 3) {
+      return conflictId;
+    }
+    return '${localizedRegionLabel(context.l10n, parts.first)} · '
+        '${localizedParameterLabel(context.l10n, parts.last)}';
+  }
+
+  String _localizedResolution(BuildContext context, dynamic value) {
+    return switch (value?.toString()) {
+      'source' => context.l10n.photoGitUseSource,
+      'replay' => context.l10n.photoGitReplayLater,
+      _ => context.l10n.photoGitKeepTarget,
+    };
+  }
+}
+
+class _PhotoGitDetailRow extends StatelessWidget {
+  const _PhotoGitDetailRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 112,
+            child: Text(
+              label,
+              style: TextStyle(
+                color: context.editorColors.textMuted,
+                fontSize: 11,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                color: context.editorColors.textSecondary,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -1573,6 +2501,8 @@ class HistoryTile extends StatelessWidget {
     required this.metadataCatalog,
     required this.version,
     required this.parentVersion,
+    this.sourceVersion,
+    this.revertedVersion,
     required this.selected,
     required this.onTap,
   });
@@ -1581,6 +2511,8 @@ class HistoryTile extends StatelessWidget {
   final ParameterMetadataCatalog metadataCatalog;
   final int version;
   final int? parentVersion;
+  final int? sourceVersion;
+  final int? revertedVersion;
   final bool selected;
   final VoidCallback onTap;
 
@@ -1661,10 +2593,30 @@ class HistoryTile extends StatelessWidget {
                     const SizedBox(height: 4),
                     Align(
                       alignment: Alignment.centerLeft,
-                      child: _HistoryBranchBadge(
-                        key: Key('history_branch_badge_${item.editId}'),
-                        isRoot: item.parentEditId == null,
-                        parentVersion: parentVersion,
+                      child: Wrap(
+                        spacing: 4,
+                        runSpacing: 3,
+                        children: [
+                          _HistoryBranchBadge(
+                            key: Key('history_branch_badge_${item.editId}'),
+                            isRoot: item.parentEditId == null,
+                            parentVersion: parentVersion,
+                          ),
+                          if (sourceVersion != null)
+                            _HistoryProvenanceBadge(
+                              icon: Icons.call_merge,
+                              label:
+                                  '${context.l10n.photoGitMergedFrom} '
+                                  'v$sourceVersion',
+                            ),
+                          if (revertedVersion != null)
+                            _HistoryProvenanceBadge(
+                              icon: Icons.undo,
+                              label:
+                                  '${context.l10n.photoGitRevertedFrom} '
+                                  'v$revertedVersion',
+                            ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -1690,6 +2642,40 @@ class HistoryTile extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HistoryProvenanceBadge extends StatelessWidget {
+  const _HistoryProvenanceBadge({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: context.editorColors.accentSoft,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 11, color: context.editorColors.accentBright),
+            const SizedBox(width: 3),
+            Text(
+              label,
+              style: TextStyle(
+                color: context.editorColors.textSecondary,
+                fontSize: 10,
+              ),
+            ),
+          ],
         ),
       ),
     );
