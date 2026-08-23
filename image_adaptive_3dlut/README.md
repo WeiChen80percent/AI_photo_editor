@@ -82,11 +82,11 @@ uv sync
 
 ## 下載 Hugging Face 模型
 
-模型檔不放在 GitHub。先安裝 Hugging Face CLI，再將下列 `<HF_USERNAME>/<HF_MODEL_REPO>` 替換成實際模型庫名稱：
+模型檔不放在 GitHub，已發布於 [WeiChen80percent/image-adaptive-3dlut](https://huggingface.co/WeiChen80percent/image-adaptive-3dlut)。先安裝 Hugging Face CLI，再下載最佳 checkpoint：
 
 ```powershell
 python -m pip install huggingface_hub
-hf download <HF_USERNAME>/<HF_MODEL_REPO> best.pt `
+hf download WeiChen80percent/image-adaptive-3dlut best.pt `
   --local-dir image_adaptive_3dlut\trained_model
 ```
 
