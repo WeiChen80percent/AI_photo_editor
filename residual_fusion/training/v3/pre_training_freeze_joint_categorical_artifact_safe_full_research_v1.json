@@ -1,0 +1,91 @@
+{
+  "schema_version": "expert_c_v3_1_joint_categorical_artifact_safe_full_train_freeze_v1",
+  "created_at_local": "2026-08-13T00:22:00+08:00",
+  "status": "frozen_before_training",
+  "hypothesis": "After passing complete 4,600-source OOF gates, the frozen artifact-safe architecture can be trained once on all legal train pairs for research inference.",
+  "minimum_experiment": "Train the exact artifact-safe categorical architecture for 40 epochs on all five legal train folds. Use soft expected strength and affine delta clamp 0.05 at inference. Do not access development/final content.",
+  "success_next_step": "Strict-load and smoke-test the checkpoint, then preserve it as research-only pending explicit development opening authorization.",
+  "inputs": {
+    "spatial_metadata": {"path": "training/outputs/expert_c_v3_spatial_fusion_crossfit001/cache/metadata.json", "sha256": "0C42543719B5104EA900F39C49D64A80EC300F26ED9B1F7C9488FF4A4F9A337B"},
+    "labels": {"path": "training/outputs/expert_c_v3_joint_student_labels001/joint_student_oof_labels.jsonl", "sha256": "C111C0E9C0DA1FF1E695DAF8C0696DC6FF41BE7C19C1D98AC344EC3CB546667B"},
+    "train_features": {"path": "training/outputs/expert_c_v3_gate_train_labels_v1/train_rows.jsonl", "sha256": "CE86084F854D65B0E688B176E5DF32BEC8716B4442FA2BA9A8D4774316F23566"},
+    "crossfit_result": {"path": "training/outputs/expert_c_v3_1_joint_categorical_artifact_safe_crossfit001/result.json", "sha256": "62105BBF4E3036C3C2CAD633B234F482DA5CEAACAFA2CAB481DA4C02B18D7F53"}
+  },
+  "implementation": {
+    "runner_path": "training/v3/train_joint_categorical_artifact_safe_full.py",
+    "runner_sha256": "6D525EB7EF3C71E45FB186A35529950A4357D84F6D19F16C58A703219CCF982A"
+  },
+  "data": {
+    "train_folds": [0, 1, 2, 3, 4],
+    "held_fold": -1,
+    "analysis_size": 128,
+    "state_feature_count": 32,
+    "development_content_access": "prohibited",
+    "final_content_access": "prohibited"
+  },
+  "model": {
+    "type": "shared_mobilenet_local_affine_hsl_categorical_strength_student",
+    "grid_depth": 8,
+    "guide_knot_count": 16,
+    "frozen_encoder_through": 4,
+    "state_hidden": 64,
+    "head_hidden": 96,
+    "risk_hidden": 48,
+    "initial_risk": 0.25,
+    "initial_strength": 0.25,
+    "output_parameter_count": 23,
+    "identity_biased_initialization": true,
+    "fivek_warm_start": false
+  },
+  "editor": {
+    "hue_shift_bound_degrees": 18.0,
+    "saturation_log_gain_bound": 0.6,
+    "lightness_delta_bound": 0.18,
+    "training_renderer": "differentiable PyTorch HSL after local affine"
+  },
+  "training": {
+    "seed": 20260833,
+    "epochs": 40,
+    "batch_size": 24,
+    "optimizer": "AdamW",
+    "encoder_learning_rate": 0.00002,
+    "head_learning_rate": 0.0002,
+    "minimum_learning_rate": 0.000002,
+    "weight_decay": 0.00001,
+    "horizontal_flip_probability": 0.5,
+    "strength_oracle_weight": 0.35,
+    "no_op_sample_extra_weight": 2.0,
+    "no_op_preservation_weight": 1.0,
+    "no_worse_hinge_weight": 1.0,
+    "cvar_fraction": 0.10,
+    "cvar_excess_weight": 1.0,
+    "hsl_l2_weight": 0.01,
+    "hsl_smoothness_weight": 0.005,
+    "gradient_clip_norm": 5.0,
+    "mixed_precision": true,
+    "opponent_color_weight": 0.20,
+    "chroma_edge_weight": 0.08,
+    "neutral_shift_weight": 0.10,
+    "flat_region_shift_edge_weight": 0.10
+  },
+  "inference_policy": {
+    "strength": "soft_expected_probability_weighted",
+    "affine_delta_clamp": 0.05
+  },
+  "evaluation": {
+    "batch_size": 32,
+    "fixed_strength": 0.25,
+    "oracle_strengths": [0.0, 0.25, 0.5, 0.75, 1.0]
+  },
+  "gates": {
+    "minimum_mean_gain_over_fixed": 0.001,
+    "minimum_strict_win_rate": 0.80,
+    "minimum_worst_decile_gain": -0.006,
+    "minimum_no_op_cohort_gain": -0.001
+  },
+  "output": {
+    "directory": "training/outputs/expert_c_v3_1_joint_categorical_artifact_safe_full_research001",
+    "promoted": false
+  },
+  "protected_split_policy": "All 4,600 legal train sources may be used for gradients. Development and final content remain sealed and no promotion claim is allowed."
+}

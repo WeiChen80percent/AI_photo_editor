@@ -1,0 +1,102 @@
+{
+  "schema_version": "raw_expert_c_baseline_v1",
+  "baseline_name": "raw_expert_c_supervised_v2",
+  "created_at": "2026-07-27",
+  "status": "fresh_holdout_passed",
+  "lifecycle": "promoted_after_sealed_final_holdout",
+  "purpose": "Fast global OpenCV editing toward MIT-Adobe FiveK Expert C",
+  "model": {
+    "type": "ridge_regression",
+    "selected_candidate": "state_ridge_alpha_1",
+    "input_contract": "opencv_stats_v2",
+    "feature_count": 32,
+    "uses_image_pixels_at_inference": true,
+    "uses_gt_at_inference": false,
+    "uses_prompt_at_inference": false,
+    "artifact": {
+      "path": "training/outputs/raw_expert_c_expanded_v2/raw_expert_c_regressor.npz",
+      "sha256": "F65148CA8DA2D10A291A5A04A25393409F16D9A17689FEDE6006D05D24FFAF87",
+      "size_bytes": 5208
+    }
+  },
+  "parameters": [
+    "brightness",
+    "contrast",
+    "gamma",
+    "saturation",
+    "temperature",
+    "tint",
+    "sharpen",
+    "vignette"
+  ],
+  "strength_modes": {
+    "research": {
+      "strength": 1.0,
+      "selection": "maximum expanded-v2 development average score delta"
+    },
+    "conservative": {
+      "strength": 0.4,
+      "selection": "optional inherited safety mode; not used for final promotion"
+    }
+  },
+  "training_contract": {
+    "source_dataset": "MIT-Adobe FiveK",
+    "expert": "C",
+    "oracle_target_records": 320,
+    "old_oracle_target_records": 160,
+    "new_oracle_target_records": 160,
+    "development_records": 40,
+    "opened_prior_holdouts_used_for_training": false,
+    "manifest": {
+      "path": "dataset_pilot/supervised/raw_expert_c_expanded_v2.jsonl",
+      "sha256": "02C7EFC1132CD1BB180EBBA6F50631FEE061A6E4C73F15041A9DC853D6B49F9A"
+    }
+  },
+  "development_metrics": {
+    "count": 40,
+    "score_improvement_rate": 0.825,
+    "avg_score_delta": 0.028028,
+    "avg_psnr_delta": 1.078021,
+    "avg_ssim_delta": 0.021666,
+    "frozen_v1_avg_score_delta": 0.021044,
+    "avg_score_delta_advantage_over_v1": 0.006984,
+    "report": {
+      "path": "training/outputs/raw_expert_c_v1_v2_development_comparison/comparison_summary.json",
+      "sha256": "92C06ACC50F8349E56CC95C62510D4AB53A3F59F18750C19E67AED3CF6E720F1"
+    }
+  },
+  "final_holdout_metrics": {
+    "count": 80,
+    "holdout_open_count": 1,
+    "source_overlap_with_all_prior_raw_experiments": 0,
+    "score_improvement_rate": 0.7125,
+    "avg_score_delta": 0.021971,
+    "avg_psnr_delta": 0.779354,
+    "avg_ssim_delta": 0.019975,
+    "frozen_v1_score_improvement_rate": 0.6375,
+    "frozen_v1_avg_score_delta": 0.013736,
+    "avg_score_delta_advantage_over_v1": 0.008236,
+    "v2_beats_v1_per_image_rate": 0.575,
+    "report": {
+      "path": "training/outputs/raw_expert_c_final_holdout_v2/final_result.json",
+      "sha256": "D25BB1CC07DB0B42E766603FD9A455944B5B7CDD3CF77EB852FBD0C3AF47AA84"
+    },
+    "evaluation_seal": {
+      "path": "training/outputs/raw_expert_c_final_holdout_v2/evaluation.seal.json",
+      "sha256": "3F39870056156A0EEEDBC87797487FBE6FF69C9486411BF9FF6C3C5544D358FF"
+    }
+  },
+  "runtime": {
+    "entrypoint": "training/predict_raw_expert_c.py",
+    "server_required": false,
+    "flutter_required": false,
+    "ollama_required": false,
+    "required_argument": "--registry training/baselines/raw_expert_c_supervised_v2.json"
+  },
+  "limitations": [
+    "Global OpenCV controls cannot reproduce every local Expert C edit.",
+    "Research mode still makes 28.75% of the sealed final holdout worse by the composite metric.",
+    "The 40-image development and 80-image final holdout are opened and must never be used for future training or tuning.",
+    "Prompt-conditioned and LLM components remain outside this numeric Expert C baseline."
+  ]
+}

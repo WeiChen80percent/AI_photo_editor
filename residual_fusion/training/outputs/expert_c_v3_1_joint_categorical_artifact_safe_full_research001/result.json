@@ -1,0 +1,56 @@
+{
+  "schema_version": "expert_c_v3_joint_categorical_strength_full_train_result_v1",
+  "created_at": "2026-08-12T16:30:10.762023+00:00",
+  "status": "COMPLETE",
+  "data": {
+    "train_folds": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "train_count": 4600,
+    "training_count": 4600,
+    "development_count_reserved": 200,
+    "final_count_reserved": 200,
+    "development_content_accessed": false,
+    "final_content_accessed": false
+  },
+  "initialization": "ImageNet MobileNetV3 Small plus identity-biased renderer and balanced five-class strength head; no FiveK warm start",
+  "training": {
+    "initial": {
+      "epoch": 1,
+      "loss": 0.70082902,
+      "composite": 0.11572255,
+      "teacher": 0.0,
+      "strength": 1.6654646,
+      "hinge": 0.0001319,
+      "cvar": 0.00083518
+    },
+    "final": {
+      "epoch": 40,
+      "loss": 0.60038243,
+      "composite": 0.10777219,
+      "teacher": 0.0,
+      "strength": 1.40294193,
+      "hinge": 3.032e-05,
+      "cvar": 0.00024093
+    },
+    "epochs": 40
+  },
+  "deployment": {
+    "official_demo_replacement": false,
+    "reason": "OOF gates passed, but development and final promotion evaluation remain sealed."
+  },
+  "checkpoint": {
+    "path": "training/outputs/expert_c_v3_1_joint_categorical_artifact_safe_full_research001/joint_categorical_strength_full_train.pt",
+    "sha256": "3E893D2A1FDB0F04F32259D20873F0A1E2F4C1FFE340435E8ABB71756259E4AB"
+  },
+  "freeze": {
+    "path": "training/v3/pre_training_freeze_joint_categorical_artifact_safe_full_research_v1.json",
+    "sha256": "641B2A2325A5C86DF1E8221E206BCFCEBFC84F051D8F368ECB21AE2E8571D9C7"
+  },
+  "promoted": false,
+  "elapsed_seconds": 356.714
+}

@@ -1,0 +1,69 @@
+{
+  "schema_version": "supervised_opencv_pipeline_v1",
+  "baseline_name": "supervised_opencv_pipeline_v1",
+  "created_at": "2026-07-21",
+  "status": "prompt_test_failed_research_only",
+  "flow": [
+    "user_prompt",
+    "qwen3_1_7b_qlora_prompt_control",
+    "high_confidence_runtime_guard",
+    "opencv_stats_v2",
+    "numpy_selective_hybrid_regressor",
+    "opencv_parameterized_edit"
+  ],
+  "prompt_control": {
+    "registry": "training/baselines/prompt_control_hybrid_v1.json",
+    "registry_sha256": "3D9331A7823632F3D2F82918FED5CBD1F22EAAFD4EA29A39792608367D3E7D47",
+    "test_evaluated": true,
+    "test_status": "failed_intent_gate",
+    "test_intent_accuracy": 0.75
+  },
+  "numeric_model": {
+    "registry": "training/baselines/selective_hybrid_numpy_v1.json",
+    "registry_sha256": "C2E26A05603423880A832C01DF63776F283AA04C554F3657BAF97E2FF4D5A480",
+    "validation_parity_within_1e_4": "80/80",
+    "test_evaluated": false
+  },
+  "backend": {
+    "activation_flag": "AI_PHOTO_USE_SUPERVISED_PIPELINE=1",
+    "pipeline_service": {
+      "path": "backend/app/services/supervised_edit_pipeline.py",
+      "sha256": "E87BB20DD443782EB92B11BB96F816AC2B715EB379FDA9A3BBB443E25EEA2086"
+    },
+    "numpy_predictor": {
+      "path": "backend/app/services/selective_hybrid_predictor.py",
+      "sha256": "36BBB23078559AE321246660C1AC916B4D72715D2EFC3A4545B4E6DDA9F642E8"
+    },
+    "edit_route": {
+      "path": "backend/app/routes/edit.py",
+      "sha256": "1D051B7BBC8287E36F648F7FC849FF408D956EA1C935754BAAE587B0F2478978"
+    },
+    "history": {
+      "path": "backend/app/services/edit_history.py",
+      "sha256": "15E9E02529D30E60508AA8585AAAC1ACF5F0EA0B04EEF40D8BD7AE9E24A546BE"
+    },
+    "launcher": {
+      "path": "backend/start_backend_supervised.ps1",
+      "sha256": "3FAE66C1699F6423DE6F2D59152E70EE50CCA3A579FB1B36DEB4AFF2CACE88AF"
+    },
+    "reference_mode_changed": false,
+    "legacy_prompt_mode_available_when_flag_off": true
+  },
+  "verification": {
+    "unit_tests": "14 passed",
+    "launcher_check_only": "PASS",
+    "fastapi_multipart_smoke": "HTTP 200",
+    "fastapi_parser_source": "ollama_qwen3_qlora_runtime_guard",
+    "fastapi_numeric_runtime": "numpy",
+    "fastapi_route": "white_balance_expert",
+    "prompt_control_test": "FAIL: intent 12/16 (75%); required >=95%"
+  },
+  "control_effects": {
+    "intent": "active",
+    "strength": "logged_only",
+    "constraints": "logged_and_parser_guard_only"
+  },
+  "prompt_control_test_evaluated": true,
+  "fivek_image_test_evaluated": false,
+  "warning": "Backend integration is functional, but the final prompt-control test failed. Keep this pipeline research/demo-only, do not tune on the opened prompt test, and keep the 80-image FiveK test sealed until EXP-006 is frozen."
+}

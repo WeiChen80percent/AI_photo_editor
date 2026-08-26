@@ -1,0 +1,72 @@
+{
+  "schema_version": "numeric_baseline_v1",
+  "baseline_name": "selective_hybrid_v1",
+  "created_at": "2026-07-21",
+  "status": "validation_frozen_test_unopened",
+  "seed": 2026,
+  "manifest": {
+    "path": "dataset_pilot/supervised/oracle_profile_with_raw_wb_v2.jsonl",
+    "sha256": "D11EB6C1F8ED1D05FEF018715FA13A6195DC29678CA83A7DBBEC1CADCCA4C81A",
+    "records": 798,
+    "split": {
+      "train": 638,
+      "validation": 80,
+      "test": 80
+    }
+  },
+  "routing": {
+    "source": "model_input.prompt only",
+    "fix_white_balance": "white_balance_expert",
+    "auto_enhance": "shared_v2_state_intent",
+    "fix_exposure": "shared_v2_state_intent",
+    "restore_natural": "shared_v2_state_intent"
+  },
+  "artifacts": {
+    "shared_v2_state_intent": {
+      "path": "training/outputs/hybrid_ablation_exp002_v1/v2_state_intent.pt",
+      "sha256": "AE952986F365463528EA73324605442C543D34CA42472E1C0A420A40A756F20C",
+      "size_bytes": 33205
+    },
+    "white_balance_expert": {
+      "path": "training/outputs/intent_experts_exp003_v1/experts/fix_white_balance.pt",
+      "sha256": "35D851F6AF77C08537E6C3CA221B3C40AB0B9FE771365236EA940E0967D4E135",
+      "size_bytes": 32013,
+      "parameter_profile": "fix_white_balance"
+    }
+  },
+  "contracts": {
+    "image_state": "opencv_stats_v2 (32 input-only features)",
+    "prompt_intents": [
+      "auto_enhance",
+      "fix_exposure",
+      "fix_white_balance",
+      "restore_natural"
+    ],
+    "continuous_parameters": [
+      "brightness",
+      "contrast",
+      "gamma",
+      "saturation",
+      "temperature",
+      "tint",
+      "sharpen",
+      "vignette"
+    ],
+    "test_evaluated": false
+  },
+  "validation_metrics": {
+    "count": 80,
+    "score_improvement_rate": 0.8,
+    "avg_score_delta": 0.062929,
+    "avg_psnr_delta": 4.059432,
+    "avg_ssim_delta": 0.063348,
+    "raw_input_avg_score_delta": 0.017476,
+    "white_balance_avg_score_delta": 0.019867,
+    "cool_blue_avg_score_delta": 0.00476,
+    "score_delta_p10": -0.039599,
+    "score_delta_minimum": -0.083184,
+    "avg_score_delta_gap_to_oracle": 0.048396
+  },
+  "experiment": "training/experiments/exp_004_selective_wb_expert/README.md",
+  "warning": "Validation-frozen research baseline. Do not deploy or evaluate test until the LLM intent contract and safety gate are frozen."
+}

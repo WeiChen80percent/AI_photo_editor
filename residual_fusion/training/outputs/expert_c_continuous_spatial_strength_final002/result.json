@@ -1,0 +1,83 @@
+{
+  "schema_version": "expert_c_continuous_spatial_strength_final_result_v1",
+  "created_at": "2026-08-17T15:23:07.746762+00:00",
+  "status": "PASS_FINAL",
+  "data": {
+    "final_count": 200,
+    "development_content_accessed": false,
+    "development_evaluation_count_for_candidate": 0,
+    "development_previously_opened": true,
+    "final_count_reserved": 200,
+    "final_content_accessed": true,
+    "final_evaluation_count_for_candidate": 1
+  },
+  "candidate": {
+    "name": "v3_6_plus_continuous_spatial_strength_full001",
+    "deployment_lambda": 0.800000011920929,
+    "continuous_manifest_sha256": "279E230F3DC33A126022BCCB1D8445D87EC367748DFC54177D9EDFA67B2501F8",
+    "v3_6_guard_sha256": "AC82CA3A5267CAE9F1C428FF86208EEF9A23A0810310B44302511B539876BC71",
+    "parameters_and_thresholds_frozen": true
+  },
+  "metrics": {
+    "v3_6_baseline": {
+      "mean_gain": 0.03022785484790802,
+      "median_gain": 0.02416667342185974,
+      "worst_decile_mean": -0.054663170129060745,
+      "catastrophic_rate": 0.115,
+      "harm_rate": 0.16
+    },
+    "continuous_blend": {
+      "mean_gain": 0.030223965644836426,
+      "median_gain": 0.024273008108139038,
+      "worst_decile_mean": -0.041358090937137604,
+      "catastrophic_rate": 0.11,
+      "harm_rate": 0.15
+    },
+    "improvement_vs_v3_6": {
+      "mean_gain": -3.889203071594238e-06,
+      "worst_decile_mean": 0.013305079191923141,
+      "catastrophic_rate_reduction": 0.0050000000000000044,
+      "harm_rate_reduction": 0.010000000000000009
+    },
+    "edit_rate": 0.785
+  },
+  "gates": {
+    "thresholds": {
+      "maximum_mean_regression": 0.0005,
+      "minimum_worst_decile_improvement": 0.002,
+      "catastrophic_rate_must_not_increase": true,
+      "harm_rate_must_not_increase": true,
+      "coverage_must_be_exact": true,
+      "v3_6_noop_must_be_preserved": true
+    },
+    "checks": {
+      "mean_preserved": true,
+      "worst_decile_improved": true,
+      "catastrophic_rate_not_increased": true,
+      "harm_rate_not_increased": true,
+      "coverage_exact": true,
+      "v3_6_noop_preserved_exactly": true
+    },
+    "all_passed": true
+  },
+  "artifacts": {
+    "rows": {
+      "path": "C:\\Users\\user\\Desktop\\AI_photo_editor\\training\\outputs\\expert_c_continuous_spatial_strength_final002\\final_rows.jsonl",
+      "sha256": "5CC9624DABA2846B5B35D7662A17A7FB5A254E46DE93F4CF5BF44884A328C7D2"
+    },
+    "freeze": {
+      "path": "C:\\Users\\user\\Desktop\\AI_photo_editor\\training\\v3\\pre_evaluation_freeze_continuous_spatial_strength_final_v1_retry1.json",
+      "sha256": "624CD476ABAB9F77B41CCF59B1ED61BC5BC74B2CB7873346C475EA80DF3AA6CB"
+    }
+  },
+  "segmentation": {
+    "model_id": "nvidia/segformer-b5-finetuned-ade-640-640",
+    "device": "cuda",
+    "dtype": "float16",
+    "median_batch_inference_ms": 128.681250003865
+  },
+  "promoted": false,
+  "final_opened": true,
+  "elapsed_seconds": 34.314,
+  "interpretation_policy": "One frozen evaluation of this candidate on the final split. Failure cannot be repaired by changing these gates under the same candidate ID."
+}

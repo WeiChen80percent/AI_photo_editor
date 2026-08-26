@@ -1,0 +1,65 @@
+{
+  "schema_version": "numeric_numpy_baseline_v1",
+  "baseline_name": "selective_hybrid_numpy_v1",
+  "created_at": "2026-07-21",
+  "status": "validation_frozen_parity_verified_test_unopened",
+  "source_registry": {
+    "path": "training/baselines/selective_hybrid_v1.json",
+    "sha256": "2089A053C3C9F4479BDC5E36303157D9BCDA66C8354EED62562B2E82C76E3C09"
+  },
+  "routing": {
+    "fix_white_balance": "white_balance_expert",
+    "auto_enhance": "shared_v2_state_intent",
+    "fix_exposure": "shared_v2_state_intent",
+    "restore_natural": "shared_v2_state_intent"
+  },
+  "artifacts": {
+    "shared_v2_state_intent": {
+      "path": "training/outputs/selective_hybrid_numpy_v1/shared_v2_state_intent.npz",
+      "sha256": "36408489F685EBAB77B8C990A159360E3221A1C03475373C96C4A5EDD3F67D8B",
+      "size_bytes": 30817,
+      "source_path": "training/outputs/hybrid_ablation_exp002_v1/v2_state_intent.pt",
+      "source_sha256": "AE952986F365463528EA73324605442C543D34CA42472E1C0A420A40A756F20C"
+    },
+    "white_balance_expert": {
+      "path": "training/outputs/selective_hybrid_numpy_v1/white_balance_expert.npz",
+      "sha256": "D0B68A344A69608403BD93B2DD706C1C828EF3BEBE337FABDF2228D5DC938330",
+      "size_bytes": 29752,
+      "source_path": "training/outputs/intent_experts_exp003_v1/experts/fix_white_balance.pt",
+      "source_sha256": "35D851F6AF77C08537E6C3CA221B3C40AB0B9FE771365236EA940E0967D4E135"
+    }
+  },
+  "contract": {
+    "runtime_dependency": "numpy",
+    "network": "Linear(64)-ReLU-Linear(64)-ReLU-Linear(8)-Sigmoid",
+    "image_state": "opencv_stats_v2",
+    "parameter_order": [
+      "brightness",
+      "contrast",
+      "gamma",
+      "saturation",
+      "temperature",
+      "tint",
+      "sharpen",
+      "vignette"
+    ],
+    "test_evaluated": false
+  },
+  "validation_metrics": {
+    "inherited_from": "selective_hybrid_v1",
+    "score_improvement_rate": 0.8,
+    "avg_score_delta": 0.062929,
+    "avg_psnr_delta": 4.059432
+  },
+  "parity_validation": {
+    "path": "training/outputs/selective_hybrid_numpy_v1/parity_validation.json",
+    "sha256": "375945DAB102287EFE58E3D284011B8C36C0CF9D2991F1ADA98D5CBA228F4F07",
+    "count": 80,
+    "exact_matched": 75,
+    "within_tolerance": 80,
+    "tolerance": 0.0001,
+    "max_absolute_delta": 0.0001,
+    "test_evaluated": false
+  },
+  "warning": "NumPy serialization of the frozen PyTorch baseline. Validation parity passed at 1e-4 tolerance; test remains sealed."
+}

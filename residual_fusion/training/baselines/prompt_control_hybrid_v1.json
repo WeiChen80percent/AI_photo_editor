@@ -1,0 +1,135 @@
+{
+  "schema_version": "prompt_control_baseline_v1",
+  "baseline_name": "prompt_control_hybrid_v1",
+  "created_at": "2026-07-21",
+  "status": "test_failed_research_only",
+  "base_model": "Qwen/Qwen3-1.7B",
+  "training": {
+    "method": "supervised QLoRA",
+    "dataset_path": "training/data/prompt_control_v1.jsonl",
+    "dataset_sha256": "DF01184BB1266AF7F2C6986FE5D655B30A4B6A88CF8F56D6F2EEAFAE46208F5B",
+    "counts": {
+      "train": 288,
+      "validation": 48,
+      "test": 16
+    },
+    "adapter_path": "training/outputs/prompt_control_qwen3_1_7b_exp005_v1/checkpoint-72",
+    "adapter_model_sha256": "FFAE9428245D3FE3A75BE39337EAD072333BA6F382015792C9732C9A4C0D3DF4",
+    "adapter_config_sha256": "BADACA3B3E090D6398CC4C9D4B9C5DCD2B4E351F4BB12593B2BE539F8DAFBCA1"
+  },
+  "deployment": {
+    "runtime": "Ollama 0.32.1",
+    "model": "ai-photo-prompt-control:gguf-v1",
+    "ollama_model_id": "6a1edb71b26b",
+    "format": "GGUF BF16",
+    "gguf_path": "training/outputs/prompt_control_ollama_fused_v1/ai-photo-prompt-control-bf16.gguf",
+    "gguf_sha256": "75FD03C6380FC238F13A900A610AFDCE9DB8B72D05CD125BB03804F20F0B402D",
+    "gguf_size_bytes": 3447348960,
+    "modelfile_path": "training/outputs/prompt_control_ollama_fused_v1/Modelfile.runtime",
+    "modelfile_sha256": "BE455B87EB3A4C7588AF3F7EE1F411423028F1A50D262A2FF10BD24D17D6E901"
+  },
+  "contract": {
+    "intents": [
+      "auto_enhance",
+      "fix_exposure",
+      "fix_white_balance",
+      "restore_natural"
+    ],
+    "strengths": [
+      "subtle",
+      "normal",
+      "strong"
+    ],
+    "constraints": [
+      "preserve_natural",
+      "avoid_clipping",
+      "preserve_skin_tones",
+      "preserve_details"
+    ],
+    "numeric_effect": {
+      "intent": true,
+      "strength": false,
+      "constraints": false
+    }
+  },
+  "guard": {
+    "type": "llm_primary_plus_high_confidence_runtime_guard",
+    "experiment": "training/experiments/exp_005d_ollama_runtime_guard/README.md",
+    "prompt_control_code": "backend/app/services/prompt_control.py",
+    "prompt_control_sha256": "F03339463D2C9438D0DF74C34F5533904657153B7B4FF1156594D5A896000399",
+    "runtime_code": "backend/app/services/prompt_control_runtime.py",
+    "runtime_sha256": "6AB67AB0B641949A5E8506A337440CFC6DB36F3EBA4EA5439E4BF6A38C643DCD"
+  },
+  "validation": {
+    "raw_evaluation_path": "training/outputs/prompt_control_ollama_gguf_exp005/evaluation_validation.json",
+    "raw_evaluation_sha256": "653A64ECDE3AD02B8E49F30EFE95F5B18C36A7F5481442F9C84038DA47692DD6",
+    "guarded_evaluation_path": "training/outputs/prompt_control_ollama_gguf_exp005/evaluation_validation_runtime_guard.json",
+    "guarded_evaluation_sha256": "611B91F6D27352A3243711C51A51E51C50FA68FBEAFE730D34039E9007B16F44",
+    "metrics": {
+      "schema_valid_rate": 1.0,
+      "intent_accuracy": 1.0,
+      "strength_accuracy": 1.0,
+      "constraint_micro_f1": 0.971429,
+      "full_exact_accuracy": 0.958333,
+      "warm_latency_p95_seconds": 1.302872
+    },
+    "all_gates_passed": true
+  },
+  "test": {
+    "opened_once_at": "2026-07-21",
+    "raw_evaluation_path": "training/outputs/prompt_control_ollama_gguf_exp005_test/evaluation_test.json",
+    "raw_evaluation_sha256": "488CC4602D6DD3FA024A33F26BAA0EBC5DD242CAAAA24BAA7FD6E9A264538D66",
+    "raw_metrics": {
+      "schema_valid_rate": 1.0,
+      "intent_accuracy": 0.75,
+      "strength_accuracy": 0.9375,
+      "constraint_micro_f1": 0.9,
+      "full_exact_accuracy": 0.625,
+      "warm_latency_p95_seconds": 1.883541
+    },
+    "guarded_evaluation_path": "training/outputs/prompt_control_ollama_gguf_exp005_test/evaluation_test_runtime_guard.json",
+    "guarded_evaluation_sha256": "F9111CE4486CCBFC6503B01D3EB747D0A30F61F088FCB4117DC3413B92C092BB",
+    "guarded_metrics": {
+      "schema_valid_rate": 1.0,
+      "intent_accuracy": 0.75,
+      "strength_accuracy": 1.0,
+      "constraint_micro_f1": 0.9,
+      "full_exact_accuracy": 0.6875,
+      "warm_latency_p95_seconds": 1.883541
+    },
+    "all_gates_passed": false,
+    "failed_gate": "intent_accuracy >= 0.95",
+    "intent_correct": "12/16",
+    "failure_analysis": [
+      "Three restore_natural prompts about reducing or undoing over-editing were classified as auto_enhance.",
+      "One fix_white_balance prompt describing a pale purple cast was classified as restore_natural."
+    ],
+    "usage_policy": "Failure analysis only. Never add, relabel, paraphrase, or otherwise tune from these 16 test items."
+  },
+  "numeric_baseline": {
+    "registry": "training/baselines/selective_hybrid_v1.json",
+    "test_evaluated": false
+  },
+  "runtime_cli": {
+    "path": "training/predict_llm_selective_hybrid.py",
+    "sha256": "0CDEA6FF284D4837C7E39A2719853A9B69A287DF88D7BCE0C719D5F89F8B3BB5",
+    "numeric_path": "training/predict_selective_hybrid.py",
+    "numeric_sha256": "BB37465D4D4E3F5FA248D8CF2C78856BD839787792A8385C95C75DA8A70E910D"
+  },
+  "smoke_test": {
+    "split": "train",
+    "source_id": "a0031-WP_CRW_0736",
+    "degradation_type": "white_balance_cool_blue",
+    "parser_source": "ollama_qwen3_qlora_runtime_guard",
+    "route": "white_balance_expert",
+    "pipeline_total_seconds": 1.754851,
+    "opencv_seconds": 0.030308,
+    "degraded_psnr": 27.682788,
+    "restored_psnr": 40.179459,
+    "score_delta": 0.033485,
+    "result_sha256": "0EB59E3150925BD3B8A737C241F4B7F88A84C19D374FA3B71EF7C9E2092ED834",
+    "comparison_sha256": "F7A564BB505A16CFF144A58AAABA66E8AF2BC574EB95785E4E417D74000013D4"
+  },
+  "test_evaluated": true,
+  "warning": "The final prompt-control test failed the intent gate (12/16, 75%). This artifact is research/demo-only and must not be presented as generalized prompt understanding. Do not tune on the opened 16-item test; the 80-image FiveK test remains sealed."
+}

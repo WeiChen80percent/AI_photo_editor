@@ -1,0 +1,82 @@
+{
+  "schema_version": "expert_c_v3_1_artifact_safe_development_result_v1",
+  "created_at": "2026-08-13T09:35:13.981446+00:00",
+  "status": "PASS",
+  "data": {
+    "development_count": 200,
+    "development_content_accessed": true,
+    "development_evaluation_count_for_v3_1": 1,
+    "final_count_reserved": 200,
+    "final_content_accessed": false
+  },
+  "candidate": {
+    "name": "expert_c_v3_1_joint_categorical_artifact_safe_full_research001",
+    "checkpoint_sha256": "3E893D2A1FDB0F04F32259D20873F0A1E2F4C1FFE340435E8ABB71756259E4AB",
+    "strength_policy": "soft_expected_probability_weighted",
+    "affine_delta_clamp": 0.05,
+    "training_source_count": 4600,
+    "parameters_and_thresholds_frozen": true
+  },
+  "metrics": {
+    "v2_mean_score": 0.10185,
+    "old_v3_vs_v2": {
+      "average_gain": 0.004796,
+      "median_gain": 0.00453,
+      "strict_win_rate": 0.83,
+      "worst_decile_gain": -0.006133,
+      "low_v2_error_quartile_gain": 0.003351
+    },
+    "v3_1_vs_v2": {
+      "average_gain": 0.004697,
+      "median_gain": 0.003748,
+      "strict_win_rate": 0.9,
+      "worst_decile_gain": -0.002084,
+      "low_v2_error_quartile_gain": 0.004331
+    },
+    "v3_1_vs_old_v3": {
+      "average_gain": -9.9e-05,
+      "median_gain": -0.000179,
+      "strict_win_rate": 0.495,
+      "worst_decile_gain": -0.007298,
+      "low_v2_error_quartile_gain": 0.00098
+    },
+    "worst_decile_improvement_over_old_v3": 0.004049,
+    "low_v2_error_threshold": 0.066593
+  },
+  "runtime": {
+    "old_v3_median_model_ms": 11.04175,
+    "v3_1_median_model_ms": 10.71825
+  },
+  "gates": {
+    "thresholds": {
+      "minimum_mean_gain_over_v2": 0.004,
+      "minimum_strict_win_rate_over_v2": 0.75,
+      "minimum_worst_decile_gain_over_v2": -0.008,
+      "minimum_low_v2_error_quartile_gain": -0.002,
+      "minimum_worst_decile_improvement_over_old_v3": 0.002
+    },
+    "checks": {
+      "minimum_mean_gain_over_v2": true,
+      "minimum_strict_win_rate_over_v2": true,
+      "minimum_worst_decile_gain_over_v2": true,
+      "minimum_low_v2_error_quartile_gain": true,
+      "minimum_worst_decile_improvement_over_old_v3": true
+    },
+    "all_passed": true
+  },
+  "artifacts": {
+    "rows": {
+      "path": "C:\\Users\\user\\Desktop\\AI_photo_editor\\training\\outputs\\expert_c_v3_1_artifact_safe_development001\\development_rows.jsonl",
+      "sha256": "94975B7E14C5DF42A509FFE5624241B1A519AE28B9C6442C5F3158396BAE2C2D"
+    },
+    "old_v3_checkpoint_sha256": "700C3E47EE97199F2DB10B92D1119E66C5DE9980B8D5D89E211CCE16864712AF",
+    "v3_1_checkpoint_sha256": "3E893D2A1FDB0F04F32259D20873F0A1E2F4C1FFE340435E8ABB71756259E4AB",
+    "freeze": {
+      "path": "C:\\Users\\user\\Desktop\\AI_photo_editor\\training\\v3\\pre_evaluation_freeze_artifact_safe_development_v1.json",
+      "sha256": "DE44E7096E27EB8662A97FAB2744E0A7DFC7A1682DAF5F89AC02ACCBC7E0BE6F"
+    }
+  },
+  "promoted": false,
+  "final_opened": false,
+  "elapsed_seconds": 14.521
+}

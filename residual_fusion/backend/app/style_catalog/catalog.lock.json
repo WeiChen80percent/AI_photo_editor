@@ -1,0 +1,5029 @@
+{
+  "schema_version": "style_catalog_v1",
+  "catalog_version": "1.0.0",
+  "generated_at": "2026-07-28T00:00:00+08:00",
+  "styles": [
+    {
+      "style_id": "natural_clean",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "自然清透",
+        "en": "Natural Clean"
+      },
+      "aliases": [
+        "自然清透風格",
+        "乾淨自然",
+        "clean natural"
+      ],
+      "family": "natural_clean",
+      "tags": [
+        "natural",
+        "clean",
+        "balanced",
+        "everyday"
+      ],
+      "description": "輕微提亮與增加層次，保留自然色彩，適合一般日常照片。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.85,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "brightness": 3.0,
+          "contrast": 1.04,
+          "saturation": 1.02,
+          "sharpen": 0.1,
+          "clarity": 0.08
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.22,
+            0.2
+          ],
+          [
+            0.5,
+            0.52
+          ],
+          [
+            0.8,
+            0.83
+          ],
+          [
+            1.0,
+            1.0
+          ]
+        ],
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual review",
+        "preview_path": "/style-previews/natural_clean.jpg"
+      },
+      "known_limitations": [
+        "極高反差照片可能需要另外降低 highlights。"
+      ],
+      "recipe_hash": "09bd1d65cc0d02a960252b1722735051f25cc73a5c005f2d4817af4216ffa657",
+      "asset_hash": "09bd1d65cc0d02a960252b1722735051f25cc73a5c005f2d4817af4216ffa657",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "soft_portrait",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "柔和人像",
+        "en": "Soft Portrait"
+      },
+      "aliases": [
+        "柔膚人像風格",
+        "溫柔人像",
+        "soft skin portrait"
+      ],
+      "family": "portrait_skin",
+      "tags": [
+        "portrait",
+        "skin",
+        "soft",
+        "flattering"
+      ],
+      "description": "降低硬對比與橘紅色飽和，保留膚色並產生柔和的人像層次。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.8,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "brightness": 5.0,
+          "contrast": 0.96,
+          "saturation": 0.97,
+          "temperature": 4.0,
+          "sharpen": 0.05
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.02
+          ],
+          [
+            0.25,
+            0.27
+          ],
+          [
+            0.55,
+            0.57
+          ],
+          [
+            0.82,
+            0.84
+          ],
+          [
+            1.0,
+            0.98
+          ]
+        ],
+        "selective_hsl": [
+          {
+            "hue_center": 25,
+            "width": 42,
+            "saturation_scale": 0.92,
+            "value_shift": 0.025
+          }
+        ],
+        "fade": 0.025,
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual review",
+        "preview_path": "/style-previews/soft_portrait.jpg"
+      },
+      "known_limitations": [
+        "沒有可靠人物區域時仍會以全圖風格套用。"
+      ],
+      "recipe_hash": "df19b03905fdf0149c61856d0ceb442bd28dc4f2427c84bc7122ab3f8b38a6ef",
+      "asset_hash": "df19b03905fdf0149c61856d0ceb442bd28dc4f2427c84bc7122ab3f8b38a6ef",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "golden_portrait",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "金色人像",
+        "en": "Golden Portrait"
+      },
+      "aliases": [
+        "黃金時刻人像",
+        "暖金人像",
+        "golden hour portrait"
+      ],
+      "family": "portrait_skin",
+      "tags": [
+        "portrait",
+        "warm",
+        "golden",
+        "sunset"
+      ],
+      "description": "以暖金高光與溫和暗部塑造黃金時刻的人像氛圍。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.82,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "brightness": 3.0,
+          "contrast": 1.03,
+          "saturation": 1.04,
+          "temperature": 9.0,
+          "vignette": 0.06
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.01
+          ],
+          [
+            0.24,
+            0.22
+          ],
+          [
+            0.52,
+            0.54
+          ],
+          [
+            0.8,
+            0.85
+          ],
+          [
+            1.0,
+            1.0
+          ]
+        ],
+        "split_tone": {
+          "shadow_color": [
+            0.24,
+            0.31,
+            0.38
+          ],
+          "highlight_color": [
+            1.0,
+            0.72,
+            0.34
+          ],
+          "shadow_strength": 0.05,
+          "highlight_strength": 0.13,
+          "balance": 0.56
+        },
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual review",
+        "preview_path": "/style-previews/golden_portrait.jpg"
+      },
+      "known_limitations": [
+        "原圖白平衡已明顯偏黃時建議降低 strength。"
+      ],
+      "recipe_hash": "484e9a2f2b31c42a457b68ddc1aa4fe0b64dd45cd2a3d41c6d83c5264aebbe10",
+      "asset_hash": "484e9a2f2b31c42a457b68ddc1aa4fe0b64dd45cd2a3d41c6d83c5264aebbe10",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "landscape_clear",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "風景通透",
+        "en": "Landscape Clear"
+      },
+      "aliases": [
+        "通透風景",
+        "旅行風景增強",
+        "clear landscape"
+      ],
+      "family": "landscape_travel",
+      "tags": [
+        "landscape",
+        "travel",
+        "sky",
+        "foliage",
+        "clear"
+      ],
+      "description": "增加遠景層次、天空與植被色彩，同時控制整體飽和度。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.85,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "contrast": 1.08,
+          "saturation": 1.06,
+          "sharpen": 0.16,
+          "clarity": 0.15,
+          "dehaze": 0.11
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.2,
+            0.17
+          ],
+          [
+            0.48,
+            0.49
+          ],
+          [
+            0.78,
+            0.84
+          ],
+          [
+            1.0,
+            1.0
+          ]
+        ],
+        "selective_hsl": [
+          {
+            "hue_center": 210,
+            "width": 52,
+            "hue_shift": -4,
+            "saturation_scale": 1.1,
+            "value_shift": -0.01
+          },
+          {
+            "hue_center": 115,
+            "width": 48,
+            "hue_shift": -3,
+            "saturation_scale": 1.06,
+            "value_shift": 0.01
+          }
+        ],
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual review",
+        "preview_path": "/style-previews/landscape_clear.jpg"
+      },
+      "known_limitations": [
+        "霧景若需要保留柔霧感，應降低 strength。"
+      ],
+      "recipe_hash": "b7d365f72842af9f881dd102aa06906ea1b46e0f47c3a6625fec77b1691f0d08",
+      "asset_hash": "b7d365f72842af9f881dd102aa06906ea1b46e0f47c3a6625fec77b1691f0d08",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "cinematic",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "經典電影感",
+        "en": "Classic Cinematic"
+      },
+      "aliases": [
+        "電影感",
+        "電影風格",
+        "cinematic style",
+        "cinematic"
+      ],
+      "family": "cinematic",
+      "tags": [
+        "cinematic",
+        "dramatic",
+        "contrast",
+        "classic"
+      ],
+      "description": "相容既有 cinematic preset 的經典高對比電影感。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 1.0,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "legacy_preset",
+        "legacy_preset_name": "cinematic",
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual review",
+        "preview_path": "/style-previews/cinematic.jpg"
+      },
+      "known_limitations": [
+        "高反差或極低光場景可能顯得過暗，這個相容風格可再提高亮度。"
+      ],
+      "recipe_hash": "58a60eeb0f1a56b824f8d3e5279f2a02f88b1f2a99f906241fdc61c8204db6ce",
+      "asset_hash": "58a60eeb0f1a56b824f8d3e5279f2a02f88b1f2a99f906241fdc61c8204db6ce",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "midnight_teal",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "午夜青橙",
+        "en": "Midnight Teal"
+      },
+      "aliases": [
+        "午夜電影色",
+        "深夜青橙",
+        "midnight teal cinematic"
+      ],
+      "family": "cinematic",
+      "tags": [
+        "cinematic",
+        "teal",
+        "orange",
+        "moody",
+        "night"
+      ],
+      "description": "冷青暗部搭配克制暖色高光，呈現深夜電影氛圍。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.78,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "brightness": -5.0,
+          "contrast": 1.13,
+          "saturation": 0.92,
+          "temperature": -4.0,
+          "vignette": 0.15
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.015
+          ],
+          [
+            0.18,
+            0.12
+          ],
+          [
+            0.48,
+            0.45
+          ],
+          [
+            0.78,
+            0.85
+          ],
+          [
+            1.0,
+            0.99
+          ]
+        ],
+        "color_matrix": [
+          [
+            0.94,
+            0.04,
+            0.02
+          ],
+          [
+            -0.02,
+            1.02,
+            0.03
+          ],
+          [
+            0.02,
+            0.07,
+            0.96
+          ]
+        ],
+        "split_tone": {
+          "shadow_color": [
+            0.1,
+            0.58,
+            0.68
+          ],
+          "highlight_color": [
+            1.0,
+            0.55,
+            0.24
+          ],
+          "shadow_strength": 0.13,
+          "highlight_strength": 0.08,
+          "balance": 0.54
+        },
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual review",
+        "preview_path": "/style-previews/midnight_teal.jpg"
+      },
+      "known_limitations": [
+        "日光白背景可能顯得過冷。"
+      ],
+      "recipe_hash": "3a6a4082e39970492ca417603a5799ac9ee2685fc0ab6d42c0c27a573958fdd4",
+      "asset_hash": "3a6a4082e39970492ca417603a5799ac9ee2685fc0ab6d42c0c27a573958fdd4",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "vintage_film",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "暗黃底片",
+        "en": "Warm Vintage Film"
+      },
+      "aliases": [
+        "暗黃底片感",
+        "復古底片",
+        "warm vintage film",
+        "vintage film"
+      ],
+      "family": "film_retro",
+      "tags": [
+        "film",
+        "vintage",
+        "warm",
+        "muted"
+      ],
+      "description": "相容既有 vintage_film preset 的暗黃復古底片感。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 1.0,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "legacy_preset",
+        "legacy_preset_name": "vintage_film",
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual review",
+        "preview_path": "/style-previews/vintage_film.jpg"
+      },
+      "known_limitations": [
+        "原圖已偏黃時效果會更明顯。"
+      ],
+      "recipe_hash": "402ea8c9292ba5db8bd14fd24e052767c4d2419f96c2ed827b77712343858f52",
+      "asset_hash": "402ea8c9292ba5db8bd14fd24e052767c4d2419f96c2ed827b77712343858f52",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "faded_analog",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "褪色類比",
+        "en": "Faded Analog"
+      },
+      "aliases": [
+        "褪色底片",
+        "類比相機感",
+        "faded analog film"
+      ],
+      "family": "film_retro",
+      "tags": [
+        "film",
+        "faded",
+        "grain",
+        "analog",
+        "lifted_black"
+      ],
+      "description": "抬升黑位、壓低鮮豔度並加入固定顆粒的褪色類比質感。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.82,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "brightness": 1.0,
+          "contrast": 0.93,
+          "saturation": 0.86,
+          "temperature": 7.0,
+          "vignette": 0.08
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.055
+          ],
+          [
+            0.22,
+            0.23
+          ],
+          [
+            0.52,
+            0.53
+          ],
+          [
+            0.82,
+            0.8
+          ],
+          [
+            1.0,
+            0.95
+          ]
+        ],
+        "fade": 0.075,
+        "grain": {
+          "amount": 0.024,
+          "seed": 1731
+        },
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual review",
+        "preview_path": "/style-previews/faded_analog.jpg"
+      },
+      "known_limitations": [
+        "細小文字或乾淨產品照可能不適合顆粒效果。"
+      ],
+      "recipe_hash": "0b8376227880bdb59fe34e6a8c72f0e373d7d2874b3587a14a29d02f6e108fa8",
+      "asset_hash": "0b8376227880bdb59fe34e6a8c72f0e373d7d2874b3587a14a29d02f6e108fa8",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "silver_mono",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "銀鹽黑白",
+        "en": "Silver Monochrome"
+      },
+      "aliases": [
+        "銀鹽黑白風格",
+        "經典黑白",
+        "silver black and white"
+      ],
+      "family": "black_white",
+      "tags": [
+        "black_white",
+        "monochrome",
+        "silver",
+        "classic"
+      ],
+      "description": "以偏亮膚色的通道混合與細緻顆粒製作經典銀鹽黑白。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 1.0,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "contrast": 1.1,
+          "sharpen": 0.1,
+          "clarity": 0.13
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.01
+          ],
+          [
+            0.2,
+            0.15
+          ],
+          [
+            0.5,
+            0.52
+          ],
+          [
+            0.82,
+            0.88
+          ],
+          [
+            1.0,
+            1.0
+          ]
+        ],
+        "monochrome": {
+          "weights": [
+            0.34,
+            0.54,
+            0.12
+          ],
+          "tint": [
+            0.96,
+            0.98,
+            1.0
+          ],
+          "tint_strength": 0.06
+        },
+        "grain": {
+          "amount": 0.018,
+          "seed": 2407
+        },
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual review",
+        "preview_path": "/style-previews/silver_mono.jpg"
+      },
+      "known_limitations": [
+        "極低光照片的雜訊會與顆粒疊加。"
+      ],
+      "recipe_hash": "f6a08c8b5a18acdfc81cfe1a3a1722f3f7e51682ac36e58ceb47ddd69f176e28",
+      "asset_hash": "f6a08c8b5a18acdfc81cfe1a3a1722f3f7e51682ac36e58ceb47ddd69f176e28",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "neon_night",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "霓虹夜色",
+        "en": "Neon Night"
+      },
+      "aliases": [
+        "霓虹夜景",
+        "城市霓虹感",
+        "neon city night"
+      ],
+      "family": "night_neon",
+      "tags": [
+        "night",
+        "neon",
+        "city",
+        "cyan",
+        "magenta"
+      ],
+      "description": "強化夜景中的青色與洋紅色光源，保留暗部層次。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.8,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "exposure": 0.1,
+          "contrast": 1.11,
+          "saturation": 1.13,
+          "temperature": -3.0,
+          "clarity": 0.14,
+          "dehaze": 0.07
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.01
+          ],
+          [
+            0.18,
+            0.12
+          ],
+          [
+            0.48,
+            0.48
+          ],
+          [
+            0.78,
+            0.86
+          ],
+          [
+            1.0,
+            1.0
+          ]
+        ],
+        "selective_hsl": [
+          {
+            "hue_center": 185,
+            "width": 42,
+            "hue_shift": -7,
+            "saturation_scale": 1.18,
+            "value_shift": 0.015
+          },
+          {
+            "hue_center": 310,
+            "width": 44,
+            "hue_shift": 5,
+            "saturation_scale": 1.2,
+            "value_shift": 0.02
+          }
+        ],
+        "split_tone": {
+          "shadow_color": [
+            0.12,
+            0.5,
+            0.74
+          ],
+          "highlight_color": [
+            0.94,
+            0.3,
+            0.72
+          ],
+          "shadow_strength": 0.1,
+          "highlight_strength": 0.09,
+          "balance": 0.52
+        },
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual review",
+        "preview_path": "/style-previews/neon_night.jpg"
+      },
+      "known_limitations": [
+        "日景或自然膚色為主的照片不一定適合。"
+      ],
+      "recipe_hash": "151acbfc77b2668b98044ebdfe95f027d885488b1f6140562080cdce2c7b3587",
+      "asset_hash": "151acbfc77b2668b98044ebdfe95f027d885488b1f6140562080cdce2c7b3587",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "fresh_japanese",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "日系清新",
+        "en": "Fresh Japanese"
+      },
+      "aliases": [
+        "日系清新風格",
+        "清新日系",
+        "fresh japanese",
+        "japanese fresh"
+      ],
+      "family": "pastel_creative",
+      "tags": [
+        "japanese",
+        "fresh",
+        "airy",
+        "bright",
+        "pastel"
+      ],
+      "description": "相容既有 fresh_japanese preset 的明亮低對比清新風格。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 1.0,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "legacy_preset",
+        "legacy_preset_name": "fresh_japanese",
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual review",
+        "preview_path": "/style-previews/fresh_japanese.jpg"
+      },
+      "known_limitations": [
+        "高光接近飽和時可能需要先降低 whites 或 highlights。"
+      ],
+      "recipe_hash": "5abcbe9e104bc0aca791ed09a0f3b047e260412161b806038df1c1f00b708eb7",
+      "asset_hash": "5abcbe9e104bc0aca791ed09a0f3b047e260412161b806038df1c1f00b708eb7",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "pastel_dream",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "粉彩夢境",
+        "en": "Pastel Dream"
+      },
+      "aliases": [
+        "夢幻粉彩",
+        "柔霧粉彩",
+        "pastel dream look"
+      ],
+      "family": "pastel_creative",
+      "tags": [
+        "pastel",
+        "dreamy",
+        "soft",
+        "creative",
+        "low_contrast"
+      ],
+      "description": "柔化對比、抬升黑位並淡化高飽和色，形成夢幻粉彩氛圍。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.76,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "brightness": 8.0,
+          "contrast": 0.9,
+          "saturation": 0.88,
+          "temperature": 2.0,
+          "sharpen": 0.04
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.07
+          ],
+          [
+            0.22,
+            0.27
+          ],
+          [
+            0.5,
+            0.56
+          ],
+          [
+            0.8,
+            0.84
+          ],
+          [
+            1.0,
+            0.97
+          ]
+        ],
+        "color_matrix": [
+          [
+            1.01,
+            0.02,
+            0.01
+          ],
+          [
+            0.01,
+            0.99,
+            0.02
+          ],
+          [
+            0.02,
+            0.02,
+            1.01
+          ]
+        ],
+        "split_tone": {
+          "shadow_color": [
+            0.55,
+            0.46,
+            0.78
+          ],
+          "highlight_color": [
+            1.0,
+            0.66,
+            0.72
+          ],
+          "shadow_strength": 0.06,
+          "highlight_strength": 0.07,
+          "balance": 0.55
+        },
+        "fade": 0.085,
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual review",
+        "preview_path": "/style-previews/pastel_dream.jpg"
+      },
+      "known_limitations": [
+        "高反差建築或需要精準產品色的照片不建議使用。"
+      ],
+      "recipe_hash": "2295862b56199aedeeaf5833826f295be2b65159b4b68e109f34dde5b4ef2e57",
+      "asset_hash": "2295862b56199aedeeaf5833826f295be2b65159b4b68e109f34dde5b4ef2e57",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "true_color",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "真實原色",
+        "en": "True Color"
+      },
+      "aliases": [
+        "真實色彩",
+        "忠實原色",
+        "true color look"
+      ],
+      "family": "natural_clean",
+      "tags": [
+        "natural",
+        "accurate",
+        "neutral",
+        "color"
+      ],
+      "description": "只做輕微層次與細節整理，保留接近原圖的中性色彩。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.9,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "brightness": 1.0,
+          "contrast": 1.02,
+          "saturation": 1.0,
+          "sharpen": 0.08,
+          "clarity": 0.04,
+          "temperature": 0.0
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.22,
+            0.21
+          ],
+          [
+            0.5,
+            0.51
+          ],
+          [
+            0.8,
+            0.82
+          ],
+          [
+            1.0,
+            1.0
+          ]
+        ],
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "rejected",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/true_color.jpg",
+        "decision_note": "與既有 approved style 過度接近，不納入 canonical style 計數。"
+      },
+      "known_limitations": [
+        "效果刻意克制，不適合需要強烈風格化的照片。"
+      ],
+      "recipe_hash": "d3437eeeac4df87be1f102368decec8af6a32520f10d317bd7b0dd77933e8ab6",
+      "asset_hash": "d3437eeeac4df87be1f102368decec8af6a32520f10d317bd7b0dd77933e8ab6",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "airy_daylight",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "空氣日光",
+        "en": "Airy Daylight"
+      },
+      "aliases": [
+        "明亮日光",
+        "空氣感日系",
+        "airy daylight look"
+      ],
+      "family": "natural_clean",
+      "tags": [
+        "natural",
+        "airy",
+        "daylight",
+        "bright"
+      ],
+      "description": "提亮中間調、柔化暗部並保留清爽日光色。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.78,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "brightness": 8.0,
+          "contrast": 0.94,
+          "saturation": 0.98,
+          "sharpen": 0.08,
+          "clarity": 0.06,
+          "temperature": -2.0
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.035
+          ],
+          [
+            0.2,
+            0.25
+          ],
+          [
+            0.5,
+            0.57
+          ],
+          [
+            0.82,
+            0.88
+          ],
+          [
+            1.0,
+            1.0
+          ]
+        ],
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/airy_daylight.jpg",
+        "decision_note": "通過 52x8 固定圖、strength、determinism、clipping 與家族 contact sheet 人工檢查。"
+      },
+      "known_limitations": [
+        "原圖高光已接近飽和時建議降低 strength。"
+      ],
+      "recipe_hash": "508ff0dfadbd751d6d3bfb7cf44df3fe34f85ca0a91c688d12f830101dd68c68",
+      "asset_hash": "508ff0dfadbd751d6d3bfb7cf44df3fe34f85ca0a91c688d12f830101dd68c68",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "crisp_editorial",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "俐落編輯",
+        "en": "Crisp Editorial"
+      },
+      "aliases": [
+        "雜誌俐落感",
+        "編輯風格",
+        "crisp editorial look"
+      ],
+      "family": "natural_clean",
+      "tags": [
+        "natural",
+        "editorial",
+        "crisp",
+        "detail"
+      ],
+      "description": "以明確微對比與乾淨細節呈現俐落雜誌質感。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.82,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "brightness": 0.0,
+          "contrast": 1.1,
+          "saturation": 0.97,
+          "sharpen": 0.2,
+          "clarity": 0.18,
+          "dehaze": 0.06
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.18,
+            0.13
+          ],
+          [
+            0.48,
+            0.48
+          ],
+          [
+            0.82,
+            0.89
+          ],
+          [
+            1.0,
+            1.0
+          ]
+        ],
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/crisp_editorial.jpg",
+        "decision_note": "通過 52x8 固定圖、strength、determinism、clipping 與家族 contact sheet 人工檢查。"
+      },
+      "known_limitations": [
+        "細節較硬，不適合需要柔膚的人像近拍。"
+      ],
+      "recipe_hash": "e4114cc9c32c4756c88440bc99bbc614799a9bcaa5107430f66f7ca2b7dfd184",
+      "asset_hash": "e4114cc9c32c4756c88440bc99bbc614799a9bcaa5107430f66f7ca2b7dfd184",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "mellow_daylight",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "柔暖日光",
+        "en": "Mellow Daylight"
+      },
+      "aliases": [
+        "柔暖自然",
+        "溫和日光",
+        "mellow daylight"
+      ],
+      "family": "natural_clean",
+      "tags": [
+        "natural",
+        "mellow",
+        "warm",
+        "daylight"
+      ],
+      "description": "柔化對比並加入輕微暖色，適合安靜的日常場景。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.8,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "brightness": 4.0,
+          "contrast": 0.96,
+          "saturation": 0.94,
+          "sharpen": 0.08,
+          "clarity": 0.06,
+          "temperature": 6.0
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.025
+          ],
+          [
+            0.23,
+            0.25
+          ],
+          [
+            0.53,
+            0.56
+          ],
+          [
+            0.83,
+            0.85
+          ],
+          [
+            1.0,
+            0.98
+          ]
+        ],
+        "split_tone": {
+          "shadow_color": [
+            0.42,
+            0.48,
+            0.58
+          ],
+          "highlight_color": [
+            1.0,
+            0.78,
+            0.5
+          ],
+          "shadow_strength": 0.025,
+          "highlight_strength": 0.07,
+          "balance": 0.56
+        },
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/mellow_daylight.jpg",
+        "decision_note": "通過 52x8 固定圖、strength、determinism、clipping 與家族 contact sheet 人工檢查。"
+      },
+      "known_limitations": [
+        "原圖偏黃時暖色可能較明顯。"
+      ],
+      "recipe_hash": "c8ddaba8d418c29e8bac46f0333a5535b6cf9eef47ab096c07f1a30fc8d5bc33",
+      "asset_hash": "c8ddaba8d418c29e8bac46f0333a5535b6cf9eef47ab096c07f1a30fc8d5bc33",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "soft_matte_clean",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "柔霧潔淨",
+        "en": "Soft Matte Clean"
+      },
+      "aliases": [
+        "乾淨霧面",
+        "柔霧自然",
+        "soft matte clean"
+      ],
+      "family": "natural_clean",
+      "tags": [
+        "natural",
+        "matte",
+        "soft",
+        "clean"
+      ],
+      "description": "抬升黑位與壓低高光，形成低調但乾淨的霧面外觀。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.76,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "brightness": 2.0,
+          "contrast": 0.93,
+          "saturation": 0.92,
+          "sharpen": 0.04,
+          "clarity": 0.06
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.06
+          ],
+          [
+            0.2,
+            0.24
+          ],
+          [
+            0.5,
+            0.53
+          ],
+          [
+            0.82,
+            0.82
+          ],
+          [
+            1.0,
+            0.95
+          ]
+        ],
+        "fade": 0.08,
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/soft_matte_clean.jpg",
+        "decision_note": "通過 52x8 固定圖、strength、determinism、clipping 與家族 contact sheet 人工檢查。"
+      },
+      "known_limitations": [
+        "需要純黑背景或高對比產品圖時不建議使用。"
+      ],
+      "recipe_hash": "e33b1d4d855e3d5fa689393e10974b014f96608387e698bac58bdf8ffc8e70aa",
+      "asset_hash": "e33b1d4d855e3d5fa689393e10974b014f96608387e698bac58bdf8ffc8e70aa",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "porcelain_portrait",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "瓷光人像",
+        "en": "Porcelain Portrait"
+      },
+      "aliases": [
+        "瓷白人像",
+        "清透柔膚",
+        "porcelain portrait"
+      ],
+      "family": "portrait_skin",
+      "tags": [
+        "portrait",
+        "skin",
+        "bright",
+        "porcelain"
+      ],
+      "description": "提亮膚色區間並降低橘紅飽和，呈現清透瓷光感。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.72,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "brightness": 8.0,
+          "contrast": 0.92,
+          "saturation": 0.92,
+          "temperature": -2.0,
+          "sharpen": 0.04
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.02
+          ],
+          [
+            0.24,
+            0.25
+          ],
+          [
+            0.52,
+            0.54
+          ],
+          [
+            0.82,
+            0.84
+          ],
+          [
+            1.0,
+            0.99
+          ]
+        ],
+        "selective_hsl": [
+          {
+            "hue_center": 24,
+            "width": 46,
+            "saturation_scale": 0.84,
+            "value_shift": 0.05
+          }
+        ],
+        "fade": 0.025,
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/porcelain_portrait.jpg",
+        "decision_note": "通過 52x8 固定圖、strength、determinism、clipping 與家族 contact sheet 人工檢查。"
+      },
+      "known_limitations": [
+        "深色膚色或低光人像應先確認亮部沒有過度提亮。"
+      ],
+      "recipe_hash": "c10b0516c28b2d55ab00eef0a46ebd652a942af79743a9c163a6e158bb2ce8f1",
+      "asset_hash": "c10b0516c28b2d55ab00eef0a46ebd652a942af79743a9c163a6e158bb2ce8f1",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "cocoa_portrait",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "可可暖膚",
+        "en": "Cocoa Portrait"
+      },
+      "aliases": [
+        "可可人像",
+        "深暖膚色",
+        "cocoa skin portrait"
+      ],
+      "family": "portrait_skin",
+      "tags": [
+        "portrait",
+        "skin",
+        "cocoa",
+        "warm"
+      ],
+      "description": "暖化中間調與暗部，保留較深膚色的立體感與質地。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.78,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "brightness": 1.0,
+          "contrast": 1.06,
+          "saturation": 0.96,
+          "temperature": 10.0,
+          "sharpen": 0.04,
+          "vignette": 0.06
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.01
+          ],
+          [
+            0.2,
+            0.16
+          ],
+          [
+            0.52,
+            0.52
+          ],
+          [
+            0.82,
+            0.87
+          ],
+          [
+            1.0,
+            0.99
+          ]
+        ],
+        "selective_hsl": [
+          {
+            "hue_center": 25,
+            "width": 44,
+            "saturation_scale": 0.94,
+            "value_shift": 0.015
+          }
+        ],
+        "split_tone": {
+          "shadow_color": [
+            0.36,
+            0.28,
+            0.24
+          ],
+          "highlight_color": [
+            1.0,
+            0.72,
+            0.46
+          ],
+          "shadow_strength": 0.05,
+          "highlight_strength": 0.08,
+          "balance": 0.55
+        },
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/cocoa_portrait.jpg",
+        "decision_note": "通過 52x8 固定圖、strength、determinism、clipping 與家族 contact sheet 人工檢查。"
+      },
+      "known_limitations": [
+        "白平衡已偏橘時建議降低 strength。"
+      ],
+      "recipe_hash": "686386a0746359ff6412a88db8473ad34e4f2cc5fb6731680b8156883d3a2593",
+      "asset_hash": "686386a0746359ff6412a88db8473ad34e4f2cc5fb6731680b8156883d3a2593",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "cool_editorial_portrait",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "冷調時尚人像",
+        "en": "Cool Editorial Portrait"
+      },
+      "aliases": [
+        "冷調雜誌人像",
+        "時尚冷膚",
+        "cool editorial portrait"
+      ],
+      "family": "portrait_skin",
+      "tags": [
+        "portrait",
+        "editorial",
+        "cool",
+        "fashion"
+      ],
+      "description": "中性偏冷白平衡搭配較俐落的對比，適合時尚人像。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.76,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "brightness": 2.0,
+          "contrast": 1.09,
+          "saturation": 0.89,
+          "temperature": -10.0,
+          "sharpen": 0.04,
+          "clarity": 0.09
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.015
+          ],
+          [
+            0.2,
+            0.15
+          ],
+          [
+            0.5,
+            0.49
+          ],
+          [
+            0.82,
+            0.89
+          ],
+          [
+            1.0,
+            1.0
+          ]
+        ],
+        "selective_hsl": [
+          {
+            "hue_center": 25,
+            "width": 44,
+            "saturation_scale": 0.94,
+            "value_shift": 0.015
+          }
+        ],
+        "split_tone": {
+          "shadow_color": [
+            0.3,
+            0.48,
+            0.64
+          ],
+          "highlight_color": [
+            0.86,
+            0.9,
+            1.0
+          ],
+          "shadow_strength": 0.06,
+          "highlight_strength": 0.035,
+          "balance": 0.54
+        },
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/cool_editorial_portrait.jpg",
+        "decision_note": "通過 52x8 固定圖、strength、determinism、clipping 與家族 contact sheet 人工檢查。"
+      },
+      "known_limitations": [
+        "暖光室內人像可能出現冷暖混合感。"
+      ],
+      "recipe_hash": "da05a99337b2d2d264428bace957e0d397b7bf1c4d869a76847db1d669826ef4",
+      "asset_hash": "da05a99337b2d2d264428bace957e0d397b7bf1c4d869a76847db1d669826ef4",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "rose_glow_portrait",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "玫瑰柔光",
+        "en": "Rose Glow Portrait"
+      },
+      "aliases": [
+        "玫瑰人像",
+        "粉嫩柔光",
+        "rose glow portrait"
+      ],
+      "family": "portrait_skin",
+      "tags": [
+        "portrait",
+        "rose",
+        "glow",
+        "soft"
+      ],
+      "description": "柔化高對比並加入克制玫瑰色高光，呈現溫柔光澤。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.7,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "brightness": 6.0,
+          "contrast": 0.91,
+          "saturation": 0.93,
+          "temperature": 3.0,
+          "sharpen": 0.04
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.04
+          ],
+          [
+            0.22,
+            0.27
+          ],
+          [
+            0.52,
+            0.57
+          ],
+          [
+            0.82,
+            0.86
+          ],
+          [
+            1.0,
+            0.98
+          ]
+        ],
+        "selective_hsl": [
+          {
+            "hue_center": 25,
+            "width": 44,
+            "saturation_scale": 0.94,
+            "value_shift": 0.015
+          }
+        ],
+        "split_tone": {
+          "shadow_color": [
+            0.5,
+            0.42,
+            0.58
+          ],
+          "highlight_color": [
+            1.0,
+            0.58,
+            0.66
+          ],
+          "shadow_strength": 0.025,
+          "highlight_strength": 0.09,
+          "balance": 0.58
+        },
+        "fade": 0.045,
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/rose_glow_portrait.jpg",
+        "decision_note": "通過 52x8 固定圖、strength、determinism、clipping 與家族 contact sheet 人工檢查。"
+      },
+      "known_limitations": [
+        "高飽和紅色衣物可能被一併柔化。"
+      ],
+      "recipe_hash": "a562d325d6cb125ea0fba49b0bad5d6282a4b88a04b4b5051293ebf46066d05c",
+      "asset_hash": "a562d325d6cb125ea0fba49b0bad5d6282a4b88a04b4b5051293ebf46066d05c",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "studio_neutral_portrait",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "棚拍中性人像",
+        "en": "Studio Neutral Portrait"
+      },
+      "aliases": [
+        "棚拍人像",
+        "中性膚色",
+        "studio neutral portrait"
+      ],
+      "family": "portrait_skin",
+      "tags": [
+        "portrait",
+        "studio",
+        "neutral",
+        "skin"
+      ],
+      "description": "維持中性膚色與乾淨白背景，增加棚拍輪廓與細節。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.86,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "brightness": 2.0,
+          "contrast": 1.04,
+          "saturation": 0.96,
+          "temperature": 0.0,
+          "sharpen": 0.1,
+          "clarity": 0.08
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.22,
+            0.2
+          ],
+          [
+            0.52,
+            0.54
+          ],
+          [
+            0.84,
+            0.88
+          ],
+          [
+            1.0,
+            1.0
+          ]
+        ],
+        "selective_hsl": [
+          {
+            "hue_center": 25,
+            "width": 40,
+            "saturation_scale": 0.91,
+            "value_shift": 0.02
+          }
+        ],
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "rejected",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/studio_neutral_portrait.jpg",
+        "decision_note": "與既有 approved style 過度接近，不納入 canonical style 計數。"
+      },
+      "known_limitations": [
+        "自然逆光場景可能顯得較像人工打光。"
+      ],
+      "recipe_hash": "e7acb55fec74b32d058ef3bc6ebec884bef3458eaf6837fd2ce1bb0baa28ae89",
+      "asset_hash": "e7acb55fec74b32d058ef3bc6ebec884bef3458eaf6837fd2ce1bb0baa28ae89",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "alpine_crisp",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "高山清冽",
+        "en": "Alpine Crisp"
+      },
+      "aliases": [
+        "高山通透",
+        "清冽山景",
+        "alpine crisp landscape"
+      ],
+      "family": "landscape_travel",
+      "tags": [
+        "landscape",
+        "mountain",
+        "crisp",
+        "cool"
+      ],
+      "description": "冷調清晰空氣感與較深藍綠，適合山景與高海拔場景。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.8,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "contrast": 1.12,
+          "saturation": 1.02,
+          "sharpen": 0.13,
+          "clarity": 0.2,
+          "dehaze": 0.16,
+          "temperature": -8.0
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.2,
+            0.18
+          ],
+          [
+            0.5,
+            0.51
+          ],
+          [
+            0.8,
+            0.84
+          ],
+          [
+            1.0,
+            1.0
+          ]
+        ],
+        "selective_hsl": [
+          {
+            "hue_center": 210,
+            "width": 55,
+            "hue_shift": -5,
+            "saturation_scale": 1.12,
+            "value_shift": -0.025
+          },
+          {
+            "hue_center": 115,
+            "width": 48,
+            "hue_shift": -7,
+            "saturation_scale": 0.95,
+            "value_shift": -0.01
+          }
+        ],
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/alpine_crisp.jpg",
+        "decision_note": "通過 52x8 固定圖、strength、determinism、clipping 與家族 contact sheet 人工檢查。"
+      },
+      "known_limitations": [
+        "人像混合場景的膚色可能略偏冷。"
+      ],
+      "recipe_hash": "19a6d3ecb611d15fbc27b556f83d89da02fed99993f716dd3fa6129fe2ccb803",
+      "asset_hash": "19a6d3ecb611d15fbc27b556f83d89da02fed99993f716dd3fa6129fe2ccb803",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "tropical_vivid",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "熱帶鮮活",
+        "en": "Tropical Vivid"
+      },
+      "aliases": [
+        "熱帶旅行",
+        "海島鮮活",
+        "tropical vivid travel"
+      ],
+      "family": "landscape_travel",
+      "tags": [
+        "landscape",
+        "tropical",
+        "vivid",
+        "travel"
+      ],
+      "description": "強化青藍海水與熱帶綠色，同時保留明亮陽光。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.72,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "contrast": 1.05,
+          "saturation": 1.14,
+          "sharpen": 0.13,
+          "clarity": 0.1,
+          "dehaze": 0.08,
+          "brightness": 4.0,
+          "temperature": 3.0
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.2,
+            0.2
+          ],
+          [
+            0.5,
+            0.54
+          ],
+          [
+            0.82,
+            0.88
+          ],
+          [
+            1.0,
+            1.0
+          ]
+        ],
+        "selective_hsl": [
+          {
+            "hue_center": 190,
+            "width": 48,
+            "hue_shift": -10,
+            "saturation_scale": 1.28,
+            "value_shift": 0.03
+          },
+          {
+            "hue_center": 115,
+            "width": 55,
+            "hue_shift": -8,
+            "saturation_scale": 1.18,
+            "value_shift": 0.015
+          }
+        ],
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/tropical_vivid.jpg",
+        "decision_note": "通過 52x8 固定圖、strength、determinism、clipping 與家族 contact sheet 人工檢查。"
+      },
+      "known_limitations": [
+        "高飽和衣物或招牌可能過於鮮豔。"
+      ],
+      "recipe_hash": "3a2cb6ea5c5b3819feb99693bea824b9d82ec161fc732a28d347343f2973e7f4",
+      "asset_hash": "3a2cb6ea5c5b3819feb99693bea824b9d82ec161fc732a28d347343f2973e7f4",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "desert_ochre",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "沙漠赭石",
+        "en": "Desert Ochre"
+      },
+      "aliases": [
+        "沙漠旅行色",
+        "赭石風景",
+        "desert ochre"
+      ],
+      "family": "landscape_travel",
+      "tags": [
+        "landscape",
+        "desert",
+        "ochre",
+        "warm"
+      ],
+      "description": "暖化土色與高光、壓低藍色飽和，呈現乾燥沙漠質感。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.76,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "contrast": 1.1,
+          "saturation": 0.96,
+          "sharpen": 0.13,
+          "clarity": 0.15,
+          "dehaze": 0.11,
+          "temperature": 11.0
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.2,
+            0.18
+          ],
+          [
+            0.5,
+            0.51
+          ],
+          [
+            0.8,
+            0.84
+          ],
+          [
+            1.0,
+            1.0
+          ]
+        ],
+        "selective_hsl": [
+          {
+            "hue_center": 35,
+            "width": 50,
+            "hue_shift": -4,
+            "saturation_scale": 1.16,
+            "value_shift": 0.025
+          },
+          {
+            "hue_center": 215,
+            "width": 55,
+            "saturation_scale": 0.78,
+            "value_shift": -0.02
+          }
+        ],
+        "split_tone": {
+          "shadow_color": [
+            0.38,
+            0.31,
+            0.26
+          ],
+          "highlight_color": [
+            1.0,
+            0.67,
+            0.3
+          ],
+          "shadow_strength": 0.035,
+          "highlight_strength": 0.1,
+          "balance": 0.57
+        },
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/desert_ochre.jpg",
+        "decision_note": "通過 52x8 固定圖、strength、determinism、clipping 與家族 contact sheet 人工檢查。"
+      },
+      "known_limitations": [
+        "植被茂密的場景可能失去部分清新綠色。"
+      ],
+      "recipe_hash": "3a12cf672293e8f25a645e130e0f3168a1cade17fa723b8403d129d34753ac04",
+      "asset_hash": "3a12cf672293e8f25a645e130e0f3168a1cade17fa723b8403d129d34753ac04",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "ocean_breeze",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "海風藍調",
+        "en": "Ocean Breeze"
+      },
+      "aliases": [
+        "海邊藍調",
+        "海風旅行",
+        "ocean breeze look"
+      ],
+      "family": "landscape_travel",
+      "tags": [
+        "landscape",
+        "ocean",
+        "blue",
+        "airy"
+      ],
+      "description": "提亮陰影與青藍色水面，形成清爽通風的海邊氛圍。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.77,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "contrast": 0.98,
+          "saturation": 1.02,
+          "sharpen": 0.13,
+          "clarity": 0.12,
+          "dehaze": 0.04,
+          "brightness": 5.0,
+          "temperature": -6.0
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.035
+          ],
+          [
+            0.2,
+            0.25
+          ],
+          [
+            0.5,
+            0.56
+          ],
+          [
+            0.82,
+            0.88
+          ],
+          [
+            1.0,
+            1.0
+          ]
+        ],
+        "selective_hsl": [
+          {
+            "hue_center": 205,
+            "width": 65,
+            "hue_shift": -8,
+            "saturation_scale": 1.16,
+            "value_shift": 0.045
+          }
+        ],
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/ocean_breeze.jpg",
+        "decision_note": "通過 52x8 固定圖、strength、determinism、clipping 與家族 contact sheet 人工檢查。"
+      },
+      "known_limitations": [
+        "陰天人像可能略偏青冷。"
+      ],
+      "recipe_hash": "8dc88874cde6f0cadfeab0d01d7699c7161f46aff0f816b191cbc29e00e14bd8",
+      "asset_hash": "8dc88874cde6f0cadfeab0d01d7699c7161f46aff0f816b191cbc29e00e14bd8",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "deep_forest",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "深林幽綠",
+        "en": "Deep Forest"
+      },
+      "aliases": [
+        "森林幽綠",
+        "深綠旅行",
+        "deep forest green"
+      ],
+      "family": "landscape_travel",
+      "tags": [
+        "landscape",
+        "forest",
+        "green",
+        "moody"
+      ],
+      "description": "壓暗綠色與陰影、保留葉片層次，形成深林幽靜氛圍。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.75,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "contrast": 1.13,
+          "saturation": 0.98,
+          "sharpen": 0.13,
+          "clarity": 0.12,
+          "dehaze": 0.13,
+          "brightness": -4.0,
+          "temperature": -3.0,
+          "vignette": 0.1
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.01
+          ],
+          [
+            0.18,
+            0.12
+          ],
+          [
+            0.48,
+            0.45
+          ],
+          [
+            0.8,
+            0.84
+          ],
+          [
+            1.0,
+            0.98
+          ]
+        ],
+        "selective_hsl": [
+          {
+            "hue_center": 120,
+            "width": 60,
+            "hue_shift": 9,
+            "saturation_scale": 0.9,
+            "value_shift": -0.07
+          }
+        ],
+        "split_tone": {
+          "shadow_color": [
+            0.16,
+            0.38,
+            0.31
+          ],
+          "highlight_color": [
+            0.78,
+            0.82,
+            0.54
+          ],
+          "shadow_strength": 0.08,
+          "highlight_strength": 0.035,
+          "balance": 0.55
+        },
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/deep_forest.jpg",
+        "decision_note": "通過 52x8 固定圖、strength、determinism、clipping 與家族 contact sheet 人工檢查。"
+      },
+      "known_limitations": [
+        "低光照片可能需要另外提高 shadows。"
+      ],
+      "recipe_hash": "764a7c329a44570235d058e3f94dc786db38efcc299ab924995fc873c8f36f10",
+      "asset_hash": "764a7c329a44570235d058e3f94dc786db38efcc299ab924995fc873c8f36f10",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "teal_orange_blockbuster",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "青橙鉅片",
+        "en": "Teal Orange Blockbuster"
+      },
+      "aliases": [
+        "青橙電影",
+        "鉅片色調",
+        "teal orange blockbuster"
+      ],
+      "family": "cinematic",
+      "tags": [
+        "cinematic",
+        "teal",
+        "orange",
+        "blockbuster"
+      ],
+      "description": "明確青色暗部與橙色高光，搭配高對比的商業電影外觀。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.68,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "brightness": -2.0,
+          "contrast": 1.17,
+          "saturation": 0.98,
+          "vignette": 0.13,
+          "temperature": -2.0
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.015
+          ],
+          [
+            0.18,
+            0.12
+          ],
+          [
+            0.48,
+            0.46
+          ],
+          [
+            0.8,
+            0.86
+          ],
+          [
+            1.0,
+            0.99
+          ]
+        ],
+        "split_tone": {
+          "shadow_color": [
+            0.08,
+            0.56,
+            0.63
+          ],
+          "highlight_color": [
+            1.0,
+            0.48,
+            0.16
+          ],
+          "shadow_strength": 0.18,
+          "highlight_strength": 0.13,
+          "balance": 0.52
+        },
+        "selective_hsl": [
+          {
+            "hue_center": 205,
+            "width": 65,
+            "hue_shift": -14,
+            "saturation_scale": 1.18,
+            "value_shift": -0.02
+          },
+          {
+            "hue_center": 30,
+            "width": 48,
+            "hue_shift": -5,
+            "saturation_scale": 1.12,
+            "value_shift": 0.025
+          }
+        ],
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/teal_orange_blockbuster.jpg",
+        "decision_note": "通過 52x8 固定圖、strength、determinism、clipping 與家族 contact sheet 人工檢查。"
+      },
+      "known_limitations": [
+        "膚色與藍色物件同時很多時效果較強。"
+      ],
+      "recipe_hash": "069b4d1d804b8910e27d6a6411606c0ee819d466f4011a3a86376dfbd5538a2f",
+      "asset_hash": "069b4d1d804b8910e27d6a6411606c0ee819d466f4011a3a86376dfbd5538a2f",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "desert_cinema",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "荒漠電影",
+        "en": "Desert Cinema"
+      },
+      "aliases": [
+        "荒漠片色調",
+        "暖沙電影",
+        "desert cinema look"
+      ],
+      "family": "cinematic",
+      "tags": [
+        "cinematic",
+        "desert",
+        "warm",
+        "dramatic"
+      ],
+      "description": "暖沙高光、橄欖暗部與收斂藍色，呈現荒漠敘事氛圍。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.73,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "brightness": -2.0,
+          "contrast": 1.14,
+          "saturation": 0.85,
+          "vignette": 0.14,
+          "temperature": 10.0
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.015
+          ],
+          [
+            0.18,
+            0.12
+          ],
+          [
+            0.48,
+            0.46
+          ],
+          [
+            0.8,
+            0.86
+          ],
+          [
+            1.0,
+            0.99
+          ]
+        ],
+        "split_tone": {
+          "shadow_color": [
+            0.35,
+            0.38,
+            0.24
+          ],
+          "highlight_color": [
+            1.0,
+            0.61,
+            0.25
+          ],
+          "shadow_strength": 0.11,
+          "highlight_strength": 0.14,
+          "balance": 0.55
+        },
+        "selective_hsl": [
+          {
+            "hue_center": 210,
+            "width": 58,
+            "saturation_scale": 0.58,
+            "value_shift": -0.035
+          }
+        ],
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/desert_cinema.jpg",
+        "decision_note": "通過 52x8 固定圖、strength、determinism、clipping 與家族 contact sheet 人工檢查。"
+      },
+      "known_limitations": [
+        "需要鮮明藍天的旅行照片不建議使用。"
+      ],
+      "recipe_hash": "0d82814a483ef63a855dc863f11fb59590a1c21338e3e14385099d83159794f4",
+      "asset_hash": "0d82814a483ef63a855dc863f11fb59590a1c21338e3e14385099d83159794f4",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "color_noir",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "彩色黑色電影",
+        "en": "Color Noir"
+      },
+      "aliases": [
+        "彩色黑電影",
+        "黑色電影色調",
+        "color noir"
+      ],
+      "family": "cinematic",
+      "tags": [
+        "cinematic",
+        "noir",
+        "dark",
+        "muted"
+      ],
+      "description": "大幅收斂色彩、加深陰影與邊角，保留少量彩色線索。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.72,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "brightness": -8.0,
+          "contrast": 1.22,
+          "saturation": 0.55,
+          "vignette": 0.22,
+          "temperature": -4.0,
+          "clarity": 0.12
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.16,
+            0.07
+          ],
+          [
+            0.48,
+            0.43
+          ],
+          [
+            0.8,
+            0.9
+          ],
+          [
+            1.0,
+            1.0
+          ]
+        ],
+        "split_tone": {
+          "shadow_color": [
+            0.22,
+            0.3,
+            0.42
+          ],
+          "highlight_color": [
+            0.85,
+            0.78,
+            0.65
+          ],
+          "shadow_strength": 0.09,
+          "highlight_strength": 0.035,
+          "balance": 0.5
+        },
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/color_noir.jpg",
+        "decision_note": "通過 52x8 固定圖、strength、determinism、clipping 與家族 contact sheet 人工檢查。"
+      },
+      "known_limitations": [
+        "原本低光的照片可能過暗。"
+      ],
+      "recipe_hash": "14878fbaaaac7927376f6c275e6811747f87dddca1d0a70dff80f0f1376218e5",
+      "asset_hash": "14878fbaaaac7927376f6c275e6811747f87dddca1d0a70dff80f0f1376218e5",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "bleach_bypass",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "漂白留銀",
+        "en": "Bleach Bypass"
+      },
+      "aliases": [
+        "漂白留銀風格",
+        "去色硬調電影",
+        "bleach bypass look"
+      ],
+      "family": "cinematic",
+      "tags": [
+        "cinematic",
+        "bleach",
+        "desaturated",
+        "gritty"
+      ],
+      "description": "高對比、低飽和與硬朗細節，模擬漂白留銀的粗獷觀感。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.66,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "brightness": -1.0,
+          "contrast": 1.28,
+          "saturation": 0.48,
+          "vignette": 0.08,
+          "clarity": 0.22,
+          "sharpen": 0.18,
+          "dehaze": 0.12
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.18,
+            0.08
+          ],
+          [
+            0.5,
+            0.5
+          ],
+          [
+            0.82,
+            0.93
+          ],
+          [
+            1.0,
+            1.0
+          ]
+        ],
+        "grain": {
+          "amount": 0.02,
+          "seed": 3203
+        },
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/bleach_bypass.jpg",
+        "decision_note": "通過 52x8 固定圖、strength、determinism、clipping 與家族 contact sheet 人工檢查。"
+      },
+      "known_limitations": [
+        "膚色會被刻意去色與硬化。"
+      ],
+      "recipe_hash": "89d025f46d9ae918a7511c08ccae0db7707fd1eb24f4c826c8e6cbf1ae422d32",
+      "asset_hash": "89d025f46d9ae918a7511c08ccae0db7707fd1eb24f4c826c8e6cbf1ae422d32",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "dusk_drama",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "暮光敘事",
+        "en": "Dusk Drama"
+      },
+      "aliases": [
+        "黃昏電影感",
+        "暮色敘事",
+        "dusk drama"
+      ],
+      "family": "cinematic",
+      "tags": [
+        "cinematic",
+        "dusk",
+        "purple",
+        "dramatic"
+      ],
+      "description": "紫藍暗部與琥珀高光搭配柔和黑位，適合暮色敘事。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.74,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "brightness": -3.0,
+          "contrast": 1.08,
+          "saturation": 0.9,
+          "vignette": 0.16,
+          "temperature": 2.0
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.035
+          ],
+          [
+            0.18,
+            0.15
+          ],
+          [
+            0.48,
+            0.46
+          ],
+          [
+            0.8,
+            0.85
+          ],
+          [
+            1.0,
+            0.98
+          ]
+        ],
+        "split_tone": {
+          "shadow_color": [
+            0.32,
+            0.24,
+            0.58
+          ],
+          "highlight_color": [
+            1.0,
+            0.58,
+            0.22
+          ],
+          "shadow_strength": 0.13,
+          "highlight_strength": 0.1,
+          "balance": 0.54
+        },
+        "fade": 0.04,
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/dusk_drama.jpg",
+        "decision_note": "通過 52x8 固定圖、strength、determinism、clipping 與家族 contact sheet 人工檢查。"
+      },
+      "known_limitations": [
+        "明亮白天場景可能顯得不自然。"
+      ],
+      "recipe_hash": "179baf7d02285f47c1ed405f21ab0706404731ef0c8a6459e02cea5be40653be",
+      "asset_hash": "179baf7d02285f47c1ed405f21ab0706404731ef0c8a6459e02cea5be40653be",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "classic_negative",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "經典負片",
+        "en": "Classic Negative"
+      },
+      "aliases": [
+        "經典彩色負片",
+        "柔和彩負",
+        "classic negative film"
+      ],
+      "family": "film_retro",
+      "tags": [
+        "film",
+        "negative",
+        "classic",
+        "muted"
+      ],
+      "description": "收斂藍綠與紅色、保留柔和高光，形成經典彩色負片感。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.76,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "brightness": 1.0,
+          "contrast": 0.94,
+          "saturation": 0.82,
+          "temperature": 3.0,
+          "vignette": 0.05
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.045
+          ],
+          [
+            0.22,
+            0.23
+          ],
+          [
+            0.52,
+            0.53
+          ],
+          [
+            0.82,
+            0.81
+          ],
+          [
+            1.0,
+            0.96
+          ]
+        ],
+        "fade": 0.07,
+        "grain": {
+          "amount": 0.018,
+          "seed": 4101
+        },
+        "selective_hsl": [
+          {
+            "hue_center": 25,
+            "width": 45,
+            "saturation_scale": 0.88,
+            "value_shift": 0.015
+          },
+          {
+            "hue_center": 120,
+            "width": 55,
+            "hue_shift": 9,
+            "saturation_scale": 0.82,
+            "value_shift": -0.015
+          },
+          {
+            "hue_center": 210,
+            "width": 55,
+            "hue_shift": -8,
+            "saturation_scale": 0.8,
+            "value_shift": 0.0
+          }
+        ],
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/classic_negative.jpg",
+        "decision_note": "通過 52x8 固定圖、strength、determinism、clipping 與家族 contact sheet 人工檢查。"
+      },
+      "known_limitations": [
+        "鮮豔風景會被刻意收斂。"
+      ],
+      "recipe_hash": "54bfbadba8a1ca9a7a2d4379dca37c907a5b0d6a801db98e20fb88dac62bb93a",
+      "asset_hash": "54bfbadba8a1ca9a7a2d4379dca37c907a5b0d6a801db98e20fb88dac62bb93a",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "warm_instant",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "暖色即影即有",
+        "en": "Warm Instant"
+      },
+      "aliases": [
+        "暖色拍立得",
+        "即影即有色調",
+        "warm instant film"
+      ],
+      "family": "film_retro",
+      "tags": [
+        "film",
+        "instant",
+        "warm",
+        "faded"
+      ],
+      "description": "暖黃高光、偏淡黑位與柔和飽和度，呈現即影即有照片感。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.73,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "brightness": 5.0,
+          "contrast": 0.9,
+          "saturation": 0.84,
+          "temperature": 12.0,
+          "vignette": 0.05
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.08
+          ],
+          [
+            0.22,
+            0.28
+          ],
+          [
+            0.52,
+            0.56
+          ],
+          [
+            0.82,
+            0.82
+          ],
+          [
+            1.0,
+            0.93
+          ]
+        ],
+        "fade": 0.11,
+        "grain": {
+          "amount": 0.014,
+          "seed": 4102
+        },
+        "split_tone": {
+          "shadow_color": [
+            0.42,
+            0.45,
+            0.38
+          ],
+          "highlight_color": [
+            1.0,
+            0.72,
+            0.38
+          ],
+          "shadow_strength": 0.035,
+          "highlight_strength": 0.11,
+          "balance": 0.57
+        },
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/warm_instant.jpg",
+        "decision_note": "通過 52x8 固定圖、strength、determinism、clipping 與家族 contact sheet 人工檢查。"
+      },
+      "known_limitations": [
+        "白色物件可能帶有明顯暖黃。"
+      ],
+      "recipe_hash": "7153993b466c08cde2695863ac9f4352e84a7ff37035f1f19459a56b937531cd",
+      "asset_hash": "7153993b466c08cde2695863ac9f4352e84a7ff37035f1f19459a56b937531cd",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "cool_slide",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "冷調幻燈片",
+        "en": "Cool Slide"
+      },
+      "aliases": [
+        "冷調正片",
+        "幻燈片藍調",
+        "cool slide film"
+      ],
+      "family": "film_retro",
+      "tags": [
+        "film",
+        "slide",
+        "cool",
+        "contrast"
+      ],
+      "description": "冷藍陰影與清楚色彩分離，模擬偏冷正片的通透觀感。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.75,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "brightness": -1.0,
+          "contrast": 1.1,
+          "saturation": 1.04,
+          "temperature": -11.0,
+          "vignette": 0.05,
+          "clarity": 0.08
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.015
+          ],
+          [
+            0.18,
+            0.13
+          ],
+          [
+            0.5,
+            0.5
+          ],
+          [
+            0.82,
+            0.89
+          ],
+          [
+            1.0,
+            1.0
+          ]
+        ],
+        "fade": 0.025,
+        "grain": {
+          "amount": 0.012,
+          "seed": 4103
+        },
+        "split_tone": {
+          "shadow_color": [
+            0.2,
+            0.43,
+            0.66
+          ],
+          "highlight_color": [
+            0.9,
+            0.92,
+            0.8
+          ],
+          "shadow_strength": 0.08,
+          "highlight_strength": 0.025,
+          "balance": 0.51
+        },
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/cool_slide.jpg",
+        "decision_note": "通過 52x8 固定圖、strength、determinism、clipping 與家族 contact sheet 人工檢查。"
+      },
+      "known_limitations": [
+        "室內暖光膚色可能顯得偏冷。"
+      ],
+      "recipe_hash": "7b382ab63ffde3090632a9790fb1660e44f4ebc686b95bf38073c45f55b220ec",
+      "asset_hash": "7b382ab63ffde3090632a9790fb1660e44f4ebc686b95bf38073c45f55b220ec",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "amber_seventies",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "七零琥珀",
+        "en": "Seventies Amber"
+      },
+      "aliases": [
+        "七零年代色調",
+        "琥珀復古",
+        "seventies amber"
+      ],
+      "family": "film_retro",
+      "tags": [
+        "film",
+        "seventies",
+        "amber",
+        "retro"
+      ],
+      "description": "琥珀高光、橄欖綠與深棕暗部，形成七零年代復古印象。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.7,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "brightness": -1.0,
+          "contrast": 1.01,
+          "saturation": 0.86,
+          "temperature": 15.0,
+          "vignette": 0.12
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.045
+          ],
+          [
+            0.22,
+            0.23
+          ],
+          [
+            0.52,
+            0.53
+          ],
+          [
+            0.82,
+            0.81
+          ],
+          [
+            1.0,
+            0.96
+          ]
+        ],
+        "fade": 0.05,
+        "grain": {
+          "amount": 0.025,
+          "seed": 4104
+        },
+        "selective_hsl": [
+          {
+            "hue_center": 115,
+            "width": 60,
+            "hue_shift": 18,
+            "saturation_scale": 0.72,
+            "value_shift": -0.025
+          },
+          {
+            "hue_center": 35,
+            "width": 55,
+            "hue_shift": -6,
+            "saturation_scale": 1.08,
+            "value_shift": 0.015
+          }
+        ],
+        "split_tone": {
+          "shadow_color": [
+            0.34,
+            0.29,
+            0.21
+          ],
+          "highlight_color": [
+            1.0,
+            0.58,
+            0.18
+          ],
+          "shadow_strength": 0.08,
+          "highlight_strength": 0.14,
+          "balance": 0.56
+        },
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/amber_seventies.jpg",
+        "decision_note": "通過 52x8 固定圖、strength、determinism、clipping 與家族 contact sheet 人工檢查。"
+      },
+      "known_limitations": [
+        "綠色會被刻意轉為橄欖色。"
+      ],
+      "recipe_hash": "49491fc201dda7afb44b9617d5e70072f89eae05508a06252e1eb09dfa4f23ba",
+      "asset_hash": "49491fc201dda7afb44b9617d5e70072f89eae05508a06252e1eb09dfa4f23ba",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "dusty_print",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "灰塵相紙",
+        "en": "Dusty Print"
+      },
+      "aliases": [
+        "老相紙",
+        "灰塵印相",
+        "dusty photo print"
+      ],
+      "family": "film_retro",
+      "tags": [
+        "film",
+        "print",
+        "dusty",
+        "low_contrast"
+      ],
+      "description": "低對比、褪色色彩與明顯顆粒，呈現老相紙的乾燥質感。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.7,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "brightness": 3.0,
+          "contrast": 0.86,
+          "saturation": 0.7,
+          "temperature": 6.0,
+          "vignette": 0.05,
+          "sharpen": 0.02
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.11
+          ],
+          [
+            0.22,
+            0.3
+          ],
+          [
+            0.52,
+            0.55
+          ],
+          [
+            0.82,
+            0.79
+          ],
+          [
+            1.0,
+            0.9
+          ]
+        ],
+        "fade": 0.16,
+        "grain": {
+          "amount": 0.036,
+          "seed": 4105
+        },
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/dusty_print.jpg",
+        "decision_note": "通過 52x8 固定圖、strength、determinism、clipping 與家族 contact sheet 人工檢查。"
+      },
+      "known_limitations": [
+        "細字、產品與需要乾淨背景的照片不適合。"
+      ],
+      "recipe_hash": "61e5af92b0e1eea9c436bf7a670b8eb285d75ec4872ddc39e94162d50e3267b3",
+      "asset_hash": "61e5af92b0e1eea9c436bf7a670b8eb285d75ec4872ddc39e94162d50e3267b3",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "noir_contrast_mono",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "黑色電影黑白",
+        "en": "Noir Contrast Mono"
+      },
+      "aliases": [
+        "高反差黑白",
+        "黑色電影黑白",
+        "noir contrast mono"
+      ],
+      "family": "black_white",
+      "tags": [
+        "black_white",
+        "noir",
+        "contrast",
+        "dramatic"
+      ],
+      "description": "深黑陰影、亮白高光與高反差輪廓，適合戲劇化黑白。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.92,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "contrast": 1.28,
+          "clarity": 0.2,
+          "sharpen": 0.15,
+          "vignette": 0.18
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.18,
+            0.07
+          ],
+          [
+            0.5,
+            0.48
+          ],
+          [
+            0.82,
+            0.94
+          ],
+          [
+            1.0,
+            1.0
+          ]
+        ],
+        "monochrome": {
+          "weights": [
+            0.34,
+            0.55,
+            0.11
+          ],
+          "tint": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "tint_strength": 0.0
+        },
+        "grain": {
+          "amount": 0.019,
+          "seed": 5101
+        },
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/noir_contrast_mono.jpg",
+        "decision_note": "通過 52x8 固定圖、strength、determinism、clipping 與家族 contact sheet 人工檢查。"
+      },
+      "known_limitations": [
+        "低光原圖可能失去部分陰影細節。"
+      ],
+      "recipe_hash": "a82cac90cfa9a328d9addf219fab2607e2dfa5f210d000fa7fd3342d300133d0",
+      "asset_hash": "a82cac90cfa9a328d9addf219fab2607e2dfa5f210d000fa7fd3342d300133d0",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "soft_matte_mono",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "柔霧黑白",
+        "en": "Soft Matte Mono"
+      },
+      "aliases": [
+        "霧面黑白",
+        "柔和灰階",
+        "soft matte mono"
+      ],
+      "family": "black_white",
+      "tags": [
+        "black_white",
+        "matte",
+        "soft",
+        "gentle"
+      ],
+      "description": "抬升黑位、柔化高光與對比，形成安靜霧面的黑白外觀。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.85,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "contrast": 0.88,
+          "clarity": 0.02,
+          "sharpen": 0.04,
+          "brightness": 3.0
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.09
+          ],
+          [
+            0.22,
+            0.29
+          ],
+          [
+            0.52,
+            0.55
+          ],
+          [
+            0.82,
+            0.82
+          ],
+          [
+            1.0,
+            0.94
+          ]
+        ],
+        "monochrome": {
+          "weights": [
+            0.28,
+            0.62,
+            0.1
+          ],
+          "tint": [
+            0.94,
+            0.96,
+            1.0
+          ],
+          "tint_strength": 0.04
+        },
+        "fade": 0.12,
+        "grain": {
+          "amount": 0.01,
+          "seed": 5102
+        },
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/soft_matte_mono.jpg",
+        "decision_note": "通過 52x8 固定圖、strength、determinism、clipping 與家族 contact sheet 人工檢查。"
+      },
+      "known_limitations": [
+        "需要純黑或強烈建築線條時效果較弱。"
+      ],
+      "recipe_hash": "b9d940821f098caeccfba4bd4d913f38bb8d7c026daf4bdf5631df88ebee1ee4",
+      "asset_hash": "b9d940821f098caeccfba4bd4d913f38bb8d7c026daf4bdf5631df88ebee1ee4",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "documentary_mono",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "紀實灰階",
+        "en": "Documentary Mono"
+      },
+      "aliases": [
+        "紀實黑白",
+        "新聞灰階",
+        "documentary monochrome"
+      ],
+      "family": "black_white",
+      "tags": [
+        "black_white",
+        "documentary",
+        "neutral",
+        "detail"
+      ],
+      "description": "中性灰階、可靠中間調與克制顆粒，適合紀實場景。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.9,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "contrast": 1.13,
+          "clarity": 0.2,
+          "sharpen": 0.08,
+          "brightness": -1.0
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.008
+          ],
+          [
+            0.2,
+            0.15
+          ],
+          [
+            0.5,
+            0.48
+          ],
+          [
+            0.82,
+            0.88
+          ],
+          [
+            1.0,
+            0.985
+          ]
+        ],
+        "monochrome": {
+          "weights": [
+            0.18,
+            0.74,
+            0.08
+          ],
+          "tint": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "tint_strength": 0.0
+        },
+        "grain": {
+          "amount": 0.008,
+          "seed": 5103
+        },
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/documentary_mono.jpg",
+        "decision_note": "通過 52x8 固定圖、strength、determinism、clipping 與家族 contact sheet 人工檢查。"
+      },
+      "known_limitations": [
+        "效果以忠實灰階為主，戲劇感較低。"
+      ],
+      "recipe_hash": "d86e084f409b43befc9b8bc87defa286291485c50e124a584126ca8c6cf80a0d",
+      "asset_hash": "d86e084f409b43befc9b8bc87defa286291485c50e124a584126ca8c6cf80a0d",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "graphite_portrait_mono",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "石墨人像黑白",
+        "en": "Graphite Portrait Mono"
+      },
+      "aliases": [
+        "石墨黑白人像",
+        "人像灰階",
+        "graphite portrait mono"
+      ],
+      "family": "black_white",
+      "tags": [
+        "black_white",
+        "portrait",
+        "graphite",
+        "skin"
+      ],
+      "description": "提亮橙紅通道對應膚色並壓低藍色，形成石墨般人像灰階。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.88,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "contrast": 1.06,
+          "clarity": 0.06,
+          "sharpen": 0.08,
+          "brightness": 2.0
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.025
+          ],
+          [
+            0.22,
+            0.22
+          ],
+          [
+            0.52,
+            0.55
+          ],
+          [
+            0.84,
+            0.88
+          ],
+          [
+            1.0,
+            0.99
+          ]
+        ],
+        "monochrome": {
+          "weights": [
+            0.47,
+            0.45,
+            0.08
+          ],
+          "tint": [
+            0.93,
+            0.95,
+            1.0
+          ],
+          "tint_strength": 0.05
+        },
+        "grain": {
+          "amount": 0.011,
+          "seed": 5104
+        },
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/graphite_portrait_mono.jpg",
+        "decision_note": "通過 52x8 固定圖、strength、determinism、clipping 與家族 contact sheet 人工檢查。"
+      },
+      "known_limitations": [
+        "紅色物件也會映射為較亮灰階。"
+      ],
+      "recipe_hash": "a502bd48057ec9bd2939ee921726564c99ac5070a779592d15f8f6b5f3d18b32",
+      "asset_hash": "a502bd48057ec9bd2939ee921726564c99ac5070a779592d15f8f6b5f3d18b32",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "archival_sepia",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "檔案棕調",
+        "en": "Archival Sepia"
+      },
+      "aliases": [
+        "古典棕調",
+        "檔案相片",
+        "archival sepia"
+      ],
+      "family": "black_white",
+      "tags": [
+        "black_white",
+        "sepia",
+        "archival",
+        "warm"
+      ],
+      "description": "暖棕單色、柔和黑位與細顆粒，呈現古典檔案照片感。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.82,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "contrast": 0.98,
+          "clarity": 0.04,
+          "sharpen": 0.1,
+          "vignette": 0.08
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.06
+          ],
+          [
+            0.22,
+            0.27
+          ],
+          [
+            0.52,
+            0.54
+          ],
+          [
+            0.82,
+            0.82
+          ],
+          [
+            1.0,
+            0.95
+          ]
+        ],
+        "monochrome": {
+          "weights": [
+            0.38,
+            0.52,
+            0.1
+          ],
+          "tint": [
+            1.0,
+            0.69,
+            0.38
+          ],
+          "tint_strength": 0.22
+        },
+        "fade": 0.08,
+        "grain": {
+          "amount": 0.018,
+          "seed": 5105
+        },
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/archival_sepia.jpg",
+        "decision_note": "通過 52x8 固定圖、strength、determinism、clipping 與家族 contact sheet 人工檢查。"
+      },
+      "known_limitations": [
+        "不是中性黑白，會保留明顯暖棕色。"
+      ],
+      "recipe_hash": "02ec3cb28003ea3871f0909056b08489a4700bfadfc5aa201d280e6524d265db",
+      "asset_hash": "02ec3cb28003ea3871f0909056b08489a4700bfadfc5aa201d280e6524d265db",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "electric_violet",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "電光紫夜",
+        "en": "Electric Violet"
+      },
+      "aliases": [
+        "紫色霓虹夜",
+        "電光紫",
+        "electric violet night"
+      ],
+      "family": "night_neon",
+      "tags": [
+        "night",
+        "neon",
+        "violet",
+        "electric"
+      ],
+      "description": "紫色暗部與洋紅高光強化城市霓虹的電光氣氛。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.72,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "brightness": -3.0,
+          "contrast": 1.13,
+          "saturation": 1.12,
+          "clarity": 0.12,
+          "dehaze": 0.08,
+          "vignette": 0.14,
+          "temperature": -5.0
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.01
+          ],
+          [
+            0.18,
+            0.12
+          ],
+          [
+            0.48,
+            0.47
+          ],
+          [
+            0.8,
+            0.87
+          ],
+          [
+            1.0,
+            1.0
+          ]
+        ],
+        "selective_hsl": [
+          {
+            "hue_center": 285,
+            "width": 58,
+            "hue_shift": 8,
+            "saturation_scale": 1.28,
+            "value_shift": 0.025
+          },
+          {
+            "hue_center": 210,
+            "width": 48,
+            "hue_shift": 12,
+            "saturation_scale": 1.12,
+            "value_shift": -0.015
+          }
+        ],
+        "split_tone": {
+          "shadow_color": [
+            0.37,
+            0.12,
+            0.72
+          ],
+          "highlight_color": [
+            1.0,
+            0.22,
+            0.68
+          ],
+          "shadow_strength": 0.16,
+          "highlight_strength": 0.12,
+          "balance": 0.51
+        },
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/electric_violet.jpg",
+        "decision_note": "通過 52x8 固定圖、strength、determinism、clipping 與家族 contact sheet 人工檢查。"
+      },
+      "known_limitations": [
+        "日景與自然膚色會帶明顯紫色。"
+      ],
+      "recipe_hash": "082d7b5066715e1cc7e4355a2449647082398178af8368f317e274b6ff68e870",
+      "asset_hash": "082d7b5066715e1cc7e4355a2449647082398178af8368f317e274b6ff68e870",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "cyber_cyan",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "賽博青光",
+        "en": "Cyber Cyan"
+      },
+      "aliases": [
+        "賽博青色",
+        "青光夜景",
+        "cyber cyan night"
+      ],
+      "family": "night_neon",
+      "tags": [
+        "night",
+        "cyber",
+        "cyan",
+        "futuristic"
+      ],
+      "description": "深藍陰影與高飽和青光，呈現冷冽未來城市感。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.7,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "brightness": -5.0,
+          "contrast": 1.17,
+          "saturation": 1.08,
+          "clarity": 0.17,
+          "dehaze": 0.08,
+          "vignette": 0.16,
+          "temperature": -14.0
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.01
+          ],
+          [
+            0.18,
+            0.12
+          ],
+          [
+            0.48,
+            0.47
+          ],
+          [
+            0.8,
+            0.87
+          ],
+          [
+            1.0,
+            1.0
+          ]
+        ],
+        "selective_hsl": [
+          {
+            "hue_center": 185,
+            "width": 65,
+            "hue_shift": -12,
+            "saturation_scale": 1.34,
+            "value_shift": 0.02
+          },
+          {
+            "hue_center": 35,
+            "width": 45,
+            "saturation_scale": 0.68,
+            "value_shift": -0.025
+          }
+        ],
+        "split_tone": {
+          "shadow_color": [
+            0.05,
+            0.42,
+            0.68
+          ],
+          "highlight_color": [
+            0.16,
+            1.0,
+            0.88
+          ],
+          "shadow_strength": 0.17,
+          "highlight_strength": 0.1,
+          "balance": 0.53
+        },
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/cyber_cyan.jpg",
+        "decision_note": "通過 52x8 固定圖、strength、determinism、clipping 與家族 contact sheet 人工檢查。"
+      },
+      "known_limitations": [
+        "暖色燈光與膚色會被刻意冷化。"
+      ],
+      "recipe_hash": "40278dc7fcce85adfd64e8648d09127c9afd5cb61d90a9b2894d9dfe18a55355",
+      "asset_hash": "40278dc7fcce85adfd64e8648d09127c9afd5cb61d90a9b2894d9dfe18a55355",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "tungsten_street",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "鎢絲街燈",
+        "en": "Tungsten Street"
+      },
+      "aliases": [
+        "暖黃街景",
+        "鎢絲夜色",
+        "tungsten street night"
+      ],
+      "family": "night_neon",
+      "tags": [
+        "night",
+        "street",
+        "tungsten",
+        "warm"
+      ],
+      "description": "保留暖黃街燈、加深藍黑陰影，呈現寫實夜間街拍感。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.76,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "brightness": -2.0,
+          "contrast": 1.12,
+          "saturation": 0.96,
+          "clarity": 0.14,
+          "dehaze": 0.08,
+          "vignette": 0.12,
+          "temperature": 9.0
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.01
+          ],
+          [
+            0.18,
+            0.12
+          ],
+          [
+            0.48,
+            0.47
+          ],
+          [
+            0.8,
+            0.87
+          ],
+          [
+            1.0,
+            1.0
+          ]
+        ],
+        "selective_hsl": [
+          {
+            "hue_center": 42,
+            "width": 52,
+            "hue_shift": -7,
+            "saturation_scale": 1.18,
+            "value_shift": 0.025
+          }
+        ],
+        "split_tone": {
+          "shadow_color": [
+            0.16,
+            0.27,
+            0.48
+          ],
+          "highlight_color": [
+            1.0,
+            0.54,
+            0.16
+          ],
+          "shadow_strength": 0.1,
+          "highlight_strength": 0.13,
+          "balance": 0.55
+        },
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/tungsten_street.jpg",
+        "decision_note": "通過 52x8 固定圖、strength、determinism、clipping 與家族 contact sheet 人工檢查。"
+      },
+      "known_limitations": [
+        "原圖已嚴重偏黃時應降低 strength。"
+      ],
+      "recipe_hash": "78a3798c25403786eebe030f643f646b72d82b5f58cc205650cf7854d1cc6115",
+      "asset_hash": "78a3798c25403786eebe030f643f646b72d82b5f58cc205650cf7854d1cc6115",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "rainy_noir_night",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "雨夜黑色電影",
+        "en": "Rainy Noir Night"
+      },
+      "aliases": [
+        "雨夜電影感",
+        "冷雨街頭",
+        "rainy noir night"
+      ],
+      "family": "night_neon",
+      "tags": [
+        "night",
+        "rainy",
+        "noir",
+        "blue"
+      ],
+      "description": "冷藍陰影、低飽和色彩與深邊角，適合濕潤雨夜街景。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.71,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "brightness": -7.0,
+          "contrast": 1.2,
+          "saturation": 0.62,
+          "clarity": 0.12,
+          "dehaze": 0.14,
+          "vignette": 0.22,
+          "temperature": -12.0
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.16,
+            0.07
+          ],
+          [
+            0.48,
+            0.43
+          ],
+          [
+            0.8,
+            0.89
+          ],
+          [
+            1.0,
+            1.0
+          ]
+        ],
+        "split_tone": {
+          "shadow_color": [
+            0.12,
+            0.28,
+            0.55
+          ],
+          "highlight_color": [
+            0.7,
+            0.82,
+            1.0
+          ],
+          "shadow_strength": 0.14,
+          "highlight_strength": 0.05,
+          "balance": 0.5
+        },
+        "grain": {
+          "amount": 0.014,
+          "seed": 6104
+        },
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/rainy_noir_night.jpg",
+        "decision_note": "通過 52x8 固定圖、strength、determinism、clipping 與家族 contact sheet 人工檢查。"
+      },
+      "known_limitations": [
+        "極低光照片可能出現大片純黑。"
+      ],
+      "recipe_hash": "ae6268bae38a897a4050f5766cd24b9a8b373eed9d7aa1382f9cafbe39f93d44",
+      "asset_hash": "ae6268bae38a897a4050f5766cd24b9a8b373eed9d7aa1382f9cafbe39f93d44",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "aurora_night",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "極光夜色",
+        "en": "Aurora Night"
+      },
+      "aliases": [
+        "極光色調",
+        "藍綠夜空",
+        "aurora night look"
+      ],
+      "family": "night_neon",
+      "tags": [
+        "night",
+        "aurora",
+        "green",
+        "blue"
+      ],
+      "description": "藍綠暗部與青色高光營造極光般的自然夜色。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.68,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "brightness": -3.0,
+          "contrast": 1.08,
+          "saturation": 1.06,
+          "clarity": 0.12,
+          "dehaze": 0.1,
+          "vignette": 0.11,
+          "temperature": -8.0
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.01
+          ],
+          [
+            0.18,
+            0.12
+          ],
+          [
+            0.48,
+            0.47
+          ],
+          [
+            0.8,
+            0.87
+          ],
+          [
+            1.0,
+            1.0
+          ]
+        ],
+        "selective_hsl": [
+          {
+            "hue_center": 130,
+            "width": 58,
+            "hue_shift": 14,
+            "saturation_scale": 1.22,
+            "value_shift": 0.02
+          },
+          {
+            "hue_center": 210,
+            "width": 60,
+            "hue_shift": -10,
+            "saturation_scale": 1.16,
+            "value_shift": -0.01
+          }
+        ],
+        "split_tone": {
+          "shadow_color": [
+            0.08,
+            0.35,
+            0.5
+          ],
+          "highlight_color": [
+            0.3,
+            1.0,
+            0.68
+          ],
+          "shadow_strength": 0.13,
+          "highlight_strength": 0.1,
+          "balance": 0.54
+        },
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/aurora_night.jpg",
+        "decision_note": "通過 52x8 固定圖、strength、determinism、clipping 與家族 contact sheet 人工檢查。"
+      },
+      "known_limitations": [
+        "人物為主的夜景會帶藍綠色偏。"
+      ],
+      "recipe_hash": "b7b1b2e279bfe468e7befcd50665ab15b4487b54bd9f9c64ae10a3999cbce04f",
+      "asset_hash": "b7b1b2e279bfe468e7befcd50665ab15b4487b54bd9f9c64ae10a3999cbce04f",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "lavender_haze",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "薰衣草薄霧",
+        "en": "Lavender Haze"
+      },
+      "aliases": [
+        "薰衣草霧感",
+        "紫色粉彩",
+        "lavender haze"
+      ],
+      "family": "pastel_creative",
+      "tags": [
+        "pastel",
+        "lavender",
+        "haze",
+        "dreamy"
+      ],
+      "description": "淡紫暗部、柔亮高光與低對比，形成薰衣草薄霧感。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.7,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "brightness": 7.0,
+          "contrast": 0.88,
+          "saturation": 0.82,
+          "sharpen": 0.03,
+          "temperature": -3.0
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.06
+          ],
+          [
+            0.22,
+            0.26
+          ],
+          [
+            0.5,
+            0.55
+          ],
+          [
+            0.8,
+            0.84
+          ],
+          [
+            1.0,
+            0.97
+          ]
+        ],
+        "fade": 0.1,
+        "split_tone": {
+          "shadow_color": [
+            0.58,
+            0.43,
+            0.82
+          ],
+          "highlight_color": [
+            0.92,
+            0.72,
+            1.0
+          ],
+          "shadow_strength": 0.1,
+          "highlight_strength": 0.075,
+          "balance": 0.55
+        },
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/lavender_haze.jpg",
+        "decision_note": "通過 52x8 固定圖、strength、determinism、clipping 與家族 contact sheet 人工檢查。"
+      },
+      "known_limitations": [
+        "需要中性色彩或商品準確色時不適合。"
+      ],
+      "recipe_hash": "ee646dca89074b6d256494d2e01982b065cd02ad8d20180278b17b0c2078d2da",
+      "asset_hash": "ee646dca89074b6d256494d2e01982b065cd02ad8d20180278b17b0c2078d2da",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "peach_cream",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "蜜桃奶霜",
+        "en": "Peach Cream"
+      },
+      "aliases": [
+        "蜜桃粉彩",
+        "奶油蜜桃",
+        "peach cream look"
+      ],
+      "family": "pastel_creative",
+      "tags": [
+        "pastel",
+        "peach",
+        "cream",
+        "warm"
+      ],
+      "description": "奶油高光與蜜桃粉暖色，呈現明亮柔甜的創意外觀。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.68,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "brightness": 9.0,
+          "contrast": 0.86,
+          "saturation": 0.86,
+          "sharpen": 0.03,
+          "temperature": 7.0
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.075
+          ],
+          [
+            0.22,
+            0.3
+          ],
+          [
+            0.52,
+            0.58
+          ],
+          [
+            0.82,
+            0.86
+          ],
+          [
+            1.0,
+            0.96
+          ]
+        ],
+        "fade": 0.09,
+        "split_tone": {
+          "shadow_color": [
+            0.68,
+            0.52,
+            0.58
+          ],
+          "highlight_color": [
+            1.0,
+            0.63,
+            0.48
+          ],
+          "shadow_strength": 0.045,
+          "highlight_strength": 0.12,
+          "balance": 0.59
+        },
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/peach_cream.jpg",
+        "decision_note": "通過 52x8 固定圖、strength、determinism、clipping 與家族 contact sheet 人工檢查。"
+      },
+      "known_limitations": [
+        "白色背景會呈現奶油暖色。"
+      ],
+      "recipe_hash": "56a497a50cd3fe63f59ed43801ecfe511b17326e5772b0538dfd0a71ee21ea3f",
+      "asset_hash": "56a497a50cd3fe63f59ed43801ecfe511b17326e5772b0538dfd0a71ee21ea3f",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "mint_breeze",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "薄荷微風",
+        "en": "Mint Breeze"
+      },
+      "aliases": [
+        "薄荷清新",
+        "青綠粉彩",
+        "mint breeze look"
+      ],
+      "family": "pastel_creative",
+      "tags": [
+        "pastel",
+        "mint",
+        "fresh",
+        "airy"
+      ],
+      "description": "薄荷青暗部與明亮中間調，形成清涼柔和的粉彩效果。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.68,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "brightness": 8.0,
+          "contrast": 0.89,
+          "saturation": 0.84,
+          "sharpen": 0.03,
+          "temperature": -6.0
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.06
+          ],
+          [
+            0.22,
+            0.26
+          ],
+          [
+            0.5,
+            0.55
+          ],
+          [
+            0.8,
+            0.84
+          ],
+          [
+            1.0,
+            0.97
+          ]
+        ],
+        "fade": 0.085,
+        "split_tone": {
+          "shadow_color": [
+            0.34,
+            0.74,
+            0.64
+          ],
+          "highlight_color": [
+            0.78,
+            1.0,
+            0.91
+          ],
+          "shadow_strength": 0.1,
+          "highlight_strength": 0.06,
+          "balance": 0.53
+        },
+        "selective_hsl": [
+          {
+            "hue_center": 120,
+            "width": 55,
+            "hue_shift": 16,
+            "saturation_scale": 0.88,
+            "value_shift": 0.035
+          }
+        ],
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/mint_breeze.jpg",
+        "decision_note": "通過 52x8 固定圖、strength、determinism、clipping 與家族 contact sheet 人工檢查。"
+      },
+      "known_limitations": [
+        "膚色可能帶輕微青冷感。"
+      ],
+      "recipe_hash": "e3ea9b052ae1a340bf4db03aa2211fb322ddf10613ef799a1516f02a0324ce38",
+      "asset_hash": "e3ea9b052ae1a340bf4db03aa2211fb322ddf10613ef799a1516f02a0324ce38",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "candy_pop",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "糖果跳色",
+        "en": "Candy Pop"
+      },
+      "aliases": [
+        "糖果色",
+        "跳色粉彩",
+        "candy pop style"
+      ],
+      "family": "pastel_creative",
+      "tags": [
+        "pastel",
+        "candy",
+        "colorful",
+        "playful"
+      ],
+      "description": "明亮曝光、柔和對比與選擇性色彩提升，呈現活潑糖果感。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.64,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "brightness": 7.0,
+          "contrast": 0.94,
+          "saturation": 1.08,
+          "sharpen": 0.03,
+          "temperature": 1.0
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.06
+          ],
+          [
+            0.22,
+            0.26
+          ],
+          [
+            0.5,
+            0.55
+          ],
+          [
+            0.8,
+            0.84
+          ],
+          [
+            1.0,
+            0.97
+          ]
+        ],
+        "fade": 0.04,
+        "selective_hsl": [
+          {
+            "hue_center": 330,
+            "width": 42,
+            "hue_shift": 4,
+            "saturation_scale": 1.2,
+            "value_shift": 0.025
+          },
+          {
+            "hue_center": 190,
+            "width": 48,
+            "hue_shift": -7,
+            "saturation_scale": 1.18,
+            "value_shift": 0.025
+          },
+          {
+            "hue_center": 75,
+            "width": 42,
+            "hue_shift": -5,
+            "saturation_scale": 1.15,
+            "value_shift": 0.02
+          }
+        ],
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/candy_pop.jpg",
+        "decision_note": "通過 52x8 固定圖、strength、determinism、clipping 與家族 contact sheet 人工檢查。"
+      },
+      "known_limitations": [
+        "高飽和原圖可能過於鮮豔。"
+      ],
+      "recipe_hash": "c4ff81d64563adeaffd4382ab5b93a5d66f7ac8320b6b9df8e72441b7d5374ff",
+      "asset_hash": "c4ff81d64563adeaffd4382ab5b93a5d66f7ac8320b6b9df8e72441b7d5374ff",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    },
+    {
+      "style_id": "watercolor_fade",
+      "version": "1.0.0",
+      "display_name": {
+        "zh": "水彩褪色",
+        "en": "Watercolor Fade"
+      },
+      "aliases": [
+        "水彩霧感",
+        "褪色水彩",
+        "watercolor fade"
+      ],
+      "family": "pastel_creative",
+      "tags": [
+        "pastel",
+        "watercolor",
+        "faded",
+        "artistic"
+      ],
+      "description": "大幅柔化對比、淡化色彩並抬升黑位，形成水彩紙般外觀。",
+      "strength": {
+        "minimum": 0.0,
+        "default": 0.66,
+        "maximum": 1.0
+      },
+      "renderer": {
+        "kind": "recipe",
+        "base_parameters": {
+          "brightness": 6.0,
+          "contrast": 0.78,
+          "saturation": 0.62,
+          "sharpen": 0.0,
+          "clarity": 0.0
+        },
+        "tone_curve": [
+          [
+            0.0,
+            0.14
+          ],
+          [
+            0.22,
+            0.33
+          ],
+          [
+            0.52,
+            0.58
+          ],
+          [
+            0.82,
+            0.79
+          ],
+          [
+            1.0,
+            0.9
+          ]
+        ],
+        "fade": 0.19,
+        "split_tone": {
+          "shadow_color": [
+            0.52,
+            0.62,
+            0.72
+          ],
+          "highlight_color": [
+            1.0,
+            0.82,
+            0.72
+          ],
+          "shadow_strength": 0.045,
+          "highlight_strength": 0.055,
+          "balance": 0.55
+        },
+        "version": "opencv_style_renderer_v1",
+        "working_color_space": "srgb_rec709"
+      },
+      "review": {
+        "status": "approved",
+        "reviewed_at": "2026-07-28",
+        "reviewer": "Codex visual contact-sheet review",
+        "preview_path": "/style-previews/watercolor_fade.jpg",
+        "decision_note": "通過 52x8 固定圖、strength、determinism、clipping 與家族 contact sheet 人工檢查。"
+      },
+      "known_limitations": [
+        "細節、文字與產品照片會刻意失去銳利度與準確色。"
+      ],
+      "recipe_hash": "8b31b1e18d09567c83a4fc09ebe444cd2753a7008c06b15f0d63648a6f86e1f4",
+      "asset_hash": "8b31b1e18d09567c83a4fc09ebe444cd2753a7008c06b15f0d63648a6f86e1f4",
+      "source": {
+        "source_url": "project://AI_photo_editor/style_catalog/v1",
+        "author": "AI Photo Editor project team",
+        "license": "Project-authored asset",
+        "attribution": "Created for the AI Photo Editor project",
+        "redistribution_allowed": true,
+        "source_type": "project_authored",
+        "imported_at": "2026-07-28"
+      }
+    }
+  ]
+}

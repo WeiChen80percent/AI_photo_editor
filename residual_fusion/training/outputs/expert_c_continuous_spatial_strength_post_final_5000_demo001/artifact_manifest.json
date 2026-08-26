@@ -1,0 +1,31 @@
+{
+  "schema_version": "expert_c_continuous_spatial_strength_post_final_5000_ensemble_v1",
+  "created_at": "2026-08-17T15:42:19.649505+00:00",
+  "architecture": "SpatialValueNet",
+  "ensemble": "mean of three sigmoid sky/person/rest strength predictors",
+  "deployment_lambda": 0.800000011920929,
+  "blend_rule": "(1-lambda) * full_strength + lambda * predicted_strength",
+  "hard_noop_rule": "V3.6 no-op decisions remain untouched",
+  "input_channels": [
+    "input_rgb",
+    "v3_1_delta_rgb",
+    "sky_person_rest_weights"
+  ],
+  "checkpoints": [
+    {
+      "path": "training/outputs/expert_c_continuous_spatial_strength_post_final_5000_demo001/continuous_strength_seed_131.pt",
+      "sha256": "1097C2891C8F4768ECD539678EA78DAB26A39BF6C37A01A428F9E896B2B26C1D",
+      "seed": 131
+    },
+    {
+      "path": "training/outputs/expert_c_continuous_spatial_strength_post_final_5000_demo001/continuous_strength_seed_149.pt",
+      "sha256": "EF976AB1894AD35D5E5E74B5158DD7F25DBABBBEA4F40BADF7346CF664D2BD1E",
+      "seed": 149
+    },
+    {
+      "path": "training/outputs/expert_c_continuous_spatial_strength_post_final_5000_demo001/continuous_strength_seed_167.pt",
+      "sha256": "ADFCC04B319F2906B836342388EBEF27D6D06015F9E8EEA9D2D34805C904F6A2",
+      "seed": 167
+    }
+  ]
+}

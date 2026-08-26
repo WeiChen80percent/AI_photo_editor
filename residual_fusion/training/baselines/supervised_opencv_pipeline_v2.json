@@ -1,0 +1,101 @@
+{
+  "schema_version": "supervised_opencv_pipeline_v2",
+  "baseline_name": "supervised_opencv_pipeline_v2",
+  "created_at": "2026-07-21",
+  "status": "development_validation_passed_blind_tests_pending",
+  "flow": [
+    "user_prompt",
+    "qwen3_1_7b_bf16_lora_prompt_control",
+    "opencv_stats_v2",
+    "numpy_selective_hybrid_regressor",
+    "opencv_parameterized_edit"
+  ],
+  "prompt_control": {
+    "registry": "training/baselines/prompt_control_bf16_lora_v1.json",
+    "registry_sha256": "4D7E5CDAE831130F5CC1F7AFA0A08D9D4DEDA4547F1298BEB4616C23674E18A6",
+    "model": "ai-photo-prompt-control:exp007-v1",
+    "ollama_model_id": "b5cb6df19147",
+    "runtime_guard_default": false,
+    "validation_evaluated": true,
+    "validation_status": "passed",
+    "validation_intent_accuracy": 1.0,
+    "validation_full_exact_accuracy": 0.95,
+    "fresh_blind_test_evaluated": false
+  },
+  "numeric_model": {
+    "registry": "training/baselines/selective_hybrid_numpy_v1.json",
+    "registry_sha256": "C2E26A05603423880A832C01DF63776F283AA04C554F3657BAF97E2FF4D5A480",
+    "shared_artifact": {
+      "path": "training/outputs/selective_hybrid_numpy_v1/shared_v2_state_intent.npz",
+      "sha256": "36408489F685EBAB77B8C990A159360E3221A1C03475373C96C4A5EDD3F67D8B"
+    },
+    "white_balance_artifact": {
+      "path": "training/outputs/selective_hybrid_numpy_v1/white_balance_expert.npz",
+      "sha256": "D0B68A344A69608403BD93B2DD706C1C828EF3BEBE337FABDF2228D5DC938330"
+    },
+    "validation_parity_within_1e_4": "80/80",
+    "test_evaluated": false
+  },
+  "backend": {
+    "activation_flag": "AI_PHOTO_USE_SUPERVISED_PIPELINE=1",
+    "llm_flag": "AI_PHOTO_USE_LLM=1",
+    "model_variable": "AI_PHOTO_PROMPT_MODEL=ai-photo-prompt-control:exp007-v1",
+    "guard_variable": "AI_PHOTO_PROMPT_USE_GUARD=0",
+    "prompt_contract": {
+      "path": "backend/app/services/prompt_control.py",
+      "sha256": "F03339463D2C9438D0DF74C34F5533904657153B7B4FF1156594D5A896000399"
+    },
+    "prompt_runtime": {
+      "path": "backend/app/services/prompt_control_runtime.py",
+      "sha256": "9F15611D8EEA712927F927EFC208775CE8E7AD0C86B65D79B66A9137F4F22D9C"
+    },
+    "pipeline_service": {
+      "path": "backend/app/services/supervised_edit_pipeline.py",
+      "sha256": "E87BB20DD443782EB92B11BB96F816AC2B715EB379FDA9A3BBB443E25EEA2086"
+    },
+    "numpy_predictor": {
+      "path": "backend/app/services/selective_hybrid_predictor.py",
+      "sha256": "36BBB23078559AE321246660C1AC916B4D72715D2EFC3A4545B4E6DDA9F642E8"
+    },
+    "edit_route": {
+      "path": "backend/app/routes/edit.py",
+      "sha256": "1D051B7BBC8287E36F648F7FC849FF408D956EA1C935754BAAE587B0F2478978"
+    },
+    "history": {
+      "path": "backend/app/services/edit_history.py",
+      "sha256": "15E9E02529D30E60508AA8585AAAC1ACF5F0EA0B04EEF40D8BD7AE9E24A546BE"
+    },
+    "launcher": {
+      "path": "backend/start_backend_supervised.ps1",
+      "sha256": "36CEF2E835B04BFB4E5964B73CEE3EF1210274A8C1199BA552BD4FE06D9644C2"
+    },
+    "reference_mode_changed": false,
+    "legacy_prompt_mode_available_when_flag_off": true
+  },
+  "verification": {
+    "backend_unit_tests": "15 passed",
+    "dataset_integrity_tests": "11 passed",
+    "python_compile": "passed",
+    "launcher_check_only": "PASS",
+    "resolver_smoke": {
+      "prompt_class": "strong white-balance correction with skin-tone preservation",
+      "intent": "fix_white_balance",
+      "strength": "strong",
+      "constraints": [
+        "preserve_skin_tones"
+      ],
+      "parser_source": "ollama_prompt_control_raw",
+      "model": "ai-photo-prompt-control:exp007-v1",
+      "runtime_guard_enabled": false,
+      "fallback_reason": null
+    }
+  },
+  "control_effects": {
+    "intent": "active",
+    "strength": "logged_only",
+    "constraints": "logged_only"
+  },
+  "prompt_blind_test_evaluated": false,
+  "fivek_image_test_evaluated": false,
+  "warning": "The deployable development candidate passed adapter, merge, and Ollama validation. A fresh prompt blind test and the sealed FiveK image test are still required before final generalization claims."
+}
