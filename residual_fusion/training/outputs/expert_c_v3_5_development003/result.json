@@ -1,0 +1,77 @@
+{
+  "schema_version": "expert_c_v3_5_development_result_v1",
+  "created_at": "2026-08-13T15:28:46.393777+00:00",
+  "status": "PASS",
+  "data": {
+    "development_count": 200,
+    "development_content_accessed": true,
+    "development_evaluation_count_for_v3_5": 1,
+    "development_previously_opened_for_v3_1": true,
+    "final_count_reserved": 200,
+    "final_content_accessed": false
+  },
+  "candidate": {
+    "name": "expert_c_v3_5_resolution_aligned_lcb_selector_plus_v3_1",
+    "selector_sha256": "5D672E6F4B6CF0A141B6A97F46926C24119CB72DFAB54EDA91AC3D0564C17307",
+    "v3_1_checkpoint_sha256": "3E893D2A1FDB0F04F32259D20873F0A1E2F4C1FFE340435E8ABB71756259E4AB",
+    "parameters_and_thresholds_frozen": true
+  },
+  "metrics": {
+    "always_v3_1": {
+      "average_gain_over_input": 0.029814,
+      "median_gain_over_input": 0.041166,
+      "strict_win_rate_over_input": 0.745,
+      "worst_decile_gain_over_input": -0.088338,
+      "catastrophic_rate_below_minus_0_01": 0.21,
+      "harm_rate_below_zero": 0.255
+    },
+    "v3_5_selector": {
+      "average_gain_over_input": 0.032214,
+      "median_gain_over_input": 0.039048,
+      "strict_win_rate_over_input": 0.705,
+      "worst_decile_gain_over_input": -0.063696,
+      "catastrophic_rate_below_minus_0_01": 0.17,
+      "harm_rate_below_zero": 0.21
+    },
+    "edit_rate": 0.915,
+    "mean_gain_delta_vs_v3_1": 0.0024,
+    "worst_decile_improvement_vs_v3_1": 0.024642,
+    "catastrophic_rate_reduction_vs_v3_1": 0.04
+  },
+  "runtime": {
+    "selector_feature_and_decision_median_ms": 35.45,
+    "v3_1_render_median_ms": 46.527
+  },
+  "gates": {
+    "thresholds": {
+      "maximum_mean_regression_vs_v3_1": 0.001,
+      "minimum_worst_decile_improvement_vs_v3_1": 0.001,
+      "catastrophic_rate_must_not_increase": true,
+      "minimum_edit_rate": 0.5,
+      "maximum_edit_rate": 0.99,
+      "coverage_must_be_exact": true
+    },
+    "checks": {
+      "mean_preserved": true,
+      "worst_decile_improved": true,
+      "catastrophic_rate_not_increased": true,
+      "nontrivial_action_policy": true,
+      "coverage_exact": true
+    },
+    "all_passed": true
+  },
+  "artifacts": {
+    "rows": {
+      "path": "C:\\Users\\user\\Desktop\\AI_photo_editor\\training\\outputs\\expert_c_v3_5_development003\\development_rows.jsonl",
+      "sha256": "6820FFFFE2FAE3792FDC1F90CDD878AB3B2EE279A2FBDC2DB879EED3C6D535BD"
+    },
+    "freeze": {
+      "path": "C:\\Users\\user\\Desktop\\AI_photo_editor\\training\\v3\\pre_evaluation_freeze_v3_5_development_retry2_v1.json",
+      "sha256": "56B6C8941F416E09C3A85BE0DD733E06ACC0080C7C2782D069A676338B7B0EA6"
+    }
+  },
+  "promoted": false,
+  "final_opened": false,
+  "elapsed_seconds": 23.042,
+  "interpretation_policy": "This is one frozen V3.5 upgrade evaluation on the development split already used by V3.1. It is not final-test evidence and may not be rerun with adjusted thresholds under this ID."
+}

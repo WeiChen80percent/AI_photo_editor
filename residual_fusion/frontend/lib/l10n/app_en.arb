@@ -1,0 +1,379 @@
+{
+  "@@locale": "en",
+  "appTitle": "AI Photo Editor",
+  "appCompactTitle": "AI Editor",
+  "languageTraditionalChinese": "Traditional Chinese",
+  "languageEnglish": "English",
+  "switchToTraditionalChinese": "Switch interface to Traditional Chinese",
+  "switchToEnglish": "Switch interface to English",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+  "switchToLightTheme": "Switch to light mode",
+  "switchToDarkTheme": "Switch to dark mode",
+  "clearCurrentWork": "Clear current work",
+  "chooseOriginal": "Choose original",
+  "changeOriginal": "Change original",
+  "toolPrompt": "Prompt",
+  "toolStyles": "Styles",
+  "toolReference": "Reference",
+  "toolManual": "Adjust",
+  "toolHistory": "History",
+  "labelOriginal": "Original",
+  "labelCompare": "Compare",
+  "labelResult": "Result",
+  "labelPreview": "Preview",
+  "labelBefore": "Before",
+  "labelAfter": "After",
+  "comparisonBaseline": "Compare with",
+  "comparisonBaselineOriginal": "Original",
+  "comparisonBaselineParent": "Previous edit",
+  "comparisonParentUnavailable": "This version has no available previous edit. Comparing with the original instead.",
+  "comparisonDragHandle": "Before and after split",
+  "comparisonDragHandleValue": "Before and after split at {percent}%",
+  "@comparisonDragHandleValue": {
+    "placeholders": {
+      "percent": {
+        "type": "int",
+        "example": "50"
+      }
+    }
+  },
+  "comparisonMoveLeft": "Show more of the result",
+  "comparisonMoveRight": "Show more of the comparison image",
+  "resetZoom": "Reset view",
+  "holdToSeeOriginal": "Press and hold the photo to see the original",
+  "dismissHint": "Dismiss hint",
+  "selectPhotoToStart": "Choose a photo to start",
+  "photoWorkspaceDescription": "Your photo stays fully visible, and edited results and history remain available.",
+  "photoWorkspaceCompactDescription": "Your photo, results, and history remain available.",
+  "selectOriginal": "Choose original photo",
+  "resultAppearsHere": "Your result will appear here after an edit",
+  "noImage": "No image",
+  "processing": "Processing…",
+  "imageLoadFailed": "Could not load image",
+  "discardDraftTitle": "Discard unapplied adjustments?",
+  "discardDraftForHistory": "Switching history versions will discard the current manual adjustment draft.",
+  "discardDraftForOriginal": "Returning to the original to create a new branch will discard the current manual adjustment draft.",
+  "actionBack": "Back",
+  "actionDiscardAndSwitch": "Discard and switch",
+  "replaceOriginalTitle": "Change original photo?",
+  "replaceOriginalMessage": "Changing it clears the current session and any unapplied manual draft.",
+  "actionCancel": "Cancel",
+  "actionReplaceImage": "Change photo",
+  "imagePickFailed": "Could not choose image: {error}",
+  "@imagePickFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "clearWorkTitle": "Clear current work?",
+  "clearWorkMessage": "The screen returns to its initial state. History already saved by the backend is not deleted.",
+  "actionClearScreen": "Clear screen",
+  "promptEditTitle": "Prompt edit",
+  "promptBranchFromOriginal": "Create a new history branch from the original",
+  "promptFirstVersionFromOriginal": "Create the first version from the original",
+  "promptContinueSelected": "Continue editing from the selected version",
+  "promptHint": "For example: brighten the person, darken the sky, and reduce saturation",
+  "promptModeNotice": "Prompt and reference image are separate modes. This panel only sends text.",
+  "applyPrompt": "Apply prompt",
+  "styleCatalogTitle": "Style catalog",
+  "styleCatalogUnavailable": "The style catalog is unavailable. Check that the backend is running.",
+  "styleCatalogSubtitle": "{count} approved styles · v{version}",
+  "@styleCatalogSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "50"
+      },
+      "version": {
+        "type": "String",
+        "example": "1.0.0"
+      }
+    }
+  },
+  "styleCategoryPrevious": "See previous style categories",
+  "styleCategoryNext": "See more style categories",
+  "styleCategoryAll": "All",
+  "styleStrength": "Strength",
+  "applyStyle": "Apply style",
+  "referenceEditTitle": "Reference edit",
+  "referenceFromOriginal": "Adjust the original toward the reference image colors",
+  "referenceFromCurrent": "Apply the reference direction to the current version",
+  "selectReference": "Choose reference",
+  "changeReference": "Change reference",
+  "removeReference": "Remove reference",
+  "applyReference": "Apply reference",
+  "manualEditTitle": "Manual adjustments",
+  "manualSourceVersion": "Source · {target} · {mode}",
+  "@manualSourceVersion": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      },
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "advancedAdjustments": "Advanced adjustments",
+  "historyTitle": "History",
+  "historyVersionCount": "{count} versions",
+  "@historyVersionCount": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "5"
+      }
+    }
+  },
+  "refreshHistory": "Sync history",
+  "selectedOriginalNewBranch": "Original selected · next edit creates a new branch",
+  "createBranchFromOriginal": "Create a new branch from the original",
+  "emptyHistory": "Versions appear here after your first edit.",
+  "currentPreview": "Current preview",
+  "currentAdjustments": "Current adjustments",
+  "styleEffectiveParameters": "Equivalent parameters at {strength}% strength. The style also uses curves, split toning, and other internal recipes.",
+  "@styleEffectiveParameters": {
+    "placeholders": {
+      "strength": {
+        "type": "int",
+        "example": "80"
+      }
+    }
+  },
+  "noManualParameters": "This version has no manual parameters to display.",
+  "styleUnderstanding": "Interpretation: applied {name} at {strength}% strength.",
+  "@styleUnderstanding": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "strength": {
+        "type": "int",
+        "example": "80"
+      }
+    }
+  },
+  "adjustmentCount": "{count} adjustments",
+  "@adjustmentCount": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "adaptiveIntervalReset": "Range reset",
+  "adaptiveConverged": "Converged",
+  "adaptiveContinue": "Continuing fine-tune",
+  "adaptiveFineTune": "Adaptive fine-tune",
+  "relativeAdjustment": "Relative change",
+  "candidateValue": "Candidate value",
+  "currentBounds": "Current bounds",
+  "stepSize": "Step",
+  "stepSizeWithTransform": "Step ({transform})",
+  "@stepSizeWithTransform": {
+    "placeholders": {
+      "transform": {
+        "type": "String"
+      }
+    }
+  },
+  "adaptiveReasonInitial": "Create the initial step",
+  "adaptiveReasonReverse": "Move back from the current effect",
+  "adaptiveReasonHandoff": "Continue with a related parameter",
+  "adaptiveReasonMidpoint": "Use the interval midpoint based on feedback",
+  "adaptiveReasonContinue": "Continue exploring in the same direction",
+  "adaptiveReasonNarrow": "Narrow the range after opposite feedback",
+  "adaptiveReasonReanchor": "Rebuild the adjustment baseline",
+  "adaptiveReasonAbsolute": "Use an explicit value and reset the range",
+  "adaptiveReasonRelative": "Apply a relative numeric change",
+  "adaptiveReasonResetAxis": "Reset one parameter",
+  "adaptiveReasonResetOriginal": "Return to the original",
+  "collapse": "Collapse",
+  "resetParameter": "Reset {label} to neutral",
+  "@resetParameter": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "equivalentParameters": "Equivalent {summary}",
+  "@equivalentParameters": {
+    "placeholders": {
+      "summary": {
+        "type": "String"
+      }
+    }
+  },
+  "historyVersionMode": "Version {version} · {mode}",
+  "@historyVersionMode": {
+    "placeholders": {
+      "version": {
+        "type": "int"
+      },
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "rootBranch": "Root branch",
+  "continuesParent": "Continues parent version",
+  "continuesVersion": "Continues version {version}",
+  "@continuesVersion": {
+    "placeholders": {
+      "version": {
+        "type": "int"
+      }
+    }
+  },
+  "referenceNotSelected": "No reference selected",
+  "actionReset": "Reset",
+  "actionApply": "Apply",
+  "actionApplying": "Applying…",
+  "notApplied": "Not applied",
+  "parameterExposure": "Exposure",
+  "parameterBrightness": "Brightness",
+  "parameterContrast": "Contrast",
+  "parameterHighlights": "Highlights",
+  "parameterShadows": "Shadows",
+  "parameterWhites": "Whites",
+  "parameterBlacks": "Blacks",
+  "parameterSaturation": "Saturation",
+  "parameterVibrance": "Vibrance",
+  "parameterTemperature": "Temperature",
+  "parameterWhiteBalanceTint": "White balance tint",
+  "parameterSharpen": "Sharpen",
+  "parameterClarity": "Clarity",
+  "parameterDehaze": "Dehaze",
+  "parameterVignette": "Vignette",
+  "regionAll": "Whole image",
+  "regionSky": "Sky",
+  "regionPerson": "Person",
+  "regionBackground": "Background",
+  "regionHighlights": "Bright areas",
+  "regionShadows": "Dark areas",
+  "regionCenter": "Center",
+  "regionEdges": "Edges",
+  "modePrompt": "Prompt",
+  "modeStyle": "Style",
+  "modeReference": "Reference",
+  "modeManual": "Manual",
+  "promptEditFallbackTitle": "Prompt edit",
+  "referenceEditDisplayTitle": "Reference edit",
+  "manualEditDisplayTitle": "Manual adjustments",
+  "parserLlm": "LLM interpretation",
+  "parserRules": "Rule-based interpretation",
+  "parserReference": "Reference mode",
+  "parserManual": "Manual parameters",
+  "styleFamilyNaturalClean": "Natural & clean",
+  "styleFamilyPortraitSkin": "Portrait skin",
+  "styleFamilyLandscapeTravel": "Landscape & travel",
+  "styleFamilyCinematic": "Cinematic",
+  "styleFamilyFilmRetro": "Film & retro",
+  "styleFamilyBlackWhite": "Black & white",
+  "styleFamilyNightNeon": "Night & neon",
+  "styleFamilyPastelCreative": "Pastel & creative",
+  "summaryOriginalNewBranch": "Original · next edit creates a new branch",
+  "summaryChoosePhoto": "Choose a photo, then start with a prompt or reference image",
+  "summaryPreviewPrefix": "Preview · ",
+  "manualUnavailableNeedPrompt": "Complete a prompt edit before opening manual adjustments.",
+  "manualUnavailableReference": "Reference results cannot be manually adjusted yet. Select a prompt or manual version first.",
+  "manualUnavailableEngine": "The first manual adjustment version only supports OpenCV results.",
+  "manualUnavailableGeneric": "This version does not support manual adjustments.",
+  "statusSelectedNewOriginal": "New original photo selected",
+  "statusReferenceReady": "Reference image ready",
+  "errorPromptRequired": "Enter an editing prompt.",
+  "errorReferenceRequired": "Choose a reference image first.",
+  "errorStyleCatalogLoad": "Could not load style catalog: {error}",
+  "@errorStyleCatalogLoad": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "errorOriginalRequired": "Choose an original photo first.",
+  "statusParsingPrompt": "Interpreting edit prompt…",
+  "statusApplyingReference": "Applying reference image…",
+  "statusEditComplete": "Edit complete",
+  "errorEditFailed": "Edit failed: {error}",
+  "@errorEditFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "statusHistorySynced": "History synced",
+  "statusSwitchedHistory": "Switched to history version",
+  "statusSwitchedOriginal": "Switched to original. A new history branch can now be created.",
+  "errorOpenManual": "Could not open manual adjustments: {error}",
+  "@errorOpenManual": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "statusResetSourceParameters": "Restored source version parameters",
+  "errorManualPreview": "Manual preview failed: {error}",
+  "@errorManualPreview": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "statusApplyingManual": "Applying manual adjustments…",
+  "statusManualCommitted": "Manual adjustments applied and added to history",
+  "errorManualCommit": "Could not apply manual adjustments: {error}",
+  "@errorManualCommit": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "errorStyleAmbiguous": "This description matches multiple styles. Choose a specific style from the catalog.",
+  "errorStyleCompound": "Apply a style first, then adjust brightness, color, or other parameters in a follow-up prompt.",
+  "errorStyleAsset": "Style asset or version validation failed. No substitute style was applied.",
+  "errorSemanticTargetNotFound": "The requested area was not found in this photo. Try another photo or edit the whole image.",
+  "errorAdaptiveClarification": "I am not sure which setting to fine-tune. Name a parameter or region.",
+  "errorAdaptiveConverged": "This adjustment is near the minimum step. Use manual parameters for a final fine-tune.",
+  "errorAdaptiveSatisfied": "The current result was kept. No duplicate history version was added.",
+  "errorManualSourceUnsupported": "Reference results cannot be manually adjusted yet. Select a prompt or manual version.",
+  "errorBackendUnavailable": "Could not connect to the editing backend. Check that it is running.",
+  "errorCheckPrompt": "Review the editing prompt and try again.",
+  "adaptiveIssuesContext": "{message} (involves: {contexts})",
+  "@adaptiveIssuesContext": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      },
+      "contexts": {
+        "type": "String"
+      }
+    }
+  },
+  "networkBackendError": "Could not connect to the editing backend: {error}",
+  "@networkBackendError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "backendHttpError": "Backend request failed (HTTP {statusCode})",
+  "@backendHttpError": {
+    "placeholders": {
+      "statusCode": {
+        "type": "int"
+      }
+    }
+  },
+  "backendInvalidResponse": "The backend returned an unrecognized data format."
+}

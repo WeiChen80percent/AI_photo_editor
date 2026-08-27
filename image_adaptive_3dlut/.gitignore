@@ -1,0 +1,33 @@
+# Python/runtime caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.venv/
+
+# Datasets, splits and generated data
+data/
+data_480p/
+manifests/
+
+# Model weights and training state (publish these on Hugging Face)
+trained_model/
+checkpoints/
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.onnx
+
+# Training, evaluation and inference artifacts
+runs/
+outputs/
+wandb/
+lightning_logs/
+
+# Local papers and archives
+docs/*.pdf
+*.zip
+*.tar
+*.tar.gz
+*.7z

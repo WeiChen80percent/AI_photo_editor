@@ -1,0 +1,86 @@
+{
+  "schema_version": "raw_expert_c_baseline_v1",
+  "baseline_name": "raw_expert_c_supervised_v1",
+  "created_at": "2026-07-26",
+  "status": "fresh_holdout_passed",
+  "purpose": "Fast global OpenCV editing toward MIT-Adobe FiveK Expert C",
+  "model": {
+    "type": "ridge_regression",
+    "selected_candidate": "state_ridge_alpha_100",
+    "input_contract": "opencv_stats_v2",
+    "feature_count": 32,
+    "uses_image_pixels_at_inference": true,
+    "uses_gt_at_inference": false,
+    "uses_prompt_at_inference": false,
+    "artifact": {
+      "path": "training/outputs/raw_expert_c_vision_v1/raw_expert_c_regressor.npz",
+      "sha256": "FA2FD0101D843B2BD3A7BE975B71F88C6C6473FD7D7A8295AE85B2E401250BB6",
+      "size_bytes": 5215
+    }
+  },
+  "parameters": [
+    "brightness",
+    "contrast",
+    "gamma",
+    "saturation",
+    "temperature",
+    "tint",
+    "sharpen",
+    "vignette"
+  ],
+  "strength_modes": {
+    "research": {
+      "strength": 1.0,
+      "selection": "maximum validation average score delta"
+    },
+    "conservative": {
+      "strength": 0.4,
+      "selection": "optional safety mode; 95% validation improvement rate"
+    }
+  },
+  "training_contract": {
+    "source_dataset": "MIT-Adobe FiveK",
+    "expert": "C",
+    "oracle_target_records": 160,
+    "validation_records": 20,
+    "original_pilot_test_records_not_used_for_training": 20,
+    "manifest": {
+      "path": "dataset_pilot/supervised/oracle_profile_with_raw_wb_v2.jsonl",
+      "sha256": "D11EB6C1F8ED1D05FEF018715FA13A6195DC29678CA83A7DBBEC1CADCCA4C81A"
+    }
+  },
+  "validation_metrics": {
+    "count": 20,
+    "score_improvement_rate": 0.8,
+    "avg_score_delta": 0.030463,
+    "avg_psnr_delta": 1.590182,
+    "avg_ssim_delta": 0.037162
+  },
+  "fresh_holdout_metrics": {
+    "count": 40,
+    "source_overlap_with_training": 0,
+    "score_improvement_rate": 0.725,
+    "avg_score_delta": 0.031888,
+    "avg_psnr_delta": 1.487233,
+    "avg_ssim_delta": 0.02848,
+    "old_shared_avg_score_delta": 0.020735,
+    "avg_score_delta_advantage_over_old": 0.011154,
+    "no_crop_count": 38,
+    "no_crop_avg_score_delta": 0.032238,
+    "report": {
+      "path": "training/outputs/raw_expert_c_fresh_holdout_v1/report.json",
+      "sha256": "4D213117F6CC7AAD8DB9F63F104AC0AAB0232AD55F9033A10F99DF56B39C8486"
+    }
+  },
+  "runtime": {
+    "entrypoint": "training/predict_raw_expert_c.py",
+    "server_required": false,
+    "flutter_required": false,
+    "ollama_required": false
+  },
+  "limitations": [
+    "Global OpenCV controls cannot reproduce every local Expert C edit.",
+    "The research mode still makes 27.5% of fresh holdout images worse by the composite metric.",
+    "Do not train on the opened original or fresh holdout records."
+  ]
+}

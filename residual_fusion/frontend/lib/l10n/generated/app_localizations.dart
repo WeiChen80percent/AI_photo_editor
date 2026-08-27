@@ -1,0 +1,1389 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/intl.dart' as intl;
+
+import 'app_localizations_en.dart';
+import 'app_localizations_zh.dart';
+
+// ignore_for_file: type=lint
+
+/// Callers can lookup localized strings with an instance of AppLocalizations
+/// returned by `AppLocalizations.of(context)`.
+///
+/// Applications need to include `AppLocalizations.delegate()` in their app's
+/// `localizationDelegates` list, and the locales they support in the app's
+/// `supportedLocales` list. For example:
+///
+/// ```dart
+/// import 'generated/app_localizations.dart';
+///
+/// return MaterialApp(
+///   localizationsDelegates: AppLocalizations.localizationsDelegates,
+///   supportedLocales: AppLocalizations.supportedLocales,
+///   home: MyApplicationHome(),
+/// );
+/// ```
+///
+/// ## Update pubspec.yaml
+///
+/// Please make sure to update your pubspec.yaml to include the following
+/// packages:
+///
+/// ```yaml
+/// dependencies:
+///   # Internationalization support.
+///   flutter_localizations:
+///     sdk: flutter
+///   intl: any # Use the pinned version from flutter_localizations
+///
+///   # Rest of dependencies
+/// ```
+///
+/// ## iOS Applications
+///
+/// iOS applications define key application metadata, including supported
+/// locales, in an Info.plist file that is built into the application bundle.
+/// To configure the locales supported by your app, you’ll need to edit this
+/// file.
+///
+/// First, open your project’s ios/Runner.xcworkspace Xcode workspace file.
+/// Then, in the Project Navigator, open the Info.plist file under the Runner
+/// project’s Runner folder.
+///
+/// Next, select the Information Property List item, select Add Item from the
+/// Editor menu, then select Localizations from the pop-up menu.
+///
+/// Select and expand the newly-created Localizations item then, for each
+/// locale your application supports, add a new item and select the locale
+/// you wish to add from the pop-up menu in the Value field. This list should
+/// be consistent with the languages listed in the AppLocalizations.supportedLocales
+/// property.
+abstract class AppLocalizations {
+  AppLocalizations(String locale)
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+
+  final String localeName;
+
+  static AppLocalizations of(BuildContext context) {
+    return Localizations.of<AppLocalizations>(context, AppLocalizations)!;
+  }
+
+  static const LocalizationsDelegate<AppLocalizations> delegate =
+      _AppLocalizationsDelegate();
+
+  /// A list of this localizations delegate along with the default localizations
+  /// delegates.
+  ///
+  /// Returns a list of localizations delegates containing this delegate along with
+  /// GlobalMaterialLocalizations.delegate, GlobalCupertinoLocalizations.delegate,
+  /// and GlobalWidgetsLocalizations.delegate.
+  ///
+  /// Additional delegates can be added by appending to this list in
+  /// MaterialApp. This list does not have to be used at all if a custom list
+  /// of delegates is preferred or required.
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
+      <LocalizationsDelegate<dynamic>>[
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
+
+  /// A list of this localizations delegate's supported locales.
+  static const List<Locale> supportedLocales = <Locale>[
+    Locale('en'),
+    Locale('zh'),
+    Locale('zh', 'TW'),
+  ];
+
+  /// No description provided for @appTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'AI Photo Editor'**
+  String get appTitle;
+
+  /// No description provided for @appCompactTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'AI Editor'**
+  String get appCompactTitle;
+
+  /// No description provided for @languageTraditionalChinese.
+  ///
+  /// In en, this message translates to:
+  /// **'Traditional Chinese'**
+  String get languageTraditionalChinese;
+
+  /// No description provided for @languageEnglish.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get languageEnglish;
+
+  /// No description provided for @switchToTraditionalChinese.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch interface to Traditional Chinese'**
+  String get switchToTraditionalChinese;
+
+  /// No description provided for @switchToEnglish.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch interface to English'**
+  String get switchToEnglish;
+
+  /// No description provided for @themeLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get themeLight;
+
+  /// No description provided for @themeDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get themeDark;
+
+  /// No description provided for @switchToLightTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to light mode'**
+  String get switchToLightTheme;
+
+  /// No description provided for @switchToDarkTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to dark mode'**
+  String get switchToDarkTheme;
+
+  /// No description provided for @clearCurrentWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear current work'**
+  String get clearCurrentWork;
+
+  /// No description provided for @chooseOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose original'**
+  String get chooseOriginal;
+
+  /// No description provided for @changeOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Change original'**
+  String get changeOriginal;
+
+  /// No description provided for @toolPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompt'**
+  String get toolPrompt;
+
+  /// No description provided for @toolStyles.
+  ///
+  /// In en, this message translates to:
+  /// **'Styles'**
+  String get toolStyles;
+
+  /// No description provided for @toolReference.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference'**
+  String get toolReference;
+
+  /// No description provided for @toolManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust'**
+  String get toolManual;
+
+  /// No description provided for @toolHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'History'**
+  String get toolHistory;
+
+  /// No description provided for @labelOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Original'**
+  String get labelOriginal;
+
+  /// No description provided for @labelCompare.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare'**
+  String get labelCompare;
+
+  /// No description provided for @labelResult.
+  ///
+  /// In en, this message translates to:
+  /// **'Result'**
+  String get labelResult;
+
+  /// No description provided for @labelPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get labelPreview;
+
+  /// No description provided for @labelBefore.
+  ///
+  /// In en, this message translates to:
+  /// **'Before'**
+  String get labelBefore;
+
+  /// No description provided for @labelAfter.
+  ///
+  /// In en, this message translates to:
+  /// **'After'**
+  String get labelAfter;
+
+  /// No description provided for @comparisonBaseline.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare with'**
+  String get comparisonBaseline;
+
+  /// No description provided for @comparisonBaselineOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Original'**
+  String get comparisonBaselineOriginal;
+
+  /// No description provided for @comparisonBaselineParent.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous edit'**
+  String get comparisonBaselineParent;
+
+  /// No description provided for @comparisonParentUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This version has no available previous edit. Comparing with the original instead.'**
+  String get comparisonParentUnavailable;
+
+  /// No description provided for @comparisonDragHandle.
+  ///
+  /// In en, this message translates to:
+  /// **'Before and after split'**
+  String get comparisonDragHandle;
+
+  /// No description provided for @comparisonDragHandleValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Before and after split at {percent}%'**
+  String comparisonDragHandleValue(int percent);
+
+  /// No description provided for @comparisonMoveLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Show more of the result'**
+  String get comparisonMoveLeft;
+
+  /// No description provided for @comparisonMoveRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Show more of the comparison image'**
+  String get comparisonMoveRight;
+
+  /// No description provided for @resetZoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset view'**
+  String get resetZoom;
+
+  /// No description provided for @holdToSeeOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Press and hold the photo to see the original'**
+  String get holdToSeeOriginal;
+
+  /// No description provided for @dismissHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss hint'**
+  String get dismissHint;
+
+  /// No description provided for @selectPhotoToStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a photo to start'**
+  String get selectPhotoToStart;
+
+  /// No description provided for @photoWorkspaceDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Your photo stays fully visible, and edited results and history remain available.'**
+  String get photoWorkspaceDescription;
+
+  /// No description provided for @photoWorkspaceCompactDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Your photo, results, and history remain available.'**
+  String get photoWorkspaceCompactDescription;
+
+  /// No description provided for @selectOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose original photo'**
+  String get selectOriginal;
+
+  /// No description provided for @resultAppearsHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Your result will appear here after an edit'**
+  String get resultAppearsHere;
+
+  /// No description provided for @noImage.
+  ///
+  /// In en, this message translates to:
+  /// **'No image'**
+  String get noImage;
+
+  /// No description provided for @processing.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing…'**
+  String get processing;
+
+  /// No description provided for @imageLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load image'**
+  String get imageLoadFailed;
+
+  /// No description provided for @discardDraftTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard unapplied adjustments?'**
+  String get discardDraftTitle;
+
+  /// No description provided for @discardDraftForHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Switching history versions will discard the current manual adjustment draft.'**
+  String get discardDraftForHistory;
+
+  /// No description provided for @discardDraftForOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Returning to the original to create a new branch will discard the current manual adjustment draft.'**
+  String get discardDraftForOriginal;
+
+  /// No description provided for @actionBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get actionBack;
+
+  /// No description provided for @actionDiscardAndSwitch.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard and switch'**
+  String get actionDiscardAndSwitch;
+
+  /// No description provided for @replaceOriginalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change original photo?'**
+  String get replaceOriginalTitle;
+
+  /// No description provided for @replaceOriginalMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Changing it clears the current session and any unapplied manual draft.'**
+  String get replaceOriginalMessage;
+
+  /// No description provided for @actionCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get actionCancel;
+
+  /// No description provided for @actionReplaceImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Change photo'**
+  String get actionReplaceImage;
+
+  /// No description provided for @imagePickFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not choose image: {error}'**
+  String imagePickFailed(String error);
+
+  /// No description provided for @clearWorkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear current work?'**
+  String get clearWorkTitle;
+
+  /// No description provided for @clearWorkMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The screen returns to its initial state. History already saved by the backend is not deleted.'**
+  String get clearWorkMessage;
+
+  /// No description provided for @actionClearScreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear screen'**
+  String get actionClearScreen;
+
+  /// No description provided for @promptEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompt edit'**
+  String get promptEditTitle;
+
+  /// No description provided for @promptBranchFromOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a new history branch from the original'**
+  String get promptBranchFromOriginal;
+
+  /// No description provided for @promptFirstVersionFromOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Create the first version from the original'**
+  String get promptFirstVersionFromOriginal;
+
+  /// No description provided for @promptContinueSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue editing from the selected version'**
+  String get promptContinueSelected;
+
+  /// No description provided for @promptHint.
+  ///
+  /// In en, this message translates to:
+  /// **'For example: brighten the person, darken the sky, and reduce saturation'**
+  String get promptHint;
+
+  /// No description provided for @promptModeNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompt and reference image are separate modes. This panel only sends text.'**
+  String get promptModeNotice;
+
+  /// No description provided for @applyPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply prompt'**
+  String get applyPrompt;
+
+  /// No description provided for @styleCatalogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Style catalog'**
+  String get styleCatalogTitle;
+
+  /// No description provided for @styleCatalogUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The style catalog is unavailable. Check that the backend is running.'**
+  String get styleCatalogUnavailable;
+
+  /// No description provided for @styleCatalogSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} approved styles · v{version}'**
+  String styleCatalogSubtitle(int count, String version);
+
+  /// No description provided for @styleCategoryPrevious.
+  ///
+  /// In en, this message translates to:
+  /// **'See previous style categories'**
+  String get styleCategoryPrevious;
+
+  /// No description provided for @styleCategoryNext.
+  ///
+  /// In en, this message translates to:
+  /// **'See more style categories'**
+  String get styleCategoryNext;
+
+  /// No description provided for @styleCategoryAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get styleCategoryAll;
+
+  /// No description provided for @styleStrength.
+  ///
+  /// In en, this message translates to:
+  /// **'Strength'**
+  String get styleStrength;
+
+  /// No description provided for @applyStyle.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply style'**
+  String get applyStyle;
+
+  /// No description provided for @referenceEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference edit'**
+  String get referenceEditTitle;
+
+  /// No description provided for @referenceFromOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust the original toward the reference image colors'**
+  String get referenceFromOriginal;
+
+  /// No description provided for @referenceFromCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply the reference direction to the current version'**
+  String get referenceFromCurrent;
+
+  /// No description provided for @selectReference.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose reference'**
+  String get selectReference;
+
+  /// No description provided for @changeReference.
+  ///
+  /// In en, this message translates to:
+  /// **'Change reference'**
+  String get changeReference;
+
+  /// No description provided for @removeReference.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove reference'**
+  String get removeReference;
+
+  /// No description provided for @applyReference.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply reference'**
+  String get applyReference;
+
+  /// No description provided for @manualEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual adjustments'**
+  String get manualEditTitle;
+
+  /// No description provided for @manualSourceVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Source · {target} · {mode}'**
+  String manualSourceVersion(String target, String mode);
+
+  /// No description provided for @advancedAdjustments.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced adjustments'**
+  String get advancedAdjustments;
+
+  /// No description provided for @historyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'History'**
+  String get historyTitle;
+
+  /// No description provided for @historyVersionCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} versions'**
+  String historyVersionCount(int count);
+
+  /// No description provided for @refreshHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync history'**
+  String get refreshHistory;
+
+  /// No description provided for @selectedOriginalNewBranch.
+  ///
+  /// In en, this message translates to:
+  /// **'Original selected · next edit creates a new branch'**
+  String get selectedOriginalNewBranch;
+
+  /// No description provided for @createBranchFromOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a new branch from the original'**
+  String get createBranchFromOriginal;
+
+  /// No description provided for @emptyHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Versions appear here after your first edit.'**
+  String get emptyHistory;
+
+  /// No description provided for @currentPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Current preview'**
+  String get currentPreview;
+
+  /// No description provided for @currentAdjustments.
+  ///
+  /// In en, this message translates to:
+  /// **'Current adjustments'**
+  String get currentAdjustments;
+
+  /// No description provided for @styleEffectiveParameters.
+  ///
+  /// In en, this message translates to:
+  /// **'Equivalent parameters at {strength}% strength. The style also uses curves, split toning, and other internal recipes.'**
+  String styleEffectiveParameters(int strength);
+
+  /// No description provided for @noManualParameters.
+  ///
+  /// In en, this message translates to:
+  /// **'This version has no manual parameters to display.'**
+  String get noManualParameters;
+
+  /// No description provided for @styleUnderstanding.
+  ///
+  /// In en, this message translates to:
+  /// **'Interpretation: applied {name} at {strength}% strength.'**
+  String styleUnderstanding(String name, int strength);
+
+  /// No description provided for @adjustmentCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} adjustments'**
+  String adjustmentCount(int count);
+
+  /// No description provided for @adaptiveIntervalReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Range reset'**
+  String get adaptiveIntervalReset;
+
+  /// No description provided for @adaptiveConverged.
+  ///
+  /// In en, this message translates to:
+  /// **'Converged'**
+  String get adaptiveConverged;
+
+  /// No description provided for @adaptiveContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continuing fine-tune'**
+  String get adaptiveContinue;
+
+  /// No description provided for @adaptiveFineTune.
+  ///
+  /// In en, this message translates to:
+  /// **'Adaptive fine-tune'**
+  String get adaptiveFineTune;
+
+  /// No description provided for @relativeAdjustment.
+  ///
+  /// In en, this message translates to:
+  /// **'Relative change'**
+  String get relativeAdjustment;
+
+  /// No description provided for @candidateValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Candidate value'**
+  String get candidateValue;
+
+  /// No description provided for @currentBounds.
+  ///
+  /// In en, this message translates to:
+  /// **'Current bounds'**
+  String get currentBounds;
+
+  /// No description provided for @stepSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Step'**
+  String get stepSize;
+
+  /// No description provided for @stepSizeWithTransform.
+  ///
+  /// In en, this message translates to:
+  /// **'Step ({transform})'**
+  String stepSizeWithTransform(String transform);
+
+  /// No description provided for @adaptiveReasonInitial.
+  ///
+  /// In en, this message translates to:
+  /// **'Create the initial step'**
+  String get adaptiveReasonInitial;
+
+  /// No description provided for @adaptiveReasonReverse.
+  ///
+  /// In en, this message translates to:
+  /// **'Move back from the current effect'**
+  String get adaptiveReasonReverse;
+
+  /// No description provided for @adaptiveReasonHandoff.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with a related parameter'**
+  String get adaptiveReasonHandoff;
+
+  /// No description provided for @adaptiveReasonMidpoint.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the interval midpoint based on feedback'**
+  String get adaptiveReasonMidpoint;
+
+  /// No description provided for @adaptiveReasonContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue exploring in the same direction'**
+  String get adaptiveReasonContinue;
+
+  /// No description provided for @adaptiveReasonNarrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Narrow the range after opposite feedback'**
+  String get adaptiveReasonNarrow;
+
+  /// No description provided for @adaptiveReasonReanchor.
+  ///
+  /// In en, this message translates to:
+  /// **'Rebuild the adjustment baseline'**
+  String get adaptiveReasonReanchor;
+
+  /// No description provided for @adaptiveReasonAbsolute.
+  ///
+  /// In en, this message translates to:
+  /// **'Use an explicit value and reset the range'**
+  String get adaptiveReasonAbsolute;
+
+  /// No description provided for @adaptiveReasonRelative.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply a relative numeric change'**
+  String get adaptiveReasonRelative;
+
+  /// No description provided for @adaptiveReasonResetAxis.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset one parameter'**
+  String get adaptiveReasonResetAxis;
+
+  /// No description provided for @adaptiveReasonResetOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Return to the original'**
+  String get adaptiveReasonResetOriginal;
+
+  /// No description provided for @collapse.
+  ///
+  /// In en, this message translates to:
+  /// **'Collapse'**
+  String get collapse;
+
+  /// No description provided for @resetParameter.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset {label} to neutral'**
+  String resetParameter(String label);
+
+  /// No description provided for @equivalentParameters.
+  ///
+  /// In en, this message translates to:
+  /// **'Equivalent {summary}'**
+  String equivalentParameters(String summary);
+
+  /// No description provided for @historyVersionMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Version {version} · {mode}'**
+  String historyVersionMode(int version, String mode);
+
+  /// No description provided for @rootBranch.
+  ///
+  /// In en, this message translates to:
+  /// **'Root branch'**
+  String get rootBranch;
+
+  /// No description provided for @continuesParent.
+  ///
+  /// In en, this message translates to:
+  /// **'Continues parent version'**
+  String get continuesParent;
+
+  /// No description provided for @continuesVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Continues version {version}'**
+  String continuesVersion(int version);
+
+  /// No description provided for @referenceNotSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'No reference selected'**
+  String get referenceNotSelected;
+
+  /// No description provided for @actionReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get actionReset;
+
+  /// No description provided for @actionApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get actionApply;
+
+  /// No description provided for @actionApplying.
+  ///
+  /// In en, this message translates to:
+  /// **'Applying…'**
+  String get actionApplying;
+
+  /// No description provided for @notApplied.
+  ///
+  /// In en, this message translates to:
+  /// **'Not applied'**
+  String get notApplied;
+
+  /// No description provided for @parameterExposure.
+  ///
+  /// In en, this message translates to:
+  /// **'Exposure'**
+  String get parameterExposure;
+
+  /// No description provided for @parameterBrightness.
+  ///
+  /// In en, this message translates to:
+  /// **'Brightness'**
+  String get parameterBrightness;
+
+  /// No description provided for @parameterContrast.
+  ///
+  /// In en, this message translates to:
+  /// **'Contrast'**
+  String get parameterContrast;
+
+  /// No description provided for @parameterHighlights.
+  ///
+  /// In en, this message translates to:
+  /// **'Highlights'**
+  String get parameterHighlights;
+
+  /// No description provided for @parameterShadows.
+  ///
+  /// In en, this message translates to:
+  /// **'Shadows'**
+  String get parameterShadows;
+
+  /// No description provided for @parameterWhites.
+  ///
+  /// In en, this message translates to:
+  /// **'Whites'**
+  String get parameterWhites;
+
+  /// No description provided for @parameterBlacks.
+  ///
+  /// In en, this message translates to:
+  /// **'Blacks'**
+  String get parameterBlacks;
+
+  /// No description provided for @parameterSaturation.
+  ///
+  /// In en, this message translates to:
+  /// **'Saturation'**
+  String get parameterSaturation;
+
+  /// No description provided for @parameterVibrance.
+  ///
+  /// In en, this message translates to:
+  /// **'Vibrance'**
+  String get parameterVibrance;
+
+  /// No description provided for @parameterTemperature.
+  ///
+  /// In en, this message translates to:
+  /// **'Temperature'**
+  String get parameterTemperature;
+
+  /// No description provided for @parameterWhiteBalanceTint.
+  ///
+  /// In en, this message translates to:
+  /// **'White balance tint'**
+  String get parameterWhiteBalanceTint;
+
+  /// No description provided for @parameterSharpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Sharpen'**
+  String get parameterSharpen;
+
+  /// No description provided for @parameterClarity.
+  ///
+  /// In en, this message translates to:
+  /// **'Clarity'**
+  String get parameterClarity;
+
+  /// No description provided for @parameterDehaze.
+  ///
+  /// In en, this message translates to:
+  /// **'Dehaze'**
+  String get parameterDehaze;
+
+  /// No description provided for @parameterVignette.
+  ///
+  /// In en, this message translates to:
+  /// **'Vignette'**
+  String get parameterVignette;
+
+  /// No description provided for @regionAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Whole image'**
+  String get regionAll;
+
+  /// No description provided for @regionSky.
+  ///
+  /// In en, this message translates to:
+  /// **'Sky'**
+  String get regionSky;
+
+  /// No description provided for @regionPerson.
+  ///
+  /// In en, this message translates to:
+  /// **'Person'**
+  String get regionPerson;
+
+  /// No description provided for @regionBackground.
+  ///
+  /// In en, this message translates to:
+  /// **'Background'**
+  String get regionBackground;
+
+  /// No description provided for @regionHighlights.
+  ///
+  /// In en, this message translates to:
+  /// **'Bright areas'**
+  String get regionHighlights;
+
+  /// No description provided for @regionShadows.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark areas'**
+  String get regionShadows;
+
+  /// No description provided for @regionCenter.
+  ///
+  /// In en, this message translates to:
+  /// **'Center'**
+  String get regionCenter;
+
+  /// No description provided for @regionEdges.
+  ///
+  /// In en, this message translates to:
+  /// **'Edges'**
+  String get regionEdges;
+
+  /// No description provided for @modePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompt'**
+  String get modePrompt;
+
+  /// No description provided for @modeStyle.
+  ///
+  /// In en, this message translates to:
+  /// **'Style'**
+  String get modeStyle;
+
+  /// No description provided for @modeReference.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference'**
+  String get modeReference;
+
+  /// No description provided for @modeManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual'**
+  String get modeManual;
+
+  /// No description provided for @promptEditFallbackTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompt edit'**
+  String get promptEditFallbackTitle;
+
+  /// No description provided for @referenceEditDisplayTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference edit'**
+  String get referenceEditDisplayTitle;
+
+  /// No description provided for @manualEditDisplayTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual adjustments'**
+  String get manualEditDisplayTitle;
+
+  /// No description provided for @parserLlm.
+  ///
+  /// In en, this message translates to:
+  /// **'LLM interpretation'**
+  String get parserLlm;
+
+  /// No description provided for @parserRules.
+  ///
+  /// In en, this message translates to:
+  /// **'Rule-based interpretation'**
+  String get parserRules;
+
+  /// No description provided for @parserReference.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference mode'**
+  String get parserReference;
+
+  /// No description provided for @parserManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual parameters'**
+  String get parserManual;
+
+  /// No description provided for @styleFamilyNaturalClean.
+  ///
+  /// In en, this message translates to:
+  /// **'Natural & clean'**
+  String get styleFamilyNaturalClean;
+
+  /// No description provided for @styleFamilyPortraitSkin.
+  ///
+  /// In en, this message translates to:
+  /// **'Portrait skin'**
+  String get styleFamilyPortraitSkin;
+
+  /// No description provided for @styleFamilyLandscapeTravel.
+  ///
+  /// In en, this message translates to:
+  /// **'Landscape & travel'**
+  String get styleFamilyLandscapeTravel;
+
+  /// No description provided for @styleFamilyCinematic.
+  ///
+  /// In en, this message translates to:
+  /// **'Cinematic'**
+  String get styleFamilyCinematic;
+
+  /// No description provided for @styleFamilyFilmRetro.
+  ///
+  /// In en, this message translates to:
+  /// **'Film & retro'**
+  String get styleFamilyFilmRetro;
+
+  /// No description provided for @styleFamilyBlackWhite.
+  ///
+  /// In en, this message translates to:
+  /// **'Black & white'**
+  String get styleFamilyBlackWhite;
+
+  /// No description provided for @styleFamilyNightNeon.
+  ///
+  /// In en, this message translates to:
+  /// **'Night & neon'**
+  String get styleFamilyNightNeon;
+
+  /// No description provided for @styleFamilyPastelCreative.
+  ///
+  /// In en, this message translates to:
+  /// **'Pastel & creative'**
+  String get styleFamilyPastelCreative;
+
+  /// No description provided for @summaryOriginalNewBranch.
+  ///
+  /// In en, this message translates to:
+  /// **'Original · next edit creates a new branch'**
+  String get summaryOriginalNewBranch;
+
+  /// No description provided for @summaryChoosePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a photo, then start with a prompt or reference image'**
+  String get summaryChoosePhoto;
+
+  /// No description provided for @summaryPreviewPrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview · '**
+  String get summaryPreviewPrefix;
+
+  /// No description provided for @manualUnavailableNeedPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete a prompt edit before opening manual adjustments.'**
+  String get manualUnavailableNeedPrompt;
+
+  /// No description provided for @manualUnavailableReference.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference results cannot be manually adjusted yet. Select a prompt or manual version first.'**
+  String get manualUnavailableReference;
+
+  /// No description provided for @manualUnavailableEngine.
+  ///
+  /// In en, this message translates to:
+  /// **'The first manual adjustment version only supports OpenCV results.'**
+  String get manualUnavailableEngine;
+
+  /// No description provided for @manualUnavailableGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'This version does not support manual adjustments.'**
+  String get manualUnavailableGeneric;
+
+  /// No description provided for @statusSelectedNewOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'New original photo selected'**
+  String get statusSelectedNewOriginal;
+
+  /// No description provided for @statusReferenceReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference image ready'**
+  String get statusReferenceReady;
+
+  /// No description provided for @errorPromptRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an editing prompt.'**
+  String get errorPromptRequired;
+
+  /// No description provided for @errorReferenceRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a reference image first.'**
+  String get errorReferenceRequired;
+
+  /// No description provided for @errorStyleCatalogLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load style catalog: {error}'**
+  String errorStyleCatalogLoad(String error);
+
+  /// No description provided for @errorOriginalRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an original photo first.'**
+  String get errorOriginalRequired;
+
+  /// No description provided for @statusParsingPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Interpreting edit prompt…'**
+  String get statusParsingPrompt;
+
+  /// No description provided for @statusApplyingReference.
+  ///
+  /// In en, this message translates to:
+  /// **'Applying reference image…'**
+  String get statusApplyingReference;
+
+  /// No description provided for @statusEditComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit complete'**
+  String get statusEditComplete;
+
+  /// No description provided for @errorEditFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit failed: {error}'**
+  String errorEditFailed(String error);
+
+  /// No description provided for @statusHistorySynced.
+  ///
+  /// In en, this message translates to:
+  /// **'History synced'**
+  String get statusHistorySynced;
+
+  /// No description provided for @statusSwitchedHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Switched to history version'**
+  String get statusSwitchedHistory;
+
+  /// No description provided for @statusSwitchedOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Switched to original. A new history branch can now be created.'**
+  String get statusSwitchedOriginal;
+
+  /// No description provided for @errorOpenManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open manual adjustments: {error}'**
+  String errorOpenManual(String error);
+
+  /// No description provided for @statusResetSourceParameters.
+  ///
+  /// In en, this message translates to:
+  /// **'Restored source version parameters'**
+  String get statusResetSourceParameters;
+
+  /// No description provided for @errorManualPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual preview failed: {error}'**
+  String errorManualPreview(String error);
+
+  /// No description provided for @statusApplyingManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Applying manual adjustments…'**
+  String get statusApplyingManual;
+
+  /// No description provided for @statusManualCommitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual adjustments applied and added to history'**
+  String get statusManualCommitted;
+
+  /// No description provided for @errorManualCommit.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not apply manual adjustments: {error}'**
+  String errorManualCommit(String error);
+
+  /// No description provided for @errorStyleAmbiguous.
+  ///
+  /// In en, this message translates to:
+  /// **'This description matches multiple styles. Choose a specific style from the catalog.'**
+  String get errorStyleAmbiguous;
+
+  /// No description provided for @errorStyleCompound.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply a style first, then adjust brightness, color, or other parameters in a follow-up prompt.'**
+  String get errorStyleCompound;
+
+  /// No description provided for @errorStyleAsset.
+  ///
+  /// In en, this message translates to:
+  /// **'Style asset or version validation failed. No substitute style was applied.'**
+  String get errorStyleAsset;
+
+  /// No description provided for @errorSemanticTargetNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'The requested area was not found in this photo. Try another photo or edit the whole image.'**
+  String get errorSemanticTargetNotFound;
+
+  /// No description provided for @errorAdaptiveClarification.
+  ///
+  /// In en, this message translates to:
+  /// **'I am not sure which setting to fine-tune. Name a parameter or region.'**
+  String get errorAdaptiveClarification;
+
+  /// No description provided for @errorAdaptiveConverged.
+  ///
+  /// In en, this message translates to:
+  /// **'This adjustment is near the minimum step. Use manual parameters for a final fine-tune.'**
+  String get errorAdaptiveConverged;
+
+  /// No description provided for @errorAdaptiveSatisfied.
+  ///
+  /// In en, this message translates to:
+  /// **'The current result was kept. No duplicate history version was added.'**
+  String get errorAdaptiveSatisfied;
+
+  /// No description provided for @errorManualSourceUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference results cannot be manually adjusted yet. Select a prompt or manual version.'**
+  String get errorManualSourceUnsupported;
+
+  /// No description provided for @errorBackendUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not connect to the editing backend. Check that it is running.'**
+  String get errorBackendUnavailable;
+
+  /// No description provided for @errorCheckPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Review the editing prompt and try again.'**
+  String get errorCheckPrompt;
+
+  /// No description provided for @adaptiveIssuesContext.
+  ///
+  /// In en, this message translates to:
+  /// **'{message} (involves: {contexts})'**
+  String adaptiveIssuesContext(String message, String contexts);
+
+  /// No description provided for @networkBackendError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not connect to the editing backend: {error}'**
+  String networkBackendError(String error);
+
+  /// No description provided for @backendHttpError.
+  ///
+  /// In en, this message translates to:
+  /// **'Backend request failed (HTTP {statusCode})'**
+  String backendHttpError(int statusCode);
+
+  /// No description provided for @backendInvalidResponse.
+  ///
+  /// In en, this message translates to:
+  /// **'The backend returned an unrecognized data format.'**
+  String get backendInvalidResponse;
+}
+
+class _AppLocalizationsDelegate
+    extends LocalizationsDelegate<AppLocalizations> {
+  const _AppLocalizationsDelegate();
+
+  @override
+  Future<AppLocalizations> load(Locale locale) {
+    return SynchronousFuture<AppLocalizations>(lookupAppLocalizations(locale));
+  }
+
+  @override
+  bool isSupported(Locale locale) =>
+      <String>['en', 'zh'].contains(locale.languageCode);
+
+  @override
+  bool shouldReload(_AppLocalizationsDelegate old) => false;
+}
+
+AppLocalizations lookupAppLocalizations(Locale locale) {
+  // Lookup logic when language+country codes are specified.
+  switch (locale.languageCode) {
+    case 'zh':
+      {
+        switch (locale.countryCode) {
+          case 'TW':
+            return AppLocalizationsZhTw();
+        }
+        break;
+      }
+  }
+
+  // Lookup logic when only language code is specified.
+  switch (locale.languageCode) {
+    case 'en':
+      return AppLocalizationsEn();
+    case 'zh':
+      return AppLocalizationsZh();
+  }
+
+  throw FlutterError(
+    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.',
+  );
+}

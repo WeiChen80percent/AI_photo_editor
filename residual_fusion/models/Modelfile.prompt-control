@@ -1,0 +1,5 @@
+FROM ./ai-photo-prompt-control-exp007-bf16.gguf
+TEMPLATE {{ .Prompt }}
+PARAMETER temperature 0
+PARAMETER num_predict 96
+PARAMETER num_ctx 1024

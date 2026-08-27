@@ -1,0 +1,154 @@
+{
+  "schema_version": "prompt_control_bf16_lora_v1",
+  "baseline_name": "prompt_control_bf16_lora_v1",
+  "created_at": "2026-07-21",
+  "status": "validation_passed_blind_test_pending",
+  "experiment": "EXP-007",
+  "experiment_path": "training/experiments/exp_007_bf16_lora_deployment/README.md",
+  "base_model": "Qwen/Qwen3-1.7B",
+  "data": {
+    "manifest_path": "training/data/prompt_control_exp006_b.jsonl",
+    "manifest_sha256": "994A36CD0F707EBE22F246B8899D098271D4B97748E35B0BBFE93671C111B26E",
+    "counts": {
+      "train": 720,
+      "validation": 80,
+      "test": 0
+    },
+    "contrastive_records": 200,
+    "audit_path": "training/outputs/prompt_control_exp006_data/audit_b.json",
+    "audit_sha256": "F02B286D303E39533E3B05AAD3B90A418B5D7528C13C074B24A2DD8FA5112BE4",
+    "audit_result": {
+      "family_split_leakage": 0,
+      "template_split_leakage": 0,
+      "retired_exp005_test_overlap": 0
+    }
+  },
+  "training": {
+    "method": "supervised BF16 LoRA",
+    "base_precision": "bf16",
+    "frozen_base": true,
+    "lora_rank": 16,
+    "lora_alpha": 32,
+    "lora_dropout": 0.05,
+    "learning_rate": 0.0002,
+    "scheduler": "cosine",
+    "seed": 2026,
+    "effective_batch_size": 4,
+    "max_steps": 390,
+    "checkpoint_interval": 130,
+    "wall_seconds": 547.8781,
+    "selected_checkpoint": 260,
+    "selection_rule": "highest intent accuracy, then highest full exact accuracy, then earliest checkpoint",
+    "adapter_path": "training/outputs/prompt_control_qwen3_1_7b_exp007_bf16/checkpoint-260",
+    "adapter_model_sha256": "77302C99798C41144C8AE552AA548CE9ABC738009550FA82A4992E203CB31E47",
+    "adapter_config_sha256": "3DCF446C63215FD412C1365BDBF6C5B909FDE5BE8AFB35A4CEDAF739B296BC2B"
+  },
+  "contract": {
+    "intents": [
+      "auto_enhance",
+      "fix_exposure",
+      "fix_white_balance",
+      "restore_natural"
+    ],
+    "strengths": [
+      "subtle",
+      "normal",
+      "strong"
+    ],
+    "constraints": [
+      "preserve_natural",
+      "avoid_clipping",
+      "preserve_skin_tones",
+      "preserve_details"
+    ],
+    "runtime_guard_default": false,
+    "numeric_effect": {
+      "intent": true,
+      "strength": false,
+      "constraints": false
+    }
+  },
+  "checkpoint_validation": {
+    "checkpoint_130": {
+      "report_path": "training/outputs/prompt_control_qwen3_1_7b_exp007_bf16/evaluation_checkpoint-130_bf16_validation.json",
+      "report_sha256": "838F397F4698B1B1612D49A90EDFD769083B16F232EC4807B144AFCAB05990C7",
+      "intent_accuracy": 1.0,
+      "full_exact_accuracy": 0.9375,
+      "passed": true
+    },
+    "checkpoint_260": {
+      "report_path": "training/outputs/prompt_control_qwen3_1_7b_exp007_bf16/evaluation_checkpoint-260_bf16_validation.json",
+      "report_sha256": "A041C10CF93C508A587741545E75430258448E313E6025D21D2CCB4CA0425E10",
+      "intent_accuracy": 1.0,
+      "full_exact_accuracy": 0.95,
+      "passed": true
+    },
+    "checkpoint_390": {
+      "report_path": "training/outputs/prompt_control_qwen3_1_7b_exp007_bf16/evaluation_checkpoint-390_bf16_validation.json",
+      "report_sha256": "36CFEF93E9ABBFEB23F7F42F8456B0FBF91AD362D0A2CA9A547F90D27D016AB7",
+      "intent_accuracy": 1.0,
+      "full_exact_accuracy": 0.95,
+      "passed": true
+    }
+  },
+  "selected_validation": {
+    "schema_valid_rate": 1.0,
+    "intent_accuracy": 1.0,
+    "intent_recall_minimum": 1.0,
+    "strength_accuracy": 0.975,
+    "constraint_micro_f1": 0.984615,
+    "full_exact_accuracy": 0.95,
+    "warm_latency_p95_seconds": 1.546149,
+    "all_gates_passed": true,
+    "non_exact_records": 4,
+    "error_summary": "two strength errors and two extra preserve_natural constraints; no intent errors"
+  },
+  "merge_validation": {
+    "model_path": "training/outputs/prompt_control_ollama_fused_exp007_v1",
+    "report_path": "training/outputs/prompt_control_ollama_fused_exp007_v1/evaluation_hf_merged_validation.json",
+    "report_sha256": "2419C813306D9A7A7DA69F168ABCA2F2913DFDF3586B4940F887F8F79467DB6B",
+    "schema_valid_rate": 1.0,
+    "intent_accuracy": 1.0,
+    "full_exact_accuracy": 0.95,
+    "adapter_parity": "exact on all accuracy metrics",
+    "passed": true
+  },
+  "deployment": {
+    "runtime": "Ollama 0.32.1",
+    "model": "ai-photo-prompt-control:exp007-v1",
+    "ollama_model_id": "b5cb6df19147",
+    "format": "GGUF BF16",
+    "gguf_path": "training/outputs/prompt_control_ollama_fused_exp007_v1/ai-photo-prompt-control-exp007-bf16.gguf",
+    "gguf_sha256": "7E40DEB0CF81A7D4F3CFFE166BE9664F08CB3CC376150038A1749F065F13B9E0",
+    "gguf_size_bytes": 3447348960,
+    "modelfile_path": "training/deployment/Modelfile.prompt-control-exp007",
+    "modelfile_sha256": "C9500BB65C7660C6C947AFACE6D586AE3E4140149F40ABA0CB7486D989BBE11E",
+    "evaluation_path": "training/outputs/prompt_control_ollama_exp007_validation/evaluation_validation.json",
+    "evaluation_sha256": "22F20DDBDA57DABABAE71A04528EC9FB7A93F6F8B428FB7D245A9B45A21BF65D",
+    "metrics": {
+      "schema_valid_rate": 1.0,
+      "intent_accuracy": 1.0,
+      "strength_accuracy": 0.975,
+      "constraint_micro_f1": 0.984615,
+      "full_exact_accuracy": 0.95,
+      "warm_latency_p95_seconds": 1.304987
+    },
+    "all_gates_passed": true
+  },
+  "source_hashes": {
+    "dataset_builder": "0997DB9358F56E4B36CD9EFEB37F73A70F8D1DC074B0215885F454FB98123DA9",
+    "dataset_validator": "AB50180D9B501E41F6EB2B69D5BFA577B887BEF4B30FDD76CA4D79B6B46F30DA",
+    "trainer": "A1ABFEBA09DDDFBC50A587678C04FDDFCCED70D313D2D23EFB1F99B848E87397",
+    "adapter_evaluator": "1AF458D1207C4091649A69199AEA88ED2A78DDE0EA913494840B0690D0E3932F",
+    "merged_evaluator": "E67543EB4D454580046F13E55871F087D04535DA55CF41EDB405AB19552303F5",
+    "ollama_evaluator": "5768EF60FFDC44CFD53C4D518A2B81D88A054B181EE86586471CE20CAC5772C4",
+    "exporter": "370836EE17DCD0EDB0060513641826D61BC993A476DC8AF36221C0658EF6E158"
+  },
+  "test_policy": {
+    "retired_exp005_test": "analysis only; prohibited for tuning or reevaluation",
+    "fresh_prompt_blind_test": "not yet authored or opened",
+    "fivek_image_test": "sealed",
+    "test_evaluated": false
+  },
+  "warning": "Validation passed and deployment fidelity is exact, but no fresh blind test has been opened. Do not claim final natural-language generalization yet."
+}

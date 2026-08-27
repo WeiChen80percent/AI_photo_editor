@@ -1,0 +1,24 @@
+{
+  "schema_version": "residual_fusion_model_assets_v1",
+  "prompt_controller": {
+    "base_model": "Qwen/Qwen3-1.7B",
+    "training_method": "supervised BF16 LoRA",
+    "ollama_model": "ai-photo-prompt-control:exp007-v1",
+    "gguf": {
+      "filename": "ai-photo-prompt-control-exp007-bf16.gguf",
+      "format": "GGUF BF16",
+      "size_bytes": 3447348960,
+      "sha256": "7E40DEB0CF81A7D4F3CFFE166BE9664F08CB3CC376150038A1749F065F13B9E0"
+    },
+    "lora_adapter": {
+      "filename": "adapter_model.safetensors",
+      "size_bytes": 69782384,
+      "sha256": "77302C99798C41144C8AE552AA548CE9ABC738009550FA82A4992E203CB31E47",
+      "adapter_config_filename": "adapter_config.json",
+      "adapter_config_size_bytes": 1141,
+      "adapter_config_sha256": "3DCF446C63215FD412C1365BDBF6C5B909FDE5BE8AFB35A4CEDAF739B296BC2B"
+    },
+    "hugging_face_repo": "Kaiii1912/residual_fusion"
+  },
+  "segmentation_model": "nvidia/segformer-b5-finetuned-ade-640-640"
+}

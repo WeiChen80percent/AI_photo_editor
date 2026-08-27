@@ -1,0 +1,42 @@
+{
+  "schema_version": "expert_c_v3_6_deployment_feature_contract_result_v1",
+  "created_at": "2026-08-13T15:50:04.730105+00:00",
+  "status": "PASS",
+  "data": {
+    "source_count": 500,
+    "sources_per_fold": 100,
+    "feature_count": 259,
+    "development_content_accessed": false,
+    "final_content_accessed": false
+  },
+  "metrics": {
+    "final_v3_6_action_agreement": 0.882,
+    "upstream_v3_5_action_agreement": 0.936,
+    "oof_v3_6_edit_rate": 0.854,
+    "deployment_v3_6_edit_rate": 0.816,
+    "oof_v3_5_edit_rate": 0.906,
+    "deployment_v3_5_edit_rate": 0.902,
+    "mean_absolute_risk_drift": 0.113614,
+    "p95_absolute_risk_drift": 0.287919,
+    "mean_absolute_feature_drift": 0.69381,
+    "deployment_lcb_mean": 0.019981
+  },
+  "gates": {
+    "thresholds": {
+      "minimum_final_action_agreement": 0.85,
+      "minimum_upstream_v3_5_action_agreement": 0.9,
+      "maximum_mean_absolute_risk_drift": 0.15,
+      "coverage_must_be_exact": true
+    },
+    "checks": {
+      "minimum_final_action_agreement": true,
+      "minimum_upstream_v3_5_action_agreement": true,
+      "maximum_mean_absolute_risk_drift": true,
+      "coverage_exact": true
+    },
+    "all_passed": true
+  },
+  "elapsed_seconds": 17.854,
+  "promoted": false,
+  "protected_split_policy": "Train-only diagnostic; development and final remained sealed for V3.6."
+}

@@ -1,0 +1,10 @@
+schema_version: style_source_manifest_v1
+sources:
+  project_authored_v1:
+    source_url: project://AI_photo_editor/style_catalog/v1
+    author: AI Photo Editor project team
+    license: Project-authored asset
+    attribution: Created for the AI Photo Editor project
+    redistribution_allowed: true
+    source_type: project_authored
+    imported_at: "2026-07-28"

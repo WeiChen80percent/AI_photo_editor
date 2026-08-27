@@ -1,0 +1,91 @@
+{
+  "schema_version": "expert_c_v3_8_post_final_5000_release_audit_v1",
+  "created_at": "2026-08-17T15:52:08.224075+00:00",
+  "status": "PASS_POST_FINAL_DEMO_RELEASE_AUDIT",
+  "candidate": "V3.8 post-final 5,000-pair demo fit",
+  "scientific_boundary": "The 5,000-pair fit uses all splits and therefore has no untouched test set. Generalization claims must cite the pre-final candidate's one-shot PASS_FINAL evidence, not resubstitution metrics from this fit.",
+  "checks": {
+    "cache_complete_5000": true,
+    "split_counts_exact": true,
+    "source_ids_unique": true,
+    "active_count_exact": true,
+    "fit_complete_5000": true,
+    "three_checkpoints_present_and_hashed": true,
+    "fixed_lambda_preserved": true,
+    "pre_final_release_passed": true,
+    "one_shot_final_passed": true,
+    "smoke_passed": true,
+    "drift_integrity_passed": true,
+    "default_runner_uses_5000_fit": true,
+    "predictor_default_uses_5000_fit": true,
+    "no_dng_in_derived_cache": true,
+    "no_temporary_outputs": true
+  },
+  "evidence": {
+    "cache_result": {
+      "path": "C:\\Users\\user\\Desktop\\AI_photo_editor\\training\\outputs\\expert_c_post_final_5000_cache001\\result.json",
+      "sha256": "05E2A81A4CA9BF98B60CF138C0963DA757C63AA30CB4770E1CAF7746E0B2E0AC"
+    },
+    "fit_result": {
+      "path": "C:\\Users\\user\\Desktop\\AI_photo_editor\\training\\outputs\\expert_c_continuous_spatial_strength_post_final_5000_demo001\\result.json",
+      "sha256": "091BEA65E0639C6437010EF5044B95ADD10B243CA860CEC6EE3E9C41C2D79457"
+    },
+    "pre_final_release": {
+      "path": "C:\\Users\\user\\Desktop\\AI_photo_editor\\training\\outputs\\expert_c_v3_8_release_audit001\\result.json",
+      "sha256": "7CD036A33425364E87A4683A5B924DE85F701DEE2954F422D3ABD5A239704DC9"
+    },
+    "final_result": {
+      "path": "C:\\Users\\user\\Desktop\\AI_photo_editor\\training\\outputs\\expert_c_continuous_spatial_strength_final002\\result.json",
+      "sha256": "974D4FF6A2C8C360D511AAB98F27C299B037B9ADD3EB77367DA2D99251E3BB2E"
+    },
+    "smoke_result": {
+      "path": "C:\\Users\\user\\Desktop\\AI_photo_editor\\training\\v3\\research_outputs\\v3_8_5000_batch_smoke\\audit_result.json",
+      "sha256": "57FF42BFDEF0C200F1EF8FB5D4F39369D80FC4EE6F02FA6C0865C912D28A41F6"
+    },
+    "drift_result": {
+      "path": "C:\\Users\\user\\Desktop\\AI_photo_editor\\training\\outputs\\expert_c_post_final_5000_drift_audit001\\result.json",
+      "sha256": "113AEED1CEA8C80B24E86B1DAC09EAD81DDDF919B19046350D305467B1B1FF86"
+    },
+    "runner": {
+      "path": "C:\\Users\\user\\Desktop\\AI_photo_editor\\training\\v3\\run_continuous_spatial_v3_8.ps1",
+      "sha256": "02B9A8523C6247D345BE3EC2851DDE7761DB07239DB5B86135E9E696A9AC7A9D"
+    },
+    "predictor": {
+      "path": "C:\\Users\\user\\Desktop\\AI_photo_editor\\training\\v3\\predict_expert_c_v3_8.py",
+      "sha256": "44B25F5A70249F8D34662EEA3334A6EFF1DD4F0689B223BD32B21E51719365C7"
+    }
+  },
+  "headline_metrics_from_pre_final_final": {
+    "v3_6_baseline": {
+      "mean_gain": 0.03022785484790802,
+      "median_gain": 0.02416667342185974,
+      "worst_decile_mean": -0.054663170129060745,
+      "catastrophic_rate": 0.115,
+      "harm_rate": 0.16
+    },
+    "continuous_blend": {
+      "mean_gain": 0.030223965644836426,
+      "median_gain": 0.024273008108139038,
+      "worst_decile_mean": -0.041358090937137604,
+      "catastrophic_rate": 0.11,
+      "harm_rate": 0.15
+    },
+    "improvement_vs_v3_6": {
+      "mean_gain": -3.889203071594238e-06,
+      "worst_decile_mean": 0.013305079191923141,
+      "catastrophic_rate_reduction": 0.0050000000000000044,
+      "harm_rate_reduction": 0.010000000000000009
+    },
+    "edit_rate": 0.785
+  },
+  "post_final_resubstitution_diagnostic": {
+    "mean_gain": 0.033222708851099014,
+    "median_gain": 0.025250492617487907,
+    "worst_decile_mean": -0.0413416363298893,
+    "catastrophic_rate": 0.1208,
+    "harm_rate": 0.1676,
+    "mean_sky_strength": 0.9262264966964722,
+    "mean_person_strength": 0.9473507404327393,
+    "mean_rest_strength": 0.9076147079467773
+  }
+}

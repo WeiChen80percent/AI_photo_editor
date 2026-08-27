@@ -1,0 +1,207 @@
+{
+  "schema_version": "expert_c_continuous_spatial_strength_post_final_5000_result_v1",
+  "created_at": "2026-08-17T15:42:19.651054+00:00",
+  "status": "COMPLETE_POST_FINAL_DEMO_FIT",
+  "device": "cuda",
+  "data": {
+    "source_count": 5000,
+    "active_count": 4154,
+    "development_content_accessed": true,
+    "final_content_accessed": true
+  },
+  "lambda_selection": {
+    "selected_lambda": 0.800000011920929,
+    "candidates": [
+      {
+        "index": 0,
+        "lambda": 0.0,
+        "improvement": {
+          "mean_improvement": 0.0,
+          "worst_decile_improvement": 0.0,
+          "catastrophic_reduction": 0.0,
+          "harm_reduction": 0.0
+        },
+        "score": 0.0,
+        "eligible": false
+      },
+      {
+        "index": 1,
+        "lambda": 0.10000000149011612,
+        "improvement": {
+          "mean_improvement": 0.0001340024173259735,
+          "worst_decile_improvement": 0.0013774558901786804,
+          "catastrophic_reduction": 0.00195652173913044,
+          "harm_reduction": 0.0023913043478260843
+        },
+        "score": 0.0004783663898706436,
+        "eligible": false
+      },
+      {
+        "index": 2,
+        "lambda": 0.20000000298023224,
+        "improvement": {
+          "mean_improvement": 0.0002380162477493286,
+          "worst_decile_improvement": 0.0026938579976558685,
+          "catastrophic_reduction": 0.0054347826086956486,
+          "harm_reduction": 0.005869565217391293
+        },
+        "score": 0.0009114807471632957,
+        "eligible": false
+      },
+      {
+        "index": 3,
+        "lambda": 0.30000001192092896,
+        "improvement": {
+          "mean_improvement": 0.0003074146807193756,
+          "worst_decile_improvement": 0.003945253789424896,
+          "catastrophic_reduction": 0.007173913043478253,
+          "harm_reduction": 0.007826086956521733
+        },
+        "score": 0.0012937281280755997,
+        "eligible": false
+      },
+      {
+        "index": 4,
+        "lambda": 0.4000000059604645,
+        "improvement": {
+          "mean_improvement": 0.0003420524299144745,
+          "worst_decile_improvement": 0.005150213837623596,
+          "catastrophic_reduction": 0.009347826086956501,
+          "harm_reduction": 0.009782608695652173
+        },
+        "score": 0.0016296058893203735,
+        "eligible": true
+      },
+      {
+        "index": 5,
+        "lambda": 0.5,
+        "improvement": {
+          "mean_improvement": 0.00034016557037830353,
+          "worst_decile_improvement": 0.006308607757091522,
+          "catastrophic_reduction": 0.010217391304347817,
+          "harm_reduction": 0.012173913043478257
+        },
+        "score": 0.001917317509651184,
+        "eligible": true
+      },
+      {
+        "index": 6,
+        "lambda": 0.6000000238418579,
+        "improvement": {
+          "mean_improvement": 0.0003050006926059723,
+          "worst_decile_improvement": 0.007433682680130005,
+          "catastrophic_reduction": 0.011739130434782613,
+          "harm_reduction": 0.01478260869565215
+        },
+        "score": 0.0021634213626384735,
+        "eligible": true
+      },
+      {
+        "index": 7,
+        "lambda": 0.699999988079071,
+        "improvement": {
+          "mean_improvement": 0.0002352539449930191,
+          "worst_decile_improvement": 0.008534807711839676,
+          "catastrophic_reduction": 0.015652173913043466,
+          "harm_reduction": 0.01652173913043478
+        },
+        "score": 0.002368955872952938,
+        "eligible": true
+      },
+      {
+        "index": 8,
+        "lambda": 0.800000011920929,
+        "improvement": {
+          "mean_improvement": 0.00013146735727787018,
+          "worst_decile_improvement": 0.009589239954948425,
+          "catastrophic_reduction": 0.016956521739130426,
+          "harm_reduction": 0.01804347826086955
+        },
+        "score": 0.0025287773460149765,
+        "eligible": true
+      },
+      {
+        "index": 9,
+        "lambda": 0.8999999761581421,
+        "improvement": {
+          "mean_improvement": -2.948567271232605e-06,
+          "worst_decile_improvement": 0.010597571730613708,
+          "catastrophic_reduction": 0.018913043478260866,
+          "harm_reduction": 0.019130434782608674
+        },
+        "score": 0.0026464443653821945,
+        "eligible": false
+      },
+      {
+        "index": 10,
+        "lambda": 1.0,
+        "improvement": {
+          "mean_improvement": -0.000166967511177063,
+          "worst_decile_improvement": 0.011535592377185822,
+          "catastrophic_reduction": 0.020434782608695634,
+          "harm_reduction": 0.021739130434782594
+        },
+        "score": 0.0027169305831193924,
+        "eligible": false
+      }
+    ]
+  },
+  "training": {
+    "losses": {
+      "131": {
+        "first": 0.09398635501579189,
+        "last": 0.09093175796530943
+      },
+      "149": {
+        "first": 0.0939801039284505,
+        "last": 0.09054304937373346
+      },
+      "167": {
+        "first": 0.09399013190414106,
+        "last": 0.09012737446569971
+      }
+    },
+    "train_resubstitution_metrics": {
+      "mean_gain": 0.033222708851099014,
+      "median_gain": 0.025250492617487907,
+      "worst_decile_mean": -0.0413416363298893,
+      "catastrophic_rate": 0.1208,
+      "harm_rate": 0.1676,
+      "mean_sky_strength": 0.9262264966964722,
+      "mean_person_strength": 0.9473507404327393,
+      "mean_rest_strength": 0.9076147079467773
+    }
+  },
+  "verification": {
+    "finite": true,
+    "strengths_in_unit_interval": true,
+    "checkpoint_count": 3
+  },
+  "artifact": {
+    "manifest_path": "training/outputs/expert_c_continuous_spatial_strength_post_final_5000_demo001/artifact_manifest.json",
+    "manifest_sha256": "FEC918F6CF89E4C4104A4EA83345B62E4975831FE74365AD31E1B3B683B03BA1",
+    "checkpoints": [
+      {
+        "path": "training/outputs/expert_c_continuous_spatial_strength_post_final_5000_demo001/continuous_strength_seed_131.pt",
+        "sha256": "1097C2891C8F4768ECD539678EA78DAB26A39BF6C37A01A428F9E896B2B26C1D",
+        "seed": 131
+      },
+      {
+        "path": "training/outputs/expert_c_continuous_spatial_strength_post_final_5000_demo001/continuous_strength_seed_149.pt",
+        "sha256": "EF976AB1894AD35D5E5E74B5158DD7F25DBABBBEA4F40BADF7346CF664D2BD1E",
+        "seed": 149
+      },
+      {
+        "path": "training/outputs/expert_c_continuous_spatial_strength_post_final_5000_demo001/continuous_strength_seed_167.pt",
+        "sha256": "ADFCC04B319F2906B836342388EBEF27D6D06015F9E8EEA9D2D34805C904F6A2",
+        "seed": 167
+      }
+    ]
+  },
+  "freeze": {
+    "path": "C:\\Users\\user\\Desktop\\AI_photo_editor\\training\\v3\\pre_training_freeze_post_final_5000_demo_v1.json",
+    "sha256": "D5595D63E3B2D0233C27D19418281AE5D528E85B0C915470678A89C3101002A5"
+  },
+  "elapsed_seconds": 252.996,
+  "promotion_policy": "Post-final 5,000-pair demo fit. It inherits the pre-final candidate's PASS_DEVELOPMENT and PASS_FINAL evidence and must not be presented as independently final-tested."
+}

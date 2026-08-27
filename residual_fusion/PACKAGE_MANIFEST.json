@@ -1,0 +1,1547 @@
+{
+  "schema_version": "residual_fusion_package_manifest_v1",
+  "generated_at": "2026-08-26T20:57:54.469823+00:00",
+  "release": "ResidualFusion",
+  "file_count": 305,
+  "total_bytes_excluding_runtime_outputs": 22282015,
+  "external_dependencies": [
+    "CUDA Python environment (package .venv or parent .venv)",
+    "Ollama ai-photo-prompt-control:exp007-v1 for prompt mode",
+    "local Hugging Face SegFormer cache",
+    "Flutter SDK and Chrome for frontend mode"
+  ],
+  "intentionally_excluded": [
+    "FiveK DNG/TIFF dataset",
+    "training caches and OOF arrays",
+    "old experiment outputs and screenshots",
+    "frontend build/.dart_tool",
+    "backend user sessions/uploads/results"
+  ],
+  "files": [
+    {
+      "path": ".gitignore",
+      "size": 888,
+      "sha256": "57A4DF75C053F54031E48611DD3D915B05E6405CF26EACC8FD1AC6A4B0C7FE08"
+    },
+    {
+      "path": "backend/app/main.py",
+      "size": 2061,
+      "sha256": "A5C37593B578B9B6E8D740B28C5BBA1AA009BAFBB1AA39A6C027FB572108449F"
+    },
+    {
+      "path": "backend/app/routes/edit.py",
+      "size": 25854,
+      "sha256": "9D459965C199DFA242AAB673A90A3E6F169781C334F1B59E4193736F8D23BC5A"
+    },
+    {
+      "path": "backend/app/routes/health.py",
+      "size": 126,
+      "sha256": "8E52B6F2051374CB71C9BF8364BAD4E9CFEDB433ED9434BAD6F1F1EB7A7C1D67"
+    },
+    {
+      "path": "backend/app/services/adaptive_adjustment.py",
+      "size": 63301,
+      "sha256": "FEAAF97FB5D26DDA8FD88E6A916E189F050034AC6000334C8C09F826DCE95E4A"
+    },
+    {
+      "path": "backend/app/services/adaptive_controller_v2.py",
+      "size": 81921,
+      "sha256": "98EA3E35437F5D5CCDEDADFAA174C29C4E40E66669D8234318824B46BBDC9090"
+    },
+    {
+      "path": "backend/app/services/adaptive_policy.py",
+      "size": 17561,
+      "sha256": "0CE5345971901E770720B8457D0403D50339A0DA7FFE42122392C82CC609A8AE"
+    },
+    {
+      "path": "backend/app/services/adaptive_prompt_compiler.py",
+      "size": 106335,
+      "sha256": "A965DF999A2F7501BA23CA9ECF383BE2CB5CA208E4A3AEB51E50019353D674CA"
+    },
+    {
+      "path": "backend/app/services/compound_local_edit.py",
+      "size": 11253,
+      "sha256": "AD238749CBC7ACDB9D077EF461610D6AFBA419B780B5669AFF46539776DF26B0"
+    },
+    {
+      "path": "backend/app/services/edit_engines.py",
+      "size": 5377,
+      "sha256": "53E8D319914C7F269CBDE2821476D00BF2A81B4CF5089B10ABD894DBE11226CB"
+    },
+    {
+      "path": "backend/app/services/edit_history.py",
+      "size": 6177,
+      "sha256": "A94EC6850B0D634EB5D6F2A58D2B7C4383B5D48A702EF7A02AD531DACD8A11A0"
+    },
+    {
+      "path": "backend/app/services/edit_intent_resolver.py",
+      "size": 15842,
+      "sha256": "11B19B3F9319F2C53610ED9BAAA50A0D3364B89BE2BD98EF8E977457090B18DC"
+    },
+    {
+      "path": "backend/app/services/edit_intent_templates.py",
+      "size": 5365,
+      "sha256": "124A22F66CADD2812BA8576CF9196004B42CE74EA1F7D4A0F39F69C8DD4964BB"
+    },
+    {
+      "path": "backend/app/services/edit_plan.py",
+      "size": 3397,
+      "sha256": "5A13E24A4B51C3F8F9B459F0040665DA62AE7EC36EDD9B075E8C5358588EF7B8"
+    },
+    {
+      "path": "backend/app/services/edit_schema.py",
+      "size": 12943,
+      "sha256": "F0068C5E2AFDACFD7C6376E82CB29D2FDDAB073624C2D57209F333DEBB1B3989"
+    },
+    {
+      "path": "backend/app/services/english_prompt_contract.py",
+      "size": 116535,
+      "sha256": "9B44317DF4A8D0F850CE1DF0AA2B4BFBBBA663F3DAECF7AFDA9C848C09365E37"
+    },
+    {
+      "path": "backend/app/services/expert_c_v3_5_runtime.py",
+      "size": 7329,
+      "sha256": "0E0D79646BA6CC29EB905F8CE714E23A0A14EB252A94FC27678B783BC7259FD3"
+    },
+    {
+      "path": "backend/app/services/expert_c_v3_8_runtime.py",
+      "size": 10921,
+      "sha256": "E3F08D3A9AB7D02A7F26B6A7280480CDF40F003581BB389218E1697141E8B73A"
+    },
+    {
+      "path": "backend/app/services/expert_c_v3_8_runtime_support.py",
+      "size": 11349,
+      "sha256": "9BD52FDF0C79FC42705236A084E99E5D8BF2F9FDDC2EA2F781247F663582EB1D"
+    },
+    {
+      "path": "backend/app/services/expert_c_v3_contract.py",
+      "size": 1304,
+      "sha256": "F60B028305F2EED8E0DC0D1F3A71D15AC276174BA48607C566EFFB031C4539E2"
+    },
+    {
+      "path": "backend/app/services/expert_c_v3_runtime.py",
+      "size": 16786,
+      "sha256": "6231DED0EA116C471F0F08254F29B876A79638F85ACDCF064D7CABF732E07D4A"
+    },
+    {
+      "path": "backend/app/services/image_processor.py",
+      "size": 850,
+      "sha256": "7F64849EAE9A9F3C3A310FCA7BFFC0F24D8C5EBB1905F8BB0144D9A0DE13C1A2"
+    },
+    {
+      "path": "backend/app/services/image_state_analyzer.py",
+      "size": 4542,
+      "sha256": "A092C206547BE89B0AEA443EE280C1D63BEB2FE6DA7A6746FE3CBD80ABEAAB7F"
+    },
+    {
+      "path": "backend/app/services/image_state_analyzer_v2.py",
+      "size": 4240,
+      "sha256": "BFE6F827B0BB45E40754BF3BFEC398C908EFBE9EA419C18493ADDADA5FA02C8C"
+    },
+    {
+      "path": "backend/app/services/intent_parameter_profiles.py",
+      "size": 1721,
+      "sha256": "EBF6F6ADB5615FB7D8A6F149F3F3690B6C87961E8A811A030C1A0A59E108C168"
+    },
+    {
+      "path": "backend/app/services/llm_semantic_adapter.py",
+      "size": 42339,
+      "sha256": "B902E9A1B309AA947EFC93F76EEC2D24C4A81A97D51C9D23E5F935C385C28104"
+    },
+    {
+      "path": "backend/app/services/local_edit_safety.py",
+      "size": 6176,
+      "sha256": "09E45392C98506DD9677B580F7D0821458709D7A6B83144A20AFFF217320BF72"
+    },
+    {
+      "path": "backend/app/services/manual_edit_service.py",
+      "size": 20135,
+      "sha256": "FE8CF5D698CAA80182682741629356DC340E084FF42AD90FF75C5E92DBBB54B4"
+    },
+    {
+      "path": "backend/app/services/opencv_parameter_mapper.py",
+      "size": 8765,
+      "sha256": "2FC6D2059F3DE327C02B6E91E4D54FE9C175CB2AE3B4578B684BCD12A7580049"
+    },
+    {
+      "path": "backend/app/services/opencv_processor.py",
+      "size": 30329,
+      "sha256": "D36B747C6407B30CC980A81C62424F19638177BC2B7984B61701F6F7698137A5"
+    },
+    {
+      "path": "backend/app/services/prompt_control.py",
+      "size": 9832,
+      "sha256": "F03339463D2C9438D0DF74C34F5533904657153B7B4FF1156594D5A896000399"
+    },
+    {
+      "path": "backend/app/services/prompt_control_runtime.py",
+      "size": 6522,
+      "sha256": "9F15611D8EEA712927F927EFC208775CE8E7AD0C86B65D79B66A9137F4F22D9C"
+    },
+    {
+      "path": "backend/app/services/prompt_intent_encoder.py",
+      "size": 2361,
+      "sha256": "1D78BC35AAC662C9FBBB51A73A05EE581CA7E242435E3D5E1C4F74EA30037DCB"
+    },
+    {
+      "path": "backend/app/services/prompt_parser.py",
+      "size": 15434,
+      "sha256": "329F79C73F14D607BDE32742B941559092085E9340ACA378AE7579AE343BF17C"
+    },
+    {
+      "path": "backend/app/services/prompt_text.py",
+      "size": 7681,
+      "sha256": "CF81B62D84764DFE85AC1046A05A7FC76686DB2CBEC978B212DC7B1D0C6B719D"
+    },
+    {
+      "path": "backend/app/services/render_contract.py",
+      "size": 4691,
+      "sha256": "A70EE10C8C04B57528D3002D0F62AB096E41E5C6030301B63E047B49D8FA78FF"
+    },
+    {
+      "path": "backend/app/services/selective_hybrid_predictor.py",
+      "size": 6420,
+      "sha256": "36BBB23078559AE321246660C1AC916B4D72715D2EFC3A4545B4E6DDA9F642E8"
+    },
+    {
+      "path": "backend/app/services/semantic_adaptive_adapter.py",
+      "size": 27006,
+      "sha256": "81F0CCB6B5138E9255BC0873BA75C021EAEE65D316C97023C673E8AFF99CBE4C"
+    },
+    {
+      "path": "backend/app/services/semantic_ir.py",
+      "size": 15879,
+      "sha256": "B8D95C62DADA71816941610F3151F4C7C5379FB518E75A08F345C911FA2B7272"
+    },
+    {
+      "path": "backend/app/services/semantic_mask_service.py",
+      "size": 26672,
+      "sha256": "B0DA859479409A59F3479B7B534FDA27B5AC567597B769B71883FF33739A985E"
+    },
+    {
+      "path": "backend/app/services/semantic_normalizer.py",
+      "size": 20665,
+      "sha256": "CCD9A8B282B2781F9518E3EE4377745364A48B82411615C1ADA58AB624DB9B09"
+    },
+    {
+      "path": "backend/app/services/semantic_operation_assembler.py",
+      "size": 58868,
+      "sha256": "E4B0D9AE0DE87C297CF08B6E811B85A7160940AAA93E88BAB656DB999CC7820B"
+    },
+    {
+      "path": "backend/app/services/semantic_parser.py",
+      "size": 7372,
+      "sha256": "81DC30AB4E3A9E93FDB3A2C89E4304878B4655E1DB0A019B443F82ED4F60E087"
+    },
+    {
+      "path": "backend/app/services/semantic_registry.py",
+      "size": 145742,
+      "sha256": "9B92CFA8B8102F2DF30C45E1846E2C6EF26C4274B43562B9E70311AC21A26B12"
+    },
+    {
+      "path": "backend/app/services/semantic_scope_resolver.py",
+      "size": 313192,
+      "sha256": "987744E1D58ED8B91E0A4DD730B2D31319C43CAD40955965955C1EDC0B71F9C1"
+    },
+    {
+      "path": "backend/app/services/semantic_shadow_mode.py",
+      "size": 13350,
+      "sha256": "4F74CAF3C783EE7FBB7DDA9843356DB9E3D96D4FEDA22C9B5D259D0BADDAE691"
+    },
+    {
+      "path": "backend/app/services/semantic_slot_extractor.py",
+      "size": 25461,
+      "sha256": "07D18B13E7F3EBA96562610B6C9F2A1879C4339551486271D37B68688864B3FF"
+    },
+    {
+      "path": "backend/app/services/semantic_validator.py",
+      "size": 172121,
+      "sha256": "321003A4D87203D7BCBAD27282D3DA95392C9B4209F3D04CCFF90509352CFA2C"
+    },
+    {
+      "path": "backend/app/services/style_catalog_importer.py",
+      "size": 14781,
+      "sha256": "1260593A68A8EFA737F19D0A8CB33F4FB469380C499CFBF67009D17D2F144B96"
+    },
+    {
+      "path": "backend/app/services/style_plan.py",
+      "size": 1689,
+      "sha256": "3A7D3A8EDBDE6C42344059F30CFEC4CF0E1CFF3A30FFC0DC6411F6287F25BF2F"
+    },
+    {
+      "path": "backend/app/services/style_registry.py",
+      "size": 22652,
+      "sha256": "59B71BA415BAA39D411A7D1821E720ADDFBB6E97C2AD350E4D09CD46F86C03F8"
+    },
+    {
+      "path": "backend/app/services/style_renderer.py",
+      "size": 16399,
+      "sha256": "5A18E3E6EF79A42ED6135B0D9DB67C950A6F3273B8106A8423DDA9CEB173A5AD"
+    },
+    {
+      "path": "backend/app/services/style_selector.py",
+      "size": 4957,
+      "sha256": "9AB38C82A224F9BF92A7DCF83687D7F9DF32E4CD6F2B7F8DBBCFE688F3EADD7B"
+    },
+    {
+      "path": "backend/app/services/supervised_edit_pipeline.py",
+      "size": 5801,
+      "sha256": "13E0DB5B88E481B574A5F3808B767DAC530D3203F7DF5F2C46427F8B9613B142"
+    },
+    {
+      "path": "backend/app/services/supervised_opencv_processor.py",
+      "size": 19053,
+      "sha256": "44865CA94F7DC96870A085595A74BB19C6B16D0CE98EACB461B9989D7A528E7A"
+    },
+    {
+      "path": "backend/app/style_catalog/assets/preview_anchor_v2.png",
+      "size": 2462223,
+      "sha256": "49A7070D88A69D0626646EEE1AC6489F1B5082BC2C5348D2BE70FD8A8A793994"
+    },
+    {
+      "path": "backend/app/style_catalog/catalog.lock.json",
+      "size": 133953,
+      "sha256": "F838719BAB45EE9F60B852429A20174D4E3C82CF29B954FDCC834A8B91D6E024"
+    },
+    {
+      "path": "backend/app/style_catalog/catalog.source.yaml",
+      "size": 53358,
+      "sha256": "B1972225F4047385B8ACB80E7924CA1055CCC1F679FF3629B56145A1C999ABD5"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/airy_daylight.jpg",
+      "size": 117732,
+      "sha256": "663D1549F14CA71CE146B70341F9E163626790A374309F1C6B4D9E34340FD9A0"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/alpine_crisp.jpg",
+      "size": 139176,
+      "sha256": "EEBC717868EC6DB72F2B7836B87EC93046C877E0B53CD9419C31660CAC8C67E1"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/amber_seventies.jpg",
+      "size": 137972,
+      "sha256": "7AAD96E40B8E07C24E29AA2D9DD3A5B42774E3875BCCC495A35601058A063B3A"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/archival_sepia.jpg",
+      "size": 126367,
+      "sha256": "AB9DF163797235A6AF0617D736742D95AF5E655DDFF3955C953E59B0AC3A81D4"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/aurora_night.jpg",
+      "size": 128274,
+      "sha256": "9FF455DB7430C4A1043E252373A257D4C1910F2C6211718DBCD9D01689741BC7"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/bleach_bypass.jpg",
+      "size": 144836,
+      "sha256": "98E27EA6B3479F456404DA18C3B3D3E8DD629C71CDFD01E42027D512770B61C0"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/candy_pop.jpg",
+      "size": 115361,
+      "sha256": "551FB01055192348A0623AE491404B2EF399A66622C2C527489D1714A7B5E57D"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/cinematic.jpg",
+      "size": 125152,
+      "sha256": "4B9532759877F2CB2B647F039D70479DF56EAEF14C00287DF22CA0988320C603"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/classic_negative.jpg",
+      "size": 129399,
+      "sha256": "31F5AD150C6790C7B316B62ACAEBA5E46A7AE3806AD4EB62F97D228BEE358305"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/cocoa_portrait.jpg",
+      "size": 122531,
+      "sha256": "14A4C0785902F2395CE67DF52FE28C60517F4B02C9CCC75CF576DB3F21263936"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/color_noir.jpg",
+      "size": 119844,
+      "sha256": "6A121A734AF26D7E83AEEF0CE65A466E42A92FC315D23AB9CF862BBAC5060C3C"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/cool_editorial_portrait.jpg",
+      "size": 127760,
+      "sha256": "D64816A57BC6FB80BB32D807C07BFDC0D094F4111C41194D1EC4CD3ECA1712E8"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/cool_slide.jpg",
+      "size": 134447,
+      "sha256": "8A42A509899B93F050BBAFD6B9E6E4589B798303B752B95DDDCC533B21DE3635"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/crisp_editorial.jpg",
+      "size": 139014,
+      "sha256": "D36E864CE04FDAB22AC986B7B1C2A5E9D8AA6FB7CA0F6285EC7715878DA15E2C"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/cyber_cyan.jpg",
+      "size": 128362,
+      "sha256": "23B0C013746A52672A45DBE208C6AA1B12DE400FC7180D7588D4C7F95FB17A95"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/deep_forest.jpg",
+      "size": 131755,
+      "sha256": "EF01FA9C3440C821E6864246B949D8AAEB34A11AD1419E1D728E2B180ADAEC2E"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/desert_cinema.jpg",
+      "size": 121553,
+      "sha256": "4049516A30B02783BF244715F257BA070D12F3CB20EB953DB3D75910CDA4B757"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/desert_ochre.jpg",
+      "size": 135935,
+      "sha256": "59E456C6B5D545BA95C3CF5D2DB3C0399436F7366628FF0C35B1572E10FF3A8C"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/documentary_mono.jpg",
+      "size": 122388,
+      "sha256": "E4DC2991332B4638547E166528F66ED5377DD19862603AA3CCC5BA7D3429C8DE"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/dusk_drama.jpg",
+      "size": 116893,
+      "sha256": "AAF57639225C996FD161A4FA01FCB9157890E42A57E8CD79AADE6FE87414D27A"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/dusty_print.jpg",
+      "size": 142204,
+      "sha256": "7964B4BC4B57EBE964B6AD3E288F8D01014BF6C199B737F33A04B69A45E53B9C"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/electric_violet.jpg",
+      "size": 129434,
+      "sha256": "3704469AF0042334818E24BEB410F6F2281D277112780C3E92641E19D10DE7C8"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/faded_analog.jpg",
+      "size": 138638,
+      "sha256": "CB31827DA1D8F479627DF0DAEFB8BB7C25940F32B91FA535314FD508982AC1A4"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/fresh_japanese.jpg",
+      "size": 115666,
+      "sha256": "464D539EFC0930296EDAD14265D9E0715B1A85BE3642659731AD827A71CC32E9"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/golden_portrait.jpg",
+      "size": 121208,
+      "sha256": "04320775610E297E656702562558221E76F990968EA7F0301B8B8D748433ECA6"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/graphite_portrait_mono.jpg",
+      "size": 121051,
+      "sha256": "CAF247E5BDF9962CF8AFC066BD4C765DD5BF96B4354AD0D1AAA37EE0FF651FB8"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/landscape_clear.jpg",
+      "size": 138342,
+      "sha256": "A1E8641B1291D090A34319A8D47924DEF365B983ACC0290CE11E0052308BCDD5"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/lavender_haze.jpg",
+      "size": 109863,
+      "sha256": "535E50A55056E9FFF1B7CC8FEA10AEDC816FB307AEB4E1F57DB00F16AAC32F1B"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/mellow_daylight.jpg",
+      "size": 117728,
+      "sha256": "5C9AD0212A249B5F1B8335780B553C95CB4F9402D0107AB8756A776BE83F7084"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/midnight_teal.jpg",
+      "size": 120679,
+      "sha256": "71EF9C87B8277011374E887419ACB51DF2177B70F64AA7F9365B335CB215D204"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/mint_breeze.jpg",
+      "size": 111300,
+      "sha256": "E562236948AB36333E48584AB8434C689D2FEA2EDA6DE80C852EBE768F4F3AEC"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/natural_clean.jpg",
+      "size": 126507,
+      "sha256": "8A2F41A89051DF80F354CC60E4015450AE4B8F65FE516F783BCDED7AF43450BD"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/neon_night.jpg",
+      "size": 136734,
+      "sha256": "DF04FE048D410816EB210E368EB16CDDCCE2FB14C33A05FF3023CC38782D425A"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/noir_contrast_mono.jpg",
+      "size": 136805,
+      "sha256": "8F5038EDDC190AA798ADF28DD93B4402C5E31E34DA5C85D10704020FBE5266A0"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/ocean_breeze.jpg",
+      "size": 125331,
+      "sha256": "1139AD76B98E72F6438B5681802BEFA73E3CCC0FBF80AD8CA4B647E927301785"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/pastel_dream.jpg",
+      "size": 110774,
+      "sha256": "225C89F95DA5E5A7F244EA76A7D3F034736E5B7B791169C70CD826048868E70D"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/peach_cream.jpg",
+      "size": 107578,
+      "sha256": "E3BEF6F489C77A45242F489D64AA67C1B952D4AD172E692214FB46448F63183A"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/porcelain_portrait.jpg",
+      "size": 115019,
+      "sha256": "48DCD56066551C471E0D8598AFC24F1A73E48791A2B7462B28C461BD2450069C"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/rainy_noir_night.jpg",
+      "size": 130522,
+      "sha256": "88E3B463BFF001BE8F4C72C8004C8AC2C004C15B9DD022C4D41F5A0B15DB87AE"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/rose_glow_portrait.jpg",
+      "size": 112489,
+      "sha256": "64328D3B5DBEA539AD4F0F9AC5AFCD4A3BA3E402EBE1A08EE66A4F5A01FD183C"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/silver_mono.jpg",
+      "size": 135567,
+      "sha256": "C12DDD9EE668F8990E91E71FFF532876FA066833FF4361E9C9524186D083F403"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/soft_matte_clean.jpg",
+      "size": 111568,
+      "sha256": "5958A0F24AACAB29E84217822D17994FA570C980AAFD57CD9A9D2821C574C7CE"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/soft_matte_mono.jpg",
+      "size": 106825,
+      "sha256": "551CFCC1A9F0DCD309396353457158CFEEA7BCA1D0F37F4D166F847D6BDDA434"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/soft_portrait.jpg",
+      "size": 116028,
+      "sha256": "378392C885E756BFEAA8D1B40673728E8E1879A5153B76293A9A68FCE1683053"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/teal_orange_blockbuster.jpg",
+      "size": 124497,
+      "sha256": "6E88D7764E36EF3F98C349752887E76925CB2766A63587E9F0958B04BDE61505"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/tropical_vivid.jpg",
+      "size": 131689,
+      "sha256": "24A9CFE56AFA22560F38B98C9585E28A3FF589F5E6A0907A6DD2FC847531C768"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/tungsten_street.jpg",
+      "size": 131405,
+      "sha256": "D412154E790BF6E044BE7B82F969DEBB7771800A0492AAB9E5CC0CF973A1734B"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/vintage_film.jpg",
+      "size": 104196,
+      "sha256": "69BBFD7980D876CEA34722D25A0E495CAE47446D3563528CE95C5A6C5A70BC89"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/warm_instant.jpg",
+      "size": 120242,
+      "sha256": "C95B5A4F2B1AFE037A95A9E9EA516FDBABDA130C4C110287EB2353336E01D841"
+    },
+    {
+      "path": "backend/app/style_catalog/previews/watercolor_fade.jpg",
+      "size": 98025,
+      "sha256": "2867C3353C01B2D617CAB1A03E5CD3FCB2AF0C539574253D8028A59072B3FA0B"
+    },
+    {
+      "path": "backend/app/style_catalog/sources.yaml",
+      "size": 363,
+      "sha256": "7A9CD9E898C811DA00C8716B73CA722FE6BF9087CEB240BD10DBF3CC8F5600A5"
+    },
+    {
+      "path": "backend/requirements.txt",
+      "size": 875,
+      "sha256": "719C737F83F74132C140F251B84E3899A26B83ADDA6078F5DC025FEAF883ACB8"
+    },
+    {
+      "path": "backend/start_backend_llm.ps1",
+      "size": 772,
+      "sha256": "EB60C7AE10B3E566872061F43D96AE6CA5FDA7C7CE7595A18DDF89789D828DB8"
+    },
+    {
+      "path": "backend/start_backend_supervised.ps1",
+      "size": 11085,
+      "sha256": "A54131AB7E8ACCC7F89E8EF7F05C3EABA17D476228D17019038E735F076781C5"
+    },
+    {
+      "path": "backend/tools/compile_style_catalog.py",
+      "size": 1560,
+      "sha256": "7FD16BEC6CF106A472B3F8EFC6D06567F8122CE92614DB2A334E04681714572D"
+    },
+    {
+      "path": "backend/tools/publish_style_previews.py",
+      "size": 2309,
+      "sha256": "0B4AEAB2254A2AA50F8FCD4C52CD05DBD6226DEB1EACA450C1009D345BE2F5EC"
+    },
+    {
+      "path": "frontend/.gitignore",
+      "size": 703,
+      "sha256": "4A8D984279954E0461E0FFEF9B9E7455340A0A762F227C01065A53482A83A4F1"
+    },
+    {
+      "path": "frontend/.metadata",
+      "size": 1706,
+      "sha256": "10FB09379E6CAAEA64EE4D07A4382C0F7482C88C784DBF3B0A882B78096615AB"
+    },
+    {
+      "path": "frontend/analysis_options.yaml",
+      "size": 1420,
+      "sha256": "E0EA485CFDBC3E12B93EFB8679A5EA73EBFE20EA4CA0C473DC594FC2FB274ED5"
+    },
+    {
+      "path": "frontend/android/.gitignore",
+      "size": 253,
+      "sha256": "B027C9DE1011765C015E5819BF857C0D75BFCD0886FB01721C091159012E50F1"
+    },
+    {
+      "path": "frontend/android/app/build.gradle.kts",
+      "size": 1388,
+      "sha256": "7137912CF4C77827FF239788650398130A5A80F6F70229F034D14579AF85E261"
+    },
+    {
+      "path": "frontend/android/app/src/debug/AndroidManifest.xml",
+      "size": 378,
+      "sha256": "30B0832ED8B92DFBD6AE2ABFA939CCF26333D37600056B1572BD4A397A18A74B"
+    },
+    {
+      "path": "frontend/android/app/src/main/AndroidManifest.xml",
+      "size": 2196,
+      "sha256": "43790BEDEDB217942DFDAB84DB336161D56B703F3A906A6A4E4F9D1019DEAF89"
+    },
+    {
+      "path": "frontend/android/app/src/main/kotlin/com/example/frontend/MainActivity.kt",
+      "size": 122,
+      "sha256": "5064A9524403524A65A773F3672B2C7B16FBF288D8437327DC26958A8F68B9D0"
+    },
+    {
+      "path": "frontend/android/app/src/main/res/drawable/launch_background.xml",
+      "size": 434,
+      "sha256": "94433756FE10005DDD6FC55CC5C0B1E9F3C10B66A08CEAC795ECE6713D34E28A"
+    },
+    {
+      "path": "frontend/android/app/src/main/res/drawable-v21/launch_background.xml",
+      "size": 438,
+      "sha256": "7CA6D5CEC2169C5A98661A119DB23A6F3399C8FEF2256FF04F3A642831282478"
+    },
+    {
+      "path": "frontend/android/app/src/main/res/mipmap-hdpi/ic_launcher.png",
+      "size": 544,
+      "sha256": "6A7C8F0D703E3682108F9662F813302236240D3F8F638BB391E32BFB96055FEF"
+    },
+    {
+      "path": "frontend/android/app/src/main/res/mipmap-mdpi/ic_launcher.png",
+      "size": 442,
+      "sha256": "C7C0C0189145E4E32A401C61C9BDC615754B0264E7AFAE24E834BB81049EAF81"
+    },
+    {
+      "path": "frontend/android/app/src/main/res/mipmap-xhdpi/ic_launcher.png",
+      "size": 721,
+      "sha256": "E14AA40904929BF313FDED22CF7E7FFCBF1D1AAC4263B5EF1BE8BFCE650397AA"
+    },
+    {
+      "path": "frontend/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png",
+      "size": 1031,
+      "sha256": "4D470BF22D5C17D84EDC5F82516D1BA8A1C09559CD761CEFB792F86D9F52B540"
+    },
+    {
+      "path": "frontend/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
+      "size": 1443,
+      "sha256": "3C34E1F298D0C9EA3455D46DB6B7759C8211A49E9EC6E44B635FC5C87DFB4180"
+    },
+    {
+      "path": "frontend/android/app/src/main/res/values/styles.xml",
+      "size": 996,
+      "sha256": "937D7C82F539C72EB94FD3A3773F29B3D3FEF1997213C92CB632298CEDF4BDA9"
+    },
+    {
+      "path": "frontend/android/app/src/main/res/values-night/styles.xml",
+      "size": 995,
+      "sha256": "8C5BAD5152F217E837519F9C15211D19F39BD45F5F67FAF6DD81CB4B299E518F"
+    },
+    {
+      "path": "frontend/android/app/src/profile/AndroidManifest.xml",
+      "size": 378,
+      "sha256": "30B0832ED8B92DFBD6AE2ABFA939CCF26333D37600056B1572BD4A397A18A74B"
+    },
+    {
+      "path": "frontend/android/build.gradle.kts",
+      "size": 537,
+      "sha256": "6A26DBA2CB8DFBA1E74F540B0D17A89D96C1301D3C3BFDA14348BED257FDDCBA"
+    },
+    {
+      "path": "frontend/android/gradle/wrapper/gradle-wrapper.properties",
+      "size": 201,
+      "sha256": "297C9E63B6FA6E7E8B221900FA1787C1A0E38869D8957DA66389FD0F6B00F78E"
+    },
+    {
+      "path": "frontend/android/gradle.properties",
+      "size": 138,
+      "sha256": "5539CF5F17C53900A72CF0065E450F0A8BA5B929DD2B364724C1296D0285D9DC"
+    },
+    {
+      "path": "frontend/android/settings.gradle.kts",
+      "size": 772,
+      "sha256": "A9B5756048F668D4EBF355116678FD334CD5F2169B7D4518AD19B8DF14D3AF36"
+    },
+    {
+      "path": "frontend/ios/.gitignore",
+      "size": 569,
+      "sha256": "37380775AEB2499662B7ACA80F4AC4C95AE827C3BA2BFA179AA3E9AF4812C623"
+    },
+    {
+      "path": "frontend/ios/Flutter/AppFrameworkInfo.plist",
+      "size": 720,
+      "sha256": "DA12038F9B2688A8A26160FEA2609FA8FCB11421448C109F09C0F573EFE7698D"
+    },
+    {
+      "path": "frontend/ios/Flutter/Debug.xcconfig",
+      "size": 30,
+      "sha256": "A82D7765B37116EE4821D2CD1D65942FEBF8032353757FFB0826EABDE785B4A6"
+    },
+    {
+      "path": "frontend/ios/Flutter/Release.xcconfig",
+      "size": 30,
+      "sha256": "A82D7765B37116EE4821D2CD1D65942FEBF8032353757FFB0826EABDE785B4A6"
+    },
+    {
+      "path": "frontend/ios/Runner/AppDelegate.swift",
+      "size": 539,
+      "sha256": "451C6D9BA0A2B3FF43092EA349C60FA79A91F1158B915EB29DBDD357CB95D7B8"
+    },
+    {
+      "path": "frontend/ios/Runner/Assets.xcassets/AppIcon.appiconset/Contents.json",
+      "size": 2519,
+      "sha256": "3B1E214F466FFEDFF74BAA5598AD5C4421130EEA6BC8D57B8FE23435E8280AE4"
+    },
+    {
+      "path": "frontend/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-1024x1024@1x.png",
+      "size": 10932,
+      "sha256": "7770183009E914112DE7D8EF1D235A6A30C5834424858E0D2F8253F6B8D31926"
+    },
+    {
+      "path": "frontend/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-20x20@1x.png",
+      "size": 295,
+      "sha256": "CAB10A0D391EC5BC09EF50CE49E8AD401CEE7EF03707EC0923A222C5C2B3D212"
+    },
+    {
+      "path": "frontend/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-20x20@2x.png",
+      "size": 406,
+      "sha256": "B9AD02CF6576A04D1B6806AC02A2431481B448DD0C2E505CE25842D1F7C4730B"
+    },
+    {
+      "path": "frontend/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-20x20@3x.png",
+      "size": 450,
+      "sha256": "C6E6D3B215AE744A9C391F4C4D44157EFF5E739D6AD6C39F9BFA5DF66DDDD267"
+    },
+    {
+      "path": "frontend/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-29x29@1x.png",
+      "size": 282,
+      "sha256": "5DEE24DC104AC76DC162E42AE0BEB163D426BF365562EE28BA7B3AD368559A60"
+    },
+    {
+      "path": "frontend/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-29x29@2x.png",
+      "size": 462,
+      "sha256": "A9B21EB6F4271385655A8771F76E29EEF8C1107D7879CBCFC567E6619D1F716A"
+    },
+    {
+      "path": "frontend/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-29x29@3x.png",
+      "size": 704,
+      "sha256": "E677D701FFE4AF7BC2935098D6B3984CC9AB7ACE573E6900955A5535B12410CF"
+    },
+    {
+      "path": "frontend/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-40x40@1x.png",
+      "size": 406,
+      "sha256": "B9AD02CF6576A04D1B6806AC02A2431481B448DD0C2E505CE25842D1F7C4730B"
+    },
+    {
+      "path": "frontend/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-40x40@2x.png",
+      "size": 586,
+      "sha256": "7C61C42FC7B657D9CF314D32A4EC458F0647C3AAF360BE1B9377857266EC2499"
+    },
+    {
+      "path": "frontend/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-40x40@3x.png",
+      "size": 862,
+      "sha256": "19BE171481DC71A0B2803EBCD01DD8B0C5FD5778DEE34C0A3CABC948C225F24E"
+    },
+    {
+      "path": "frontend/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-60x60@2x.png",
+      "size": 862,
+      "sha256": "19BE171481DC71A0B2803EBCD01DD8B0C5FD5778DEE34C0A3CABC948C225F24E"
+    },
+    {
+      "path": "frontend/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-60x60@3x.png",
+      "size": 1674,
+      "sha256": "4209A49E44A92EC40A327D3455EB1B1C153EE83D75DE1C2BE0A12AB18B2FF9DE"
+    },
+    {
+      "path": "frontend/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-76x76@1x.png",
+      "size": 762,
+      "sha256": "836C918CB613249EBA0483A6B02FA3DF3C1C0A89A315EE4D3B88509B83C7AB73"
+    },
+    {
+      "path": "frontend/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-76x76@2x.png",
+      "size": 1226,
+      "sha256": "41C7D42F6E61F8FE7F30B1FFA2256AECBC9682BE06D18C4A3062043E1A2E547C"
+    },
+    {
+      "path": "frontend/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-83.5x83.5@2x.png",
+      "size": 1418,
+      "sha256": "5D7E5BDF01B93802BC973345B3A78C038907147625035952A08A115A563B7F81"
+    },
+    {
+      "path": "frontend/ios/Runner/Assets.xcassets/LaunchImage.imageset/Contents.json",
+      "size": 391,
+      "sha256": "CCC7950FD5F5B82067C85F667940A9D59189151460761ECE8098CA78DAA19469"
+    },
+    {
+      "path": "frontend/ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage.png",
+      "size": 68,
+      "sha256": "93AE7D494FAD0FB30CBF3AE746A39C4BC7A0F8BBF87FBB587A3F3C01F3C5CE20"
+    },
+    {
+      "path": "frontend/ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage@2x.png",
+      "size": 68,
+      "sha256": "93AE7D494FAD0FB30CBF3AE746A39C4BC7A0F8BBF87FBB587A3F3C01F3C5CE20"
+    },
+    {
+      "path": "frontend/ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage@3x.png",
+      "size": 68,
+      "sha256": "93AE7D494FAD0FB30CBF3AE746A39C4BC7A0F8BBF87FBB587A3F3C01F3C5CE20"
+    },
+    {
+      "path": "frontend/ios/Runner/Assets.xcassets/LaunchImage.imageset/README.md",
+      "size": 336,
+      "sha256": "A985B626C4F7546A8BA392D135E9226C3547C8E2B46895F5F2BDF40D7B14EF9F"
+    },
+    {
+      "path": "frontend/ios/Runner/Base.lproj/LaunchScreen.storyboard",
+      "size": 2377,
+      "sha256": "857E61203B3DEAFB05766D8FCDA898B86A7CB6F3D5E385ECC9926C4D698215E9"
+    },
+    {
+      "path": "frontend/ios/Runner/Base.lproj/Main.storyboard",
+      "size": 1605,
+      "sha256": "FD367B6C43006D61B730F674970DD48B9F662C8F2264E52FFC1558102A2C9F2D"
+    },
+    {
+      "path": "frontend/ios/Runner/Info.plist",
+      "size": 2319,
+      "sha256": "A4194B2CA7FE6FB172C4C7DFE1C2E72A9E3F2E07F803C5782C40F6DAC78B3120"
+    },
+    {
+      "path": "frontend/ios/Runner/Runner-Bridging-Header.h",
+      "size": 38,
+      "sha256": "1A8D11D01D1CC92C650C9C9ED35299240052D4683A15A719A2315EF44185E074"
+    },
+    {
+      "path": "frontend/ios/Runner/SceneDelegate.swift",
+      "size": 76,
+      "sha256": "ADD68B905971DEDFCC0D0B5B7118030DE5925BA8C081AD9815463699E3A444AD"
+    },
+    {
+      "path": "frontend/ios/Runner.xcodeproj/project.pbxproj",
+      "size": 24102,
+      "sha256": "0286B8AACE066B01F1EB043D93DAA2FB4E87CED6B405930A445763E18B814C12"
+    },
+    {
+      "path": "frontend/ios/Runner.xcodeproj/project.xcworkspace/contents.xcworkspacedata",
+      "size": 135,
+      "sha256": "7F3B00B5C3FDB45242D7B87E1E5C4E25D1FA8129A16C94295ECC4E8EA2235C5F"
+    },
+    {
+      "path": "frontend/ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist",
+      "size": 238,
+      "sha256": "DFA0F9BB85B95CCBA9C6811ADADF8CB407FB5D52088E89DB83EBC308EC448542"
+    },
+    {
+      "path": "frontend/ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings",
+      "size": 226,
+      "sha256": "11B247BC6796892D67C9A821D18604DB4DD6A880981B34F38460B9866E6B247F"
+    },
+    {
+      "path": "frontend/ios/Runner.xcodeproj/xcshareddata/xcschemes/Runner.xcscheme",
+      "size": 3833,
+      "sha256": "2DD28B879E66081E28A3324CF2BEE7AB2F70BE9A3E50E08926B7366DADFF7D6E"
+    },
+    {
+      "path": "frontend/ios/Runner.xcworkspace/contents.xcworkspacedata",
+      "size": 152,
+      "sha256": "46C3C9702FF7C5584E11C954D943CFB6E07FB26E3FBD072DDBC0F388AA352DE1"
+    },
+    {
+      "path": "frontend/ios/Runner.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist",
+      "size": 238,
+      "sha256": "DFA0F9BB85B95CCBA9C6811ADADF8CB407FB5D52088E89DB83EBC308EC448542"
+    },
+    {
+      "path": "frontend/ios/Runner.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings",
+      "size": 226,
+      "sha256": "11B247BC6796892D67C9A821D18604DB4DD6A880981B34F38460B9866E6B247F"
+    },
+    {
+      "path": "frontend/ios/RunnerTests/RunnerTests.swift",
+      "size": 285,
+      "sha256": "5E8F4908DACEA6F29B2A790E4D38BF5FDED69096063F9A27A2F21584D62B30C0"
+    },
+    {
+      "path": "frontend/l10n.yaml",
+      "size": 182,
+      "sha256": "DCB2415BCE40AA6113D0938282FD5E810D834FA8F0B80C0197DB4B8C20AE8F12"
+    },
+    {
+      "path": "frontend/lib/api_service.dart",
+      "size": 7815,
+      "sha256": "0B647A2292BF8778DB355A90EA26912453A99C1FC0DF6B632F9ADAD4C456715F"
+    },
+    {
+      "path": "frontend/lib/app_settings.dart",
+      "size": 6362,
+      "sha256": "668786587D8A9EB6E0B409D61E7CCDE5FD7FA939CC44684191D67D2303F2FB8F"
+    },
+    {
+      "path": "frontend/lib/app_theme.dart",
+      "size": 16515,
+      "sha256": "42B6ED96AFB9FE85342D96A02CCB0E1F20C1647DDFB30E1258369B66ACDAD72A"
+    },
+    {
+      "path": "frontend/lib/edit_models.dart",
+      "size": 33439,
+      "sha256": "A61364A9DDDBC2F3851A9656904B67C1B1AA4D95EC2896A909F9323F3BA9C83E"
+    },
+    {
+      "path": "frontend/lib/editor_canvas.dart",
+      "size": 39867,
+      "sha256": "E40393C3B268FCBCCA6E4FFEEBC22CC2B5D6853883368C35E998B9DCEB59B230"
+    },
+    {
+      "path": "frontend/lib/editor_controller.dart",
+      "size": 28028,
+      "sha256": "2325BEF2405B9FEE2F2EEBC9CD18E00F5008010A4DC8D8BA6295F2D15B3B556C"
+    },
+    {
+      "path": "frontend/lib/editor_localizations.dart",
+      "size": 11559,
+      "sha256": "C953F6BC7CDDD38AEB9C32E897917621093E604FE8ACF0F7219864154C256EF3"
+    },
+    {
+      "path": "frontend/lib/editor_panels.dart",
+      "size": 63537,
+      "sha256": "275C28ED3662F546A750E625090B1A476179F5802C6523355BC03B83A2057BA1"
+    },
+    {
+      "path": "frontend/lib/editor_screen.dart",
+      "size": 19945,
+      "sha256": "DA091C328452AFDCF6182BDB64B6BF06C8996E6E1BE5CCC425B8F55F0F3EB42C"
+    },
+    {
+      "path": "frontend/lib/l10n/app_en.arb",
+      "size": 14002,
+      "sha256": "FFAEF2033AFEAF592CDB5EBB3AB01012DFCB9C4F7D53248C611F12E9A7821057"
+    },
+    {
+      "path": "frontend/lib/l10n/app_zh.arb",
+      "size": 10566,
+      "sha256": "F0C6624EB88F3EB28DA2714624BF5DCA6A9BD91E6E0330C49F9DD1BEFEF4495C"
+    },
+    {
+      "path": "frontend/lib/l10n/app_zh_TW.arb",
+      "size": 10569,
+      "sha256": "DA73BCD21B485E1C38305AC6CF25B7F66AA42CDEA61D0AB9A64CB9CA87181E00"
+    },
+    {
+      "path": "frontend/lib/l10n/generated/app_localizations.dart",
+      "size": 41335,
+      "sha256": "2764FFFED3340F52061EF9764C1EF2ED6A4163AA671A1CC6EBE22F4AF55FECDD"
+    },
+    {
+      "path": "frontend/lib/l10n/generated/app_localizations_en.dart",
+      "size": 17286,
+      "sha256": "2170CC8AEA6020CED56720369C63BE4719736A3063B03E4CA8DA601BA8744A75"
+    },
+    {
+      "path": "frontend/lib/l10n/generated/app_localizations_zh.dart",
+      "size": 32573,
+      "sha256": "FA0A7E50B7D22C9E1E898F5107C4B8EC49216B585D8AC4EF118E5A3295AAFE58"
+    },
+    {
+      "path": "frontend/lib/l10n/l10n_context.dart",
+      "size": 201,
+      "sha256": "F3D3EE7129DC8D6371CB24E7DC5E9B3AF7BE58987405800038BA2941E935946E"
+    },
+    {
+      "path": "frontend/lib/main.dart",
+      "size": 1358,
+      "sha256": "C8342110A463493EF806BD08327B229BE603DE7CD20C4F1259A0AD78AF80C2B1"
+    },
+    {
+      "path": "frontend/lib/tool_dock.dart",
+      "size": 6360,
+      "sha256": "A31C4F099418FA5ABE84457A3CB6A82F2CC662BC20F79626F522046583716C42"
+    },
+    {
+      "path": "frontend/linux/.gitignore",
+      "size": 18,
+      "sha256": "5DED4F1A9D10D34BF6EE5BEB0711D88EE2EF07B0F07ACE9ED77935A246E8EB82"
+    },
+    {
+      "path": "frontend/linux/CMakeLists.txt",
+      "size": 4755,
+      "sha256": "E3D98DF6335619763F91F6157C0F6FBF9259155B69D6EA05D542D0045D1B1B48"
+    },
+    {
+      "path": "frontend/linux/flutter/CMakeLists.txt",
+      "size": 2815,
+      "sha256": "787189E2623313CFEE590A0B553338EB9FC68B3AF922DDD77C5D39C75F989AEB"
+    },
+    {
+      "path": "frontend/linux/flutter/generated_plugin_registrant.cc",
+      "size": 440,
+      "sha256": "CF105E8CE1D7B7A3103B1F0CFA9B4D4A4ABF69C6C4AAD0A549F2774E32F7DCB9"
+    },
+    {
+      "path": "frontend/linux/flutter/generated_plugin_registrant.h",
+      "size": 303,
+      "sha256": "00F93BB5B1FAEFDEDE8F6065DF327522900FB0B8EFEE86BACF424FD947ED14BB"
+    },
+    {
+      "path": "frontend/linux/flutter/generated_plugins.cmake",
+      "size": 761,
+      "sha256": "99AE7FF3BE78108CBB1EDBE24C09B432E14ECD99395742033F89770434355974"
+    },
+    {
+      "path": "frontend/linux/runner/CMakeLists.txt",
+      "size": 974,
+      "sha256": "8CDCFD911E770FD7D511C97C7BCE6559486A815352A47C953F7EF632E236D2CC"
+    },
+    {
+      "path": "frontend/linux/runner/main.cc",
+      "size": 180,
+      "sha256": "EA23F7CDF74091D63BBA29EF60486370B766157B848F0CFE62BD8B1C1695A0C1"
+    },
+    {
+      "path": "frontend/linux/runner/my_application.cc",
+      "size": 5455,
+      "sha256": "CAF1E8FC54AB95E874CBCCAC1B7E4DBDC30EFD6C16B0116B3EA61737B03866DC"
+    },
+    {
+      "path": "frontend/linux/runner/my_application.h",
+      "size": 451,
+      "sha256": "A4218D7AC0DB8A9A6716DAF216B2D4FC6BDC7AC647E3183078B2C962EBDFCF70"
+    },
+    {
+      "path": "frontend/macos/.gitignore",
+      "size": 89,
+      "sha256": "FFEC1A0BBD70547186B82AD4E49089BAFAB2DE309B89DE97C776D70DEBB179FA"
+    },
+    {
+      "path": "frontend/macos/Flutter/Flutter-Debug.xcconfig",
+      "size": 48,
+      "sha256": "62290AD8E938BF410206D8C7E131262696B58A6DF110D39FAF3399396FFE61B1"
+    },
+    {
+      "path": "frontend/macos/Flutter/Flutter-Release.xcconfig",
+      "size": 48,
+      "sha256": "62290AD8E938BF410206D8C7E131262696B58A6DF110D39FAF3399396FFE61B1"
+    },
+    {
+      "path": "frontend/macos/Flutter/GeneratedPluginRegistrant.swift",
+      "size": 399,
+      "sha256": "264502E5F56FBB2277D1A93C23E877CFED2467FE1D6676D372136C5F9D4E8B11"
+    },
+    {
+      "path": "frontend/macos/Runner/AppDelegate.swift",
+      "size": 311,
+      "sha256": "CE9DBE45A57C59E85519DA50A26C471615B9C8CDD85A8F4A39D2E480E62A4AF4"
+    },
+    {
+      "path": "frontend/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_1024.png",
+      "size": 102994,
+      "sha256": "6232E5815AF17E25E0268B2FEC7AEA9E068CC92EC709E9605C2B31DF4FF2A313"
+    },
+    {
+      "path": "frontend/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_128.png",
+      "size": 5680,
+      "sha256": "15591F03F31313AF6FD644ED0512106CC04365130B8B73244F1CFA6DDDFB4400"
+    },
+    {
+      "path": "frontend/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_16.png",
+      "size": 520,
+      "sha256": "CC6928B5ADFC00DBF526192E2705DD9AF641CDF20AB4C6C7CA7CD4936DCA59F0"
+    },
+    {
+      "path": "frontend/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_256.png",
+      "size": 14142,
+      "sha256": "416EFD77CDE932D42EF34168DA24DD428A495B1F4F34BBBD125A18D2ADD186A2"
+    },
+    {
+      "path": "frontend/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_32.png",
+      "size": 1066,
+      "sha256": "AE8C4458E41F1E28B1E851ED87D3268D4A0351CEEA427FA2A84CC94DDFB6D4C5"
+    },
+    {
+      "path": "frontend/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_512.png",
+      "size": 36406,
+      "sha256": "0A91C6C1BF242E54EE179E34629E9EF3E8A6D286C0FCE01E302280A8BE9277E6"
+    },
+    {
+      "path": "frontend/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_64.png",
+      "size": 2218,
+      "sha256": "6AD229623498E5F1277800DB3AB7CB11FAF85EB2569E1213F7D8E55003C07B42"
+    },
+    {
+      "path": "frontend/macos/Runner/Assets.xcassets/AppIcon.appiconset/Contents.json",
+      "size": 1291,
+      "sha256": "BC6BA8105CA69651AEEB77358851590DE295DCA04681A1D58C0F449641C242F3"
+    },
+    {
+      "path": "frontend/macos/Runner/Base.lproj/MainMenu.xib",
+      "size": 23729,
+      "sha256": "BE9E9EF8469D3262370E0F0B855ED163CBF9C8362C59E330B2FFE63B86FA42F4"
+    },
+    {
+      "path": "frontend/macos/Runner/Configs/AppInfo.xcconfig",
+      "size": 603,
+      "sha256": "0EA03D547A2BDA8574B1DFFAADB4DBC327E7A749520C70565410A520A34D63F1"
+    },
+    {
+      "path": "frontend/macos/Runner/Configs/Debug.xcconfig",
+      "size": 77,
+      "sha256": "8067D533EF6593760BAAD9A9855A786A7A77470FCC3F0925EC04FE43BC1AC4B0"
+    },
+    {
+      "path": "frontend/macos/Runner/Configs/Release.xcconfig",
+      "size": 79,
+      "sha256": "7A6A4B4D973A23052FA0A0388DD261E32D311D7B66BA1BFC3B914B361808AC61"
+    },
+    {
+      "path": "frontend/macos/Runner/Configs/Warnings.xcconfig",
+      "size": 580,
+      "sha256": "0E341A392B16AD302D12890AA3DAC9257A6C10ECE685437604259A85341645A3"
+    },
+    {
+      "path": "frontend/macos/Runner/DebugProfile.entitlements",
+      "size": 348,
+      "sha256": "EBAAB2B9992173DE422C33E1FBAB7F6E31ACAA2213956097AC8CEFD894A91AC8"
+    },
+    {
+      "path": "frontend/macos/Runner/Info.plist",
+      "size": 1165,
+      "sha256": "574FC4F25C88148DBEAFED2695DD47939FEF9908838AB1DAF59C323B3AC754CF"
+    },
+    {
+      "path": "frontend/macos/Runner/MainFlutterWindow.swift",
+      "size": 388,
+      "sha256": "65C9613C11BCEDFA51416B16C975D8BA6FF12B405FC19D60DB8755D92E86D9FE"
+    },
+    {
+      "path": "frontend/macos/Runner/Release.entitlements",
+      "size": 240,
+      "sha256": "B746C74B201E6AF4E0864FBD1F4F629F96156A7EC4B7208BC995D0A5089BB592"
+    },
+    {
+      "path": "frontend/macos/Runner.xcodeproj/project.pbxproj",
+      "size": 26359,
+      "sha256": "17B963D141A1612AD55DDDCE1A69130CC69F789A012508412F59EBF7252E5C6D"
+    },
+    {
+      "path": "frontend/macos/Runner.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist",
+      "size": 238,
+      "sha256": "DFA0F9BB85B95CCBA9C6811ADADF8CB407FB5D52088E89DB83EBC308EC448542"
+    },
+    {
+      "path": "frontend/macos/Runner.xcodeproj/xcshareddata/xcschemes/Runner.xcscheme",
+      "size": 3691,
+      "sha256": "D538ED6016BE33F5FAF86FD83C15D255749B90E7E2CB2AF9E56B232FB47F3130"
+    },
+    {
+      "path": "frontend/macos/Runner.xcworkspace/contents.xcworkspacedata",
+      "size": 152,
+      "sha256": "46C3C9702FF7C5584E11C954D943CFB6E07FB26E3FBD072DDBC0F388AA352DE1"
+    },
+    {
+      "path": "frontend/macos/Runner.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist",
+      "size": 238,
+      "sha256": "DFA0F9BB85B95CCBA9C6811ADADF8CB407FB5D52088E89DB83EBC308EC448542"
+    },
+    {
+      "path": "frontend/macos/RunnerTests/RunnerTests.swift",
+      "size": 290,
+      "sha256": "6BC180BC77C7DEF7A21D197233E25DFF42CC493AB9D294632EDAFC18FDF0AC44"
+    },
+    {
+      "path": "frontend/pubspec.lock",
+      "size": 14958,
+      "sha256": "756FA445F705F81C2466113AD99923E908E8D9D97FB27E7CC90A49C5571A0980"
+    },
+    {
+      "path": "frontend/pubspec.yaml",
+      "size": 3962,
+      "sha256": "96E5E2B3D8A774A4145182AE51E71BA7B3A10B5CC1FD69F8DB0C4EECF097202E"
+    },
+    {
+      "path": "frontend/README.md",
+      "size": 630,
+      "sha256": "D61BA060662CA3D794B647E5142A4E4EB85EA3EF283CBED6222D08C76E095DE1"
+    },
+    {
+      "path": "frontend/web/favicon.png",
+      "size": 917,
+      "sha256": "7AB2525F4B86B65D3E4C70358A17E5A1AAF6F437F99CBCC046DAD73D59BB9015"
+    },
+    {
+      "path": "frontend/web/icons/Icon-192.png",
+      "size": 5292,
+      "sha256": "3DCE99077602F70421C1C6B2A240BC9B83D64D86681D45F2154143310C980BE3"
+    },
+    {
+      "path": "frontend/web/icons/Icon-512.png",
+      "size": 8252,
+      "sha256": "BACCB205AE45F0B421BE1657259B4943AC40C95094AB877F3BCBE12CD544DCBE"
+    },
+    {
+      "path": "frontend/web/icons/Icon-maskable-192.png",
+      "size": 5594,
+      "sha256": "D2C842E22A9F4EC9D996B23373A905C88D9A203B220C5C151885AD621F974B5C"
+    },
+    {
+      "path": "frontend/web/icons/Icon-maskable-512.png",
+      "size": 20998,
+      "sha256": "6AEE06CDCAB6B2AEF74B1734C4778F4421D2DA100B0FF9E52B21B55240202929"
+    },
+    {
+      "path": "frontend/web/index.html",
+      "size": 1715,
+      "sha256": "8C0C23AC631F7F1C57E5AA81CE5232C584D8A69891FFD9CE03ECD1F3ABA4B4BC"
+    },
+    {
+      "path": "frontend/web/manifest.json",
+      "size": 981,
+      "sha256": "8C75B3C007FA48A1E7FFB82644D1D15BEC612E9AAB152620AFEE3E36BC4808D9"
+    },
+    {
+      "path": "frontend/windows/.gitignore",
+      "size": 291,
+      "sha256": "96345475F1A3C66BD32D28178FBA151AB1506B35B1F7857B8F7651863093EA11"
+    },
+    {
+      "path": "frontend/windows/CMakeLists.txt",
+      "size": 4152,
+      "sha256": "127BFB7BFCDA550624D66A9AED903638BFA88826DB30DAD657C17D1F0CBA77B7"
+    },
+    {
+      "path": "frontend/windows/flutter/CMakeLists.txt",
+      "size": 3742,
+      "sha256": "1FE418971B6F41BB35CEB3D64113A835F3F6F171ECAA707BF232492B57A588D6"
+    },
+    {
+      "path": "frontend/windows/flutter/generated_plugin_registrant.cc",
+      "size": 328,
+      "sha256": "ED1440005DF088855D121DAF68D8F40764797F63A4F0604D4D6D0740549466DE"
+    },
+    {
+      "path": "frontend/windows/flutter/generated_plugin_registrant.h",
+      "size": 302,
+      "sha256": "DBC11635D7B1BA1887ADF40DF5B83D634E9C3AB0BEE34510C71528BB4D73602A"
+    },
+    {
+      "path": "frontend/windows/flutter/generated_plugins.cmake",
+      "size": 767,
+      "sha256": "8AF6ECE289183272E49888EB5BF6BFB457F82187A09B369859B147E666A8EAE6"
+    },
+    {
+      "path": "frontend/windows/runner/CMakeLists.txt",
+      "size": 1796,
+      "sha256": "34119EC122E36940235EF4BC245FCFB43B6960ED443E28AF1A8D833A81209B9E"
+    },
+    {
+      "path": "frontend/windows/runner/flutter_window.cpp",
+      "size": 2122,
+      "sha256": "DD185884C0B5301D400B58F12EBB36B1C8B326531597E531B40E44A6EEB0E943"
+    },
+    {
+      "path": "frontend/windows/runner/flutter_window.h",
+      "size": 928,
+      "sha256": "38E0FCD3A0B83895852EC295CB70D90179C0DCD40D58F065EB5232A4ECD84898"
+    },
+    {
+      "path": "frontend/windows/runner/main.cpp",
+      "size": 1261,
+      "sha256": "BFE3DD878AAC67AC7E208335D8FDA245ED5E3A915E30F197D8ED1BDBE339B339"
+    },
+    {
+      "path": "frontend/windows/runner/resource.h",
+      "size": 432,
+      "sha256": "1FA98588B04561590BA1CF0521AB86A9DB4A878312F21C9D5861D965DDD8D1AE"
+    },
+    {
+      "path": "frontend/windows/runner/resources/app_icon.ico",
+      "size": 33772,
+      "sha256": "C098D3FC85CACFF98B8E69811B48E9F0D852FCEE278132D794411D978869CBF8"
+    },
+    {
+      "path": "frontend/windows/runner/runner.exe.manifest",
+      "size": 602,
+      "sha256": "825D243E9FA1542619909C1B72D09B3ED7C1F3B225BB8367C125835E5DC3F8AA"
+    },
+    {
+      "path": "frontend/windows/runner/Runner.rc",
+      "size": 3029,
+      "sha256": "9D766798FC9278C1F664AFE454E1D4B96BC21C77A6351607608BAE428518B763"
+    },
+    {
+      "path": "frontend/windows/runner/utils.cpp",
+      "size": 1797,
+      "sha256": "DC2EE94D43116F959A4ABD42557F71D07ACC631ABBFFE03B11489DBEED35BEDB"
+    },
+    {
+      "path": "frontend/windows/runner/utils.h",
+      "size": 672,
+      "sha256": "95A7F7DDDB832997CEFA937A96F89472332277E75734A5DE553610760B744B03"
+    },
+    {
+      "path": "frontend/windows/runner/win32_window.cpp",
+      "size": 8534,
+      "sha256": "9065F31CCF746CF8B390121F958F9E959033AF864AED779597066625ED56BC36"
+    },
+    {
+      "path": "frontend/windows/runner/win32_window.h",
+      "size": 3522,
+      "sha256": "7DD03746B19DCF3542829B2F6E8ED40A2714CE5F2CB3B0E23F0118A2FCF62D62"
+    },
+    {
+      "path": "install_prompt_model.ps1",
+      "size": 2886,
+      "sha256": "F30B10B11016AEDF309DCFDB6819A5DAFE8A5A0AB88971794A25BB0D1D2BE1DE"
+    },
+    {
+      "path": "make_comparison.ps1",
+      "size": 1517,
+      "sha256": "D3F25D7FB88D0CF52FD25DCED990F21BC2E43E80934006B7A332B4CB88E85158"
+    },
+    {
+      "path": "make_comparison.py",
+      "size": 13326,
+      "sha256": "12CEBA8AEDFB0E97BDF7C6FD8F1D8D30D615419B5B06EF65C62C1AEE66A7660F"
+    },
+    {
+      "path": "models/huggingface/README.md",
+      "size": 3264,
+      "sha256": "334B7E8E5A8DB757A813DB9C15D09C54D7EEDDA90C8025164724DE839552CF6F"
+    },
+    {
+      "path": "models/MODEL_ASSETS.json",
+      "size": 963,
+      "sha256": "E014FF5A3510B1C3938B567C172F9DC37315B2CE50E9CE21D61521B7B4C6F34B"
+    },
+    {
+      "path": "models/Modelfile.prompt-control",
+      "size": 143,
+      "sha256": "AC3A65E228C23BB4FBFC6BEC3D8AC4B39AAAEA9FDDBC6EDAF66A91BE593DBD3E"
+    },
+    {
+      "path": "predict_residual_fusion.py",
+      "size": 4065,
+      "sha256": "E92824AA257232918D012BCB28EBFDEE387CD92A93B58DF0D61DD00CCC8F961D"
+    },
+    {
+      "path": "README.md",
+      "size": 12688,
+      "sha256": "F074C0D59E00929F5AE13EE2B2C496272A4B38E3C29182F21B6CA00FC0B60C15"
+    },
+    {
+      "path": "requirements.txt",
+      "size": 316,
+      "sha256": "76B762DDDF7E7DD848736751F8D99495ECD458A27BEDF7BDE80D958F57D27A5D"
+    },
+    {
+      "path": "run_residual_fusion.ps1",
+      "size": 2902,
+      "sha256": "D327D1D2C36C7FF61ECFBFC8E1558430718541E31CB4DD3115D6673D85D124D4"
+    },
+    {
+      "path": "start_backend.ps1",
+      "size": 319,
+      "sha256": "3060626057A573F7B4B013291795D83A4C8227B5CED20EC8DF793CE2754B0510"
+    },
+    {
+      "path": "start_frontend.ps1",
+      "size": 702,
+      "sha256": "07610142084FC215EAD2F07DEACFCDB5021CCBC61C55CDA79846EAE5E298F03D"
+    },
+    {
+      "path": "tools/verify_package.py",
+      "size": 5385,
+      "sha256": "1D0B8DCFF865F0A03B663F2351027903B76953C7505229DB1DBFC217706EDCAE"
+    },
+    {
+      "path": "training/baselines/prompt_control_bf16_lora_v1.json",
+      "size": 6243,
+      "sha256": "4D7E5CDAE831130F5CC1F7AFA0A08D9D4DEDA4547F1298BEB4616C23674E18A6"
+    },
+    {
+      "path": "training/baselines/prompt_control_hybrid_v1.json",
+      "size": 5744,
+      "sha256": "3D9331A7823632F3D2F82918FED5CBD1F22EAAFD4EA29A39792608367D3E7D47"
+    },
+    {
+      "path": "training/baselines/raw_expert_c_supervised_v1.json",
+      "size": 2726,
+      "sha256": "3198CF73491D4EFC67A92F04C116A8B6903CF1CFDA6E5E5103371D9C7D391E89"
+    },
+    {
+      "path": "training/baselines/raw_expert_c_supervised_v2.json",
+      "size": 3681,
+      "sha256": "DAED4E1B2E208774418A073A69174D42D5913819EB53A557DF2218B5F96D0E2B"
+    },
+    {
+      "path": "training/baselines/selective_hybrid_numpy_v1.json",
+      "size": 2445,
+      "sha256": "C2E26A05603423880A832C01DF63776F283AA04C554F3657BAF97E2FF4D5A480"
+    },
+    {
+      "path": "training/baselines/selective_hybrid_v1.json",
+      "size": 2313,
+      "sha256": "2089A053C3C9F4479BDC5E36303157D9BCDA66C8354EED62562B2E82C76E3C09"
+    },
+    {
+      "path": "training/baselines/supervised_opencv_pipeline_v1.json",
+      "size": 2760,
+      "sha256": "4F19134F0945A08B19F3B306044FFACEF6B3AEEBEF5309732FF746FDE161C61F"
+    },
+    {
+      "path": "training/baselines/supervised_opencv_pipeline_v2.json",
+      "size": 4085,
+      "sha256": "771C1FD82D042AE00504C2930B254D1B41F92D12B9B812E1158D2D5756142301"
+    },
+    {
+      "path": "training/final/expert_c_runtime.py",
+      "size": 37569,
+      "sha256": "469D620E0EBF9610C81B441F4C8022AAC38C4465654E4BA79FC89939D052F835"
+    },
+    {
+      "path": "training/outputs/expert_c_continuous_spatial_strength_final002/result.json",
+      "size": 3152,
+      "sha256": "974D4FF6A2C8C360D511AAB98F27C299B037B9ADD3EB77367DA2D99251E3BB2E"
+    },
+    {
+      "path": "training/outputs/expert_c_continuous_spatial_strength_post_final_5000_demo001/artifact_manifest.json",
+      "size": 1310,
+      "sha256": "FEC918F6CF89E4C4104A4EA83345B62E4975831FE74365AD31E1B3B683B03BA1"
+    },
+    {
+      "path": "training/outputs/expert_c_continuous_spatial_strength_post_final_5000_demo001/continuous_strength_seed_131.pt",
+      "size": 689673,
+      "sha256": "1097C2891C8F4768ECD539678EA78DAB26A39BF6C37A01A428F9E896B2B26C1D"
+    },
+    {
+      "path": "training/outputs/expert_c_continuous_spatial_strength_post_final_5000_demo001/continuous_strength_seed_149.pt",
+      "size": 689673,
+      "sha256": "EF976AB1894AD35D5E5E74B5158DD7F25DBABBBEA4F40BADF7346CF664D2BD1E"
+    },
+    {
+      "path": "training/outputs/expert_c_continuous_spatial_strength_post_final_5000_demo001/continuous_strength_seed_167.pt",
+      "size": 689673,
+      "sha256": "ADFCC04B319F2906B836342388EBEF27D6D06015F9E8EEA9D2D34805C904F6A2"
+    },
+    {
+      "path": "training/outputs/expert_c_continuous_spatial_strength_post_final_5000_demo001/result.json",
+      "size": 7179,
+      "sha256": "520131CF4ECECC8FDEF8BD85678F91B2772DC574A137B9E830D2AADBF2742EC8"
+    },
+    {
+      "path": "training/outputs/expert_c_v3_1_artifact_safe_development001/result.json",
+      "size": 3028,
+      "sha256": "19993F601627AC5A631B9AF18F0EC6B81A48720444B46A3956EEB3AE498A2E95"
+    },
+    {
+      "path": "training/outputs/expert_c_v3_1_joint_categorical_artifact_safe_full_research001/joint_categorical_strength_full_train.pt",
+      "size": 4622527,
+      "sha256": "3E893D2A1FDB0F04F32259D20873F0A1E2F4C1FFE340435E8ABB71756259E4AB"
+    },
+    {
+      "path": "training/outputs/expert_c_v3_1_joint_categorical_artifact_safe_full_research001/result.json",
+      "size": 1741,
+      "sha256": "E8BCB72C566CD4DEB965B8AC2255BE08CF3A5BC15A0C0E7CB777E6D41D69B17A"
+    },
+    {
+      "path": "training/outputs/expert_c_v3_5_development003/result.json",
+      "size": 2979,
+      "sha256": "B00B8EA3240D3CC47AB01A951A96EE4CA79E5E1D1E85E74ACEA39CBFF76580E7"
+    },
+    {
+      "path": "training/outputs/expert_c_v3_5_resolution_aligned_selector002/resolution_aligned_selector_v3_5.joblib",
+      "size": 1226261,
+      "sha256": "5D672E6F4B6CF0A141B6A97F46926C24119CB72DFAB54EDA91AC3D0564C17307"
+    },
+    {
+      "path": "training/outputs/expert_c_v3_5_resolution_aligned_selector002/result.json",
+      "size": 6107,
+      "sha256": "06BAC8154C3D57A4CEAA9CC14B0836A33CDE458F7471FE972514DB81DF4E9F28"
+    },
+    {
+      "path": "training/outputs/expert_c_v3_6_catastrophic_guard002/catastrophic_guard_v3_6.joblib",
+      "size": 2828940,
+      "sha256": "AC82CA3A5267CAE9F1C428FF86208EEF9A23A0810310B44302511B539876BC71"
+    },
+    {
+      "path": "training/outputs/expert_c_v3_6_catastrophic_guard002/result.json",
+      "size": 5510,
+      "sha256": "FE5B80F65CC59BE1FFB84A802B42833A162F243232D178B599BB0B67B13F859F"
+    },
+    {
+      "path": "training/outputs/expert_c_v3_6_deployment_feature_contract002/result.json",
+      "size": 1388,
+      "sha256": "DB7328699C89C5F599C94A0B91E7F7722031CCEA4DB0F0DC255477BCB9977764"
+    },
+    {
+      "path": "training/outputs/expert_c_v3_8_post_final_5000_release_audit001/result.json",
+      "size": 4156,
+      "sha256": "C2D0DBDE6228C139D52E7FD1153FA0044FDBB75FABE26BA3FCA989BB7E28D374"
+    },
+    {
+      "path": "training/outputs/raw_expert_c_expanded_v2/raw_expert_c_regressor.npz",
+      "size": 5208,
+      "sha256": "F65148CA8DA2D10A291A5A04A25393409F16D9A17689FEDE6006D05D24FFAF87"
+    },
+    {
+      "path": "training/outputs/selective_hybrid_numpy_v1/shared_v2_state_intent.npz",
+      "size": 30817,
+      "sha256": "36408489F685EBAB77B8C990A159360E3221A1C03475373C96C4A5EDD3F67D8B"
+    },
+    {
+      "path": "training/outputs/selective_hybrid_numpy_v1/white_balance_expert.npz",
+      "size": 29752,
+      "sha256": "D0B68A344A69608403BD93B2DD706C1C828EF3BEBE337FABDF2228D5DC938330"
+    },
+    {
+      "path": "training/predict_raw_expert_c.py",
+      "size": 1573,
+      "sha256": "BC1411CC9276D559995D847C2DA886BCCAEEEB4DA339D242F0471A693FEE5032"
+    },
+    {
+      "path": "training/v3/hsl_rendered_model.py",
+      "size": 13661,
+      "sha256": "3FC123A5011641366BAB74337F1379F8486314B0F6EB2F39F61B5A094F21EB37"
+    },
+    {
+      "path": "training/v3/pre_training_freeze_joint_categorical_artifact_safe_full_research_v1.json",
+      "size": 4040,
+      "sha256": "641B2A2325A5C86DF1E8221E206BCFCEBFC84F051D8F368ECB21AE2E8571D9C7"
+    }
+  ]
+}

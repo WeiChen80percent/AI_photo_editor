@@ -1,0 +1,164 @@
+{
+  "schema_version": "expert_c_v3_6_catastrophic_guard_result_v1",
+  "created_at": "2026-08-13T15:45:24.398937+00:00",
+  "status": "PASS",
+  "data": {
+    "train_count": 4600,
+    "feature_count": 259,
+    "fold_count": 5,
+    "catastrophic_label_rate": 0.214348,
+    "development_content_accessed": false,
+    "final_content_accessed": false
+  },
+  "nested_outer_folds": [
+    {
+      "outer_fold": 0,
+      "train_count": 3681,
+      "held_count": 919,
+      "chosen": {
+        "min_samples_leaf": 10,
+        "maximum_risk_probability": 0.5,
+        "eligible": true,
+        "metrics": {
+          "average_gain_over_input": 0.030124,
+          "median_gain_over_input": 0.023202,
+          "strict_win_rate_over_input": 0.645748,
+          "worst_decile_gain_over_input": -0.058005,
+          "catastrophic_rate_below_minus_0_01": 0.139908,
+          "harm_rate_below_zero": 0.183917
+        },
+        "edit_rate": 0.829666
+      },
+      "eligible_candidate_count": 3
+    },
+    {
+      "outer_fold": 1,
+      "train_count": 3678,
+      "held_count": 922,
+      "chosen": {
+        "min_samples_leaf": 50,
+        "maximum_risk_probability": 0.6,
+        "eligible": true,
+        "metrics": {
+          "average_gain_over_input": 0.03026,
+          "median_gain_over_input": 0.023769,
+          "strict_win_rate_over_input": 0.652257,
+          "worst_decile_gain_over_input": -0.06022,
+          "catastrophic_rate_below_minus_0_01": 0.147906,
+          "harm_rate_below_zero": 0.193855
+        },
+        "edit_rate": 0.846112
+      },
+      "eligible_candidate_count": 3
+    },
+    {
+      "outer_fold": 2,
+      "train_count": 3642,
+      "held_count": 958,
+      "chosen": {
+        "min_samples_leaf": 25,
+        "maximum_risk_probability": 0.6,
+        "eligible": true,
+        "metrics": {
+          "average_gain_over_input": 0.030542,
+          "median_gain_over_input": 0.026383,
+          "strict_win_rate_over_input": 0.662823,
+          "worst_decile_gain_over_input": -0.063171,
+          "catastrophic_rate_below_minus_0_01": 0.159802,
+          "harm_rate_below_zero": 0.206205
+        },
+        "edit_rate": 0.869028
+      },
+      "eligible_candidate_count": 3
+    },
+    {
+      "outer_fold": 3,
+      "train_count": 3691,
+      "held_count": 909,
+      "chosen": {
+        "min_samples_leaf": 50,
+        "maximum_risk_probability": 0.6,
+        "eligible": true,
+        "metrics": {
+          "average_gain_over_input": 0.029347,
+          "median_gain_over_input": 0.023574,
+          "strict_win_rate_over_input": 0.646166,
+          "worst_decile_gain_over_input": -0.060338,
+          "catastrophic_rate_below_minus_0_01": 0.152533,
+          "harm_rate_below_zero": 0.196966
+        },
+        "edit_rate": 0.843132
+      },
+      "eligible_candidate_count": 1
+    },
+    {
+      "outer_fold": 4,
+      "train_count": 3708,
+      "held_count": 892,
+      "chosen": {
+        "min_samples_leaf": 10,
+        "maximum_risk_probability": 0.5,
+        "eligible": true,
+        "metrics": {
+          "average_gain_over_input": 0.030299,
+          "median_gain_over_input": 0.023892,
+          "strict_win_rate_over_input": 0.640507,
+          "worst_decile_gain_over_input": -0.057489,
+          "catastrophic_rate_below_minus_0_01": 0.14617,
+          "harm_rate_below_zero": 0.187163
+        },
+        "edit_rate": 0.82767
+      },
+      "eligible_candidate_count": 2
+    }
+  ],
+  "baseline_v3_5": {
+    "average_gain_over_input": 0.03058,
+    "median_gain_over_input": 0.027407,
+    "strict_win_rate_over_input": 0.678913,
+    "worst_decile_gain_over_input": -0.064877,
+    "catastrophic_rate_below_minus_0_01": 0.16913,
+    "harm_rate_below_zero": 0.215
+  },
+  "catastrophic_guard_v3_6": {
+    "average_gain_over_input": 0.030001,
+    "median_gain_over_input": 0.023456,
+    "strict_win_rate_over_input": 0.643696,
+    "worst_decile_gain_over_input": -0.058152,
+    "catastrophic_rate_below_minus_0_01": 0.145,
+    "harm_rate_below_zero": 0.188913
+  },
+  "edit_rate": 0.832609,
+  "gates": {
+    "thresholds": {
+      "maximum_mean_regression_vs_v3_5": 0.001,
+      "minimum_worst_decile_improvement_vs_v3_5": 0.003,
+      "minimum_catastrophic_rate_reduction_vs_v3_5": 0.015,
+      "minimum_edit_rate": 0.7,
+      "coverage_must_be_exact": true
+    },
+    "checks": {
+      "mean_preserved": true,
+      "tail_improved": true,
+      "catastrophic_rate_reduced": true,
+      "minimum_edit_rate": true,
+      "coverage_exact": true
+    },
+    "all_passed": true
+  },
+  "oof": {
+    "path": "C:\\Users\\user\\Desktop\\AI_photo_editor\\training\\outputs\\expert_c_v3_6_catastrophic_guard002\\catastrophic_guard_oof.npz",
+    "sha256": "8AB776A7DBA09BB1B7D9D00178E6C69A1B8603ED19F5F432A64FF7FE63272B1C"
+  },
+  "artifact": {
+    "path": "training/outputs/expert_c_v3_6_catastrophic_guard002/catastrophic_guard_v3_6.joblib",
+    "sha256": "AC82CA3A5267CAE9F1C428FF86208EEF9A23A0810310B44302511B539876BC71",
+    "promoted": false
+  },
+  "freeze": {
+    "path": "C:\\Users\\user\\Desktop\\AI_photo_editor\\training\\v3\\pre_training_freeze_catastrophic_guard_v3_6_retry1_v1.json",
+    "sha256": "6A12CC770AB74D7E5A676C67F00D4F74130ED496770311CD60ECC25A5C2AED2E"
+  },
+  "elapsed_seconds": 355.418,
+  "promotion_policy": "Train-only research candidate. No development, final or backend promotion is authorized."
+}
