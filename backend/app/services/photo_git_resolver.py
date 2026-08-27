@@ -93,6 +93,8 @@ def selector_matches(
     selector: dict[str, Any],
     contribution: dict[str, Any],
 ) -> bool:
+    if selector.get("all_contributions") is True:
+        return True
     region = selector.get("region")
     if region is not None and contribution.get("region") != region:
         return False
@@ -106,6 +108,18 @@ def selector_matches(
 def _normalize_structured_selector(
     selector: PhotoGitSelector,
 ) -> dict[str, Any]:
+    if selector.all_contributions:
+        if selector.region is not None or selector.mask_type is not None or selector.parameters:
+            raise PhotoGitResolutionError(
+                "photo_git_scope_invalid",
+                "all_contributions 不可和區域、遮罩或參數混用。",
+            )
+        return {
+            "region": None,
+            "mask_type": None,
+            "parameters": [],
+            "all_contributions": True,
+        }
     region = str(selector.region or "").strip().lower() or None
     mask_type = str(selector.mask_type or "").strip().lower() or None
     parameters: list[str] = []
@@ -143,6 +157,7 @@ def _normalize_structured_selector(
         "region": region,
         "mask_type": mask_type,
         "parameters": parameters,
+        "all_contributions": False,
     }
 
 
@@ -224,6 +239,7 @@ def _deduplicate(
             selector.get("region"),
             selector.get("mask_type"),
             tuple(selector.get("parameters") or []),
+            bool(selector.get("all_contributions")),
         )
         if key in seen:
             continue

@@ -1,4 +1,6 @@
 import copy
+import hashlib
+import json
 import re
 import shutil
 from collections.abc import Mapping
@@ -14,6 +16,8 @@ from app.services.adaptive_adjustment import (
     preflight_adaptive_semantic_prompt,
     resolve_adaptive_adjustment,
 )
+from app.services.command_planner import CommandPlanCacheError, CommandPlanner
+from app.services.command_schema import CommandPlanRequest
 from app.services.edit_engines import create_engine_result, normalize_engine_name
 from app.services.edit_contract_registry import get_default_metric_registry
 from app.services.edit_contract_schema import EditContractError
@@ -31,6 +35,9 @@ from app.services.edit_history import (
 from app.services.english_prompt_contract import MAX_ENGLISH_PROMPT_LENGTH
 from app.services.grounded_contract_provider import (
     get_default_grounded_contract_provider,
+)
+from app.services.grounded_command_provider import (
+    get_default_grounded_command_provider,
 )
 from app.services.edit_intent_resolver import resolve_edit_intent
 from app.services.edit_plan import build_reference_edit_plan
@@ -64,6 +71,7 @@ PHOTO_GIT_PREVIEWS_DIR = BASE_DIR / "storage" / "photo_git_previews"
 ORIGINAL_PARENT_SENTINEL = "original"
 SESSION_ID_PATTERN = re.compile(r"^session_[0-9a-f]{32}$")
 EDIT_ID_PATTERN = re.compile(r"^edit_[0-9a-f]{32}$")
+COMMAND_EXECUTION_TYPES = {"edit_prompt", "apply_style"}
 HISTORY_STORE = EditHistoryStore(SESSIONS_DIR)
 MANUAL_EDIT_SERVICE = ManualEditService(
     backend_dir=BASE_DIR,
@@ -77,6 +85,11 @@ PHOTO_GIT_SERVICE = PhotoGitService(
     preview_root=PHOTO_GIT_PREVIEWS_DIR,
     results_root=RESULTS_DIR,
 )
+COMMAND_PLANNER = CommandPlanner(
+    history_store=HISTORY_STORE,
+    photo_git_service=PHOTO_GIT_SERVICE,
+    candidate_provider=get_default_grounded_command_provider(),
+)
 EDIT_CONTRACT_REGISTRY = get_default_metric_registry()
 EDIT_CONTRACT_SERVICE = EditContractService(registry=EDIT_CONTRACT_REGISTRY)
 GROUNDED_CONTRACT_PROVIDER = get_default_grounded_contract_provider()
@@ -89,6 +102,12 @@ class ManualEditRequest(BaseModel):
     source_edit_id: str = Field(min_length=1, max_length=80)
     parameter_overrides: dict[str, Any] = Field(default_factory=dict)
     client_request_id: str | None = Field(default=None, max_length=128)
+    instruction: str = Field(default="", max_length=500)
+    command_plan_hash: str | None = Field(
+        default=None,
+        min_length=64,
+        max_length=64,
+    )
 
 
 @router.post("/edit")
@@ -100,6 +119,8 @@ async def upload_images(
     parent_edit_id: str | None = Form(None),
     engine: str = Form("opencv"),
     client_request_id: str | None = Form(None),
+    command_type: str | None = Form(None),
+    command_plan_hash: str | None = Form(None),
 ):
     prompt_text = prompt.strip()
     if len(prompt_text) > MAX_ENGLISH_PROMPT_LENGTH:
@@ -122,6 +143,10 @@ async def upload_images(
     requested_client_request_id = (
         client_request_id.strip() if client_request_id else None
     )
+    requested_command_type = str(command_type or "").strip() or None
+    requested_command_plan_hash = (
+        str(command_plan_hash or "").strip().lower() or None
+    )
     if requested_client_request_id is not None and not (
         1 <= len(requested_client_request_id) <= 128
     ):
@@ -130,6 +155,36 @@ async def upload_images(
             detail={
                 "code": "invalid_client_request_id",
                 "message": "client_request_id 長度必須介於 1 到 128 字元。",
+            },
+        )
+    if (requested_command_type is None) != (requested_command_plan_hash is None):
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "command_provenance_incomplete",
+                "message": "command_type 與 command_plan_hash 必須一起提供。",
+            },
+        )
+    if (
+        requested_command_type is not None
+        and requested_command_type not in COMMAND_EXECUTION_TYPES
+    ):
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "command_type_invalid",
+                "message": "此 /edit 執行路徑不支援指定的 command_type。",
+            },
+        )
+    if (
+        requested_command_plan_hash is not None
+        and re.fullmatch(r"[0-9a-f]{64}", requested_command_plan_hash) is None
+    ):
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "command_plan_hash_invalid",
+                "message": "command_plan_hash 必須是 64 字元 SHA-256。",
             },
         )
     if requested_session_id and SESSION_ID_PATTERN.fullmatch(requested_session_id) is None:
@@ -246,6 +301,69 @@ async def upload_images(
             upload_task_dir.mkdir(parents=True, exist_ok=True)
             with open(reference_path, "wb") as f:
                 f.write(reference_bytes)
+
+        command_request_hash = None
+        command_execution_plan = None
+        if requested_command_plan_hash is not None:
+            command_request_hash = _command_edit_request_hash(
+                prompt=prompt_text,
+                requested_session_id=requested_session_id,
+                requested_parent_edit_id=requested_parent_edit_id,
+                engine=engine_name,
+                command_type=requested_command_type or "",
+                command_plan_hash=requested_command_plan_hash,
+                original_path=original_path,
+                base_path=base_path,
+                reference_path=reference_path,
+            )
+            if requested_client_request_id is None:
+                raise HTTPException(
+                    status_code=422,
+                    detail={
+                        "code": "command_client_request_id_required",
+                        "message": "指令執行必須提供 client_request_id。",
+                    },
+                )
+            try:
+                existing_command = HISTORY_STORE.find_edit_request_idempotent(
+                    namespace="command",
+                    client_request_id=requested_client_request_id,
+                    request_hash=command_request_hash,
+                )
+            except EditHistoryConflict as exc:
+                raise HTTPException(
+                    status_code=409,
+                    detail={
+                        "code": "command_request_conflict",
+                        "message": str(exc),
+                    },
+                ) from exc
+            if existing_command is not None:
+                _, persisted_record = existing_command
+                return _history_record_response(
+                    persisted_record,
+                    idempotent_replay=True,
+                )
+            try:
+                command_execution_plan = COMMAND_PLANNER.require_cached_plan(
+                    plan_hash=requested_command_plan_hash,
+                    instruction=prompt_text,
+                    session_id=requested_session_id,
+                    selected_edit_id=(
+                        None
+                        if requested_parent_edit_id == ORIGINAL_PARENT_SENTINEL
+                        else requested_parent_edit_id
+                    ),
+                    command_type=requested_command_type or "",
+                )
+            except CommandPlanCacheError as exc:
+                raise HTTPException(
+                    status_code=409,
+                    detail={
+                        "code": "command_plan_stale",
+                        "message": str(exc),
+                    },
+                ) from exc
 
         contract_attempt: ContractSemanticAttempt | None = None
         if edit_mode == "prompt":
@@ -551,6 +669,16 @@ async def upload_images(
                 **contract_report.as_dict(),
                 "client_request_id": requested_client_request_id,
             }
+        command_metadata = (
+            {
+                **copy.deepcopy(command_execution_plan),
+                "client_request_id": requested_client_request_id,
+                "request_hash": command_request_hash,
+                "executed_parent_edit_id": history_parent_edit_id,
+            }
+            if command_execution_plan is not None
+            else None
+        )
 
         history_record = HISTORY_STORE.build_record(
             session_id=effective_session_id,
@@ -576,6 +704,7 @@ async def upload_images(
             adaptive=adaptive,
             style=active_style,
             edit_contract=edit_contract_metadata,
+            command=command_metadata,
         )
 
         response_payload = {
@@ -603,6 +732,7 @@ async def upload_images(
             "preset_name": prompt_result.get("preset_name"),
             "style": active_style,
             "edit_contract": edit_contract_metadata,
+            "command": command_metadata,
             "parser_source": prompt_result["parser_source"],
             "fallback_reason": prompt_result["fallback_reason"],
             "explanation": explanation,
@@ -612,7 +742,30 @@ async def upload_images(
             # it must never become controller input or immutable edit history.
             response_payload["semantic_shadow"] = semantic_shadow_payload
 
-        if edit_contract_metadata is not None and requested_client_request_id:
+        if command_metadata is not None and requested_client_request_id:
+            try:
+                _, persisted_record, created = (
+                    HISTORY_STORE.save_edit_request_idempotent(
+                        history_record,
+                        namespace="command",
+                        client_request_id=requested_client_request_id,
+                        request_hash=command_request_hash or "",
+                    )
+                )
+            except EditHistoryConflict as exc:
+                raise HTTPException(
+                    status_code=409,
+                    detail={
+                        "code": "command_request_conflict",
+                        "message": str(exc),
+                    },
+                ) from exc
+            if not created:
+                return _history_record_response(
+                    persisted_record,
+                    idempotent_replay=True,
+                )
+        elif edit_contract_metadata is not None and requested_client_request_id:
             try:
                 _, persisted_record, created = (
                     HISTORY_STORE.save_edit_request_idempotent(
@@ -661,9 +814,15 @@ def get_edit_contract_schema():
     return EDIT_CONTRACT_REGISTRY.as_schema_payload()
 
 
+@router.post("/edit/commands/plan")
+def plan_editor_command(request: CommandPlanRequest):
+    return COMMAND_PLANNER.plan(request)
+
+
 @router.post("/edit/photo-git/plan")
 def plan_photo_git(request: PhotoGitPlanRequest):
     try:
+        _photo_git_command_provenance(request)
         return PHOTO_GIT_SERVICE.plan(request)
     except PhotoGitError as exc:
         raise _photo_git_http_error(exc) from exc
@@ -672,6 +831,7 @@ def plan_photo_git(request: PhotoGitPlanRequest):
 @router.post("/edit/photo-git/preview")
 def preview_photo_git(request: PhotoGitExecutionRequest):
     try:
+        _photo_git_command_provenance(request)
         return PHOTO_GIT_SERVICE.preview(request)
     except PhotoGitError as exc:
         raise _photo_git_http_error(exc) from exc
@@ -680,7 +840,12 @@ def preview_photo_git(request: PhotoGitExecutionRequest):
 @router.post("/edit/photo-git/commit")
 def commit_photo_git(request: PhotoGitCommitRequest):
     try:
-        return PHOTO_GIT_SERVICE.commit(request)
+        return PHOTO_GIT_SERVICE.commit(
+            request,
+            command_provenance_loader=(
+                lambda: _photo_git_command_provenance(request)
+            ),
+        )
     except PhotoGitError as exc:
         raise _photo_git_http_error(exc) from exc
 
@@ -722,11 +887,52 @@ def preview_manual_edit(request: ManualEditRequest):
 @router.post("/edit/manual/commit")
 def commit_manual_edit(request: ManualEditRequest):
     try:
+        command_provenance_loader = None
+        if request.command_plan_hash is not None or request.instruction.strip():
+            if request.command_plan_hash is None or not request.instruction.strip():
+                raise ManualEditError(
+                    "command_provenance_incomplete",
+                    "instruction and command_plan_hash must be provided together",
+                )
+
+            def load_command_provenance() -> Mapping[str, Any]:
+                try:
+                    command_provenance = COMMAND_PLANNER.require_cached_plan(
+                        plan_hash=request.command_plan_hash or "",
+                        instruction=request.instruction,
+                        session_id=request.session_id,
+                        selected_edit_id=request.source_edit_id,
+                        command_type="manual_adjust",
+                    )
+                except CommandPlanCacheError as exc:
+                    raise ManualEditError(
+                        "command_plan_stale",
+                        str(exc),
+                        status_code=409,
+                    ) from exc
+                action = command_provenance.get("action")
+                if (
+                    not isinstance(action, Mapping)
+                    or action.get("source_edit_id") != request.source_edit_id
+                    or dict(action.get("parameter_overrides") or {})
+                    != request.parameter_overrides
+                ):
+                    raise ManualEditError(
+                        "command_action_mismatch",
+                        "Manual execution does not match the resolved command plan",
+                        status_code=409,
+                    )
+                return command_provenance
+
+            command_provenance_loader = load_command_provenance
         return MANUAL_EDIT_SERVICE.commit(
             session_id=request.session_id,
             source_edit_id=request.source_edit_id,
             parameter_overrides=request.parameter_overrides,
             client_request_id=request.client_request_id,
+            instruction=request.instruction,
+            command_plan_hash=request.command_plan_hash,
+            command_provenance_loader=command_provenance_loader,
         )
     except SemanticTargetNotFoundError as exc:
         raise _semantic_target_http_error(exc)
@@ -748,6 +954,67 @@ def _photo_git_http_error(exc: PhotoGitError) -> HTTPException:
     }
     detail.update(exc.details)
     return HTTPException(status_code=exc.status_code, detail=detail)
+
+
+def _photo_git_command_provenance(
+    request: PhotoGitPlanRequest,
+) -> dict[str, Any] | None:
+    if request.command_plan_hash is None:
+        return None
+    command_type = (
+        "photo_git_merge"
+        if request.operation == "merge"
+        else "photo_git_revert"
+    )
+    try:
+        plan = COMMAND_PLANNER.require_cached_plan(
+            plan_hash=request.command_plan_hash,
+            instruction=request.instruction,
+            session_id=request.session_id,
+            selected_edit_id=request.target_edit_id,
+            command_type=command_type,
+        )
+    except CommandPlanCacheError as exc:
+        raise PhotoGitError(
+            "command_plan_stale",
+            str(exc),
+            status_code=409,
+        ) from exc
+    action = plan.get("action")
+    planned_request = (
+        action.get("photo_git_request")
+        if isinstance(action, Mapping)
+        else None
+    )
+    if not isinstance(planned_request, Mapping):
+        raise PhotoGitError(
+            "command_action_mismatch",
+            "Command plan does not contain a Photo Git request",
+            status_code=409,
+        )
+    actual_selectors = [
+        selector.model_dump(mode="json")
+        for selector in request.selectors
+    ]
+    expected_fields = {
+        "operation": request.operation,
+        "target_edit_id": request.target_edit_id,
+        "source_edit_id": request.source_edit_id,
+        "revert_edit_id": request.revert_edit_id,
+        "instruction": request.instruction.strip(),
+        "selectors": actual_selectors,
+    }
+    for key, actual in expected_fields.items():
+        expected = planned_request.get(key)
+        if key == "instruction":
+            expected = str(expected or "").strip()
+        if expected != actual:
+            raise PhotoGitError(
+                "command_action_mismatch",
+                "Photo Git execution does not match the resolved command plan",
+                status_code=409,
+            )
+    return plan
 
 
 def _semantic_target_http_error(exc: SemanticTargetNotFoundError) -> HTTPException:
@@ -799,6 +1066,48 @@ def _safe_backend_file(relative_path: str, label: str) -> Path:
     if not candidate.is_file():
         raise HTTPException(status_code=404, detail=f"Missing {label}: {relative_path}")
     return candidate
+
+
+def _command_edit_request_hash(
+    *,
+    prompt: str,
+    requested_session_id: str | None,
+    requested_parent_edit_id: str | None,
+    engine: str,
+    command_type: str,
+    command_plan_hash: str,
+    original_path: Path,
+    base_path: Path,
+    reference_path: Path | None,
+) -> str:
+    payload = {
+        "prompt": prompt,
+        "requested_session_id": requested_session_id,
+        "requested_parent_edit_id": requested_parent_edit_id,
+        "engine": engine,
+        "command_type": command_type,
+        "command_plan_hash": command_plan_hash,
+        "original_sha256": _sha256_file(original_path),
+        "base_sha256": _sha256_file(base_path),
+        "reference_sha256": (
+            _sha256_file(reference_path) if reference_path is not None else None
+        ),
+    }
+    encoded = json.dumps(
+        payload,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as source:
+        for chunk in iter(lambda: source.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def _cleanup_failed_task(upload_task_dir: Path, result_task_dir: Path) -> None:

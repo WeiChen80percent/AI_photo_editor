@@ -9,6 +9,7 @@ backend/storage/results/
 backend/storage/eval_runs/
 backend/storage/masks/
 backend/storage/manual_previews/
+backend/storage/photo_git_previews/
 backend/storage/sessions/
 model/outputs/
 

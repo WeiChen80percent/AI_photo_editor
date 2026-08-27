@@ -8,10 +8,14 @@ import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Callable, Mapping
 
 from app.services.edit_engines import create_engine_result
-from app.services.edit_history import EditHistoryNotFound, EditHistoryStore
+from app.services.edit_history import (
+    EditHistoryConflict,
+    EditHistoryNotFound,
+    EditHistoryStore,
+)
 from app.services.edit_plan import build_raw_parameter_edit_plan
 from app.services.edit_schema import (
     ManualParameterValidationError,
@@ -150,6 +154,10 @@ class ManualEditService:
         source_edit_id: str,
         parameter_overrides: Mapping[str, Any] | None,
         client_request_id: str | None,
+        instruction: str = "",
+        command_plan_hash: str | None = None,
+        command_provenance: Mapping[str, Any] | None = None,
+        command_provenance_loader: Callable[[], Mapping[str, Any]] | None = None,
     ) -> dict[str, Any]:
         request_started = time.perf_counter()
         context_started = time.perf_counter()
@@ -160,67 +168,142 @@ class ManualEditService:
         )
         context_ms = _elapsed_ms(context_started)
         request_id = self._validate_client_request_id(client_request_id)
+        instruction_text = str(instruction or "").strip()
+        plan_hash = self._validate_command_plan_hash(command_plan_hash)
+        request_hash = self._manual_request_hash(
+            context=context,
+            instruction=instruction_text,
+            command_plan_hash=plan_hash,
+        )
+        if request_id is not None:
+            try:
+                existing = self.history_store.find_edit_request_idempotent(
+                    namespace="manual",
+                    client_request_id=request_id,
+                    request_hash=request_hash,
+                    scope_session_id=context.session_id,
+                )
+            except EditHistoryConflict as exc:
+                raise ManualEditError(
+                    "manual_request_conflict",
+                    str(exc),
+                    status_code=409,
+                ) from exc
+            if existing is not None:
+                _, record = existing
+                return self._record_response(
+                    record,
+                    client_request_id=request_id,
+                    idempotent_replay=True,
+                    request_total_ms=_elapsed_ms(request_started),
+                )
+
+        if command_provenance_loader is not None:
+            command_provenance = command_provenance_loader()
+
         edit_id = self.history_store.new_edit_id()
         result_path = self.results_root / context.session_id / edit_id / "result.png"
-        render_started = time.perf_counter()
-        process_result = self._render(context, result_path)
-        render_ms = _elapsed_ms(render_started)
-        result_saved_path = self._relative_backend_path(result_path)
-        explanation = self._manual_explanation(context.parameter_overrides)
-        processing_timings = {
-            "context_and_validation": round(context_ms, 3),
-            "render": round(render_ms, 3),
-            "opencv": process_result.get("timings_ms"),
-        }
-        record = self.history_store.build_record(
-            session_id=context.session_id,
-            edit_id=edit_id,
-            parent_edit_id=context.source_edit_id,
-            edit_mode="manual",
-            original_image_path=context.original_saved_path,
-            base_image_path=context.base_saved_path,
-            result_image_path=result_saved_path,
-            reference_image_path=None,
-            user_prompt="",
-            resolved_intent="manual_adjustment",
-            parameters=process_result["parameters"],
-            engine=process_result["engine"],
-            edit_plan=context.edit_plan,
-            engine_parameters=process_result["parameters"],
-            mask_info=process_result.get("mask_info"),
-            explanation=explanation,
-            parser_source="manual_parameters",
-            fallback_reason=None,
-            preset_name=None,
-            manual_source_edit_id=context.source_edit_id,
-            parameter_overrides=context.parameter_overrides,
-            processing_timings=processing_timings,
-            style=context.style,
-        )
-        self.history_store.save_edit(record)
-        response = self._base_response(
-            context=context,
-            result_path=result_path,
-            process_result=process_result,
-        )
-        response.update(
-            {
-                "message": "Manual edit committed",
-                "task_id": edit_id,
-                "edit_id": edit_id,
-                "parent_edit_id": context.source_edit_id,
-                "edit_mode": "manual",
-                "client_request_id": request_id,
-                "resolved_intent": "manual_adjustment",
-                "parser_source": "manual_parameters",
-                "explanation": explanation,
-                "timings_ms": {
-                    **processing_timings,
-                    "request_total": round(_elapsed_ms(request_started), 3),
-                },
+        history_committed = False
+        try:
+            render_started = time.perf_counter()
+            process_result = self._render(context, result_path)
+            render_ms = _elapsed_ms(render_started)
+            result_saved_path = self._relative_backend_path(result_path)
+            explanation = self._manual_explanation(context.parameter_overrides)
+            processing_timings = {
+                "context_and_validation": round(context_ms, 3),
+                "render": round(render_ms, 3),
+                "opencv": process_result.get("timings_ms"),
             }
-        )
-        return response
+            manual_metadata = {
+                "client_request_id": request_id,
+                "request_hash": request_hash,
+                "source_edit_id": context.source_edit_id,
+                "parameter_overrides": context.parameter_overrides,
+            }
+            command_metadata = None
+            if instruction_text:
+                command_metadata = json.loads(
+                    json.dumps(
+                        dict(command_provenance)
+                        if command_provenance is not None
+                        else {
+                            "schema_version": "command_plan_v1",
+                            "command_type": "manual_adjust",
+                            "original_instruction": instruction_text,
+                            "plan_hash": plan_hash,
+                            "action": {
+                                "source_edit_id": context.source_edit_id,
+                                "parameter_overrides": context.parameter_overrides,
+                            },
+                        },
+                        ensure_ascii=False,
+                    )
+                )
+                command_metadata["execution_client_request_id"] = request_id
+            parser_source = (
+                str(command_metadata.get("parser_source") or "command_planner")
+                if command_metadata is not None
+                else "manual_parameters"
+            )
+            record = self.history_store.build_record(
+                session_id=context.session_id,
+                edit_id=edit_id,
+                parent_edit_id=context.source_edit_id,
+                edit_mode="manual",
+                original_image_path=context.original_saved_path,
+                base_image_path=context.base_saved_path,
+                result_image_path=result_saved_path,
+                reference_image_path=None,
+                user_prompt=instruction_text,
+                resolved_intent="manual_adjustment",
+                parameters=process_result["parameters"],
+                engine=process_result["engine"],
+                edit_plan=context.edit_plan,
+                engine_parameters=process_result["parameters"],
+                mask_info=process_result.get("mask_info"),
+                explanation=explanation,
+                parser_source=parser_source,
+                fallback_reason=None,
+                preset_name=None,
+                manual_source_edit_id=context.source_edit_id,
+                parameter_overrides=context.parameter_overrides,
+                processing_timings=processing_timings,
+                style=context.style,
+                manual=manual_metadata,
+                command=command_metadata,
+            )
+            persisted_record = record
+            created = True
+            if request_id is not None:
+                try:
+                    _, persisted_record, created = (
+                        self.history_store.save_edit_request_idempotent(
+                            record,
+                            namespace="manual",
+                            client_request_id=request_id,
+                            request_hash=request_hash,
+                            scope_session_id=context.session_id,
+                        )
+                    )
+                except EditHistoryConflict as exc:
+                    raise ManualEditError(
+                        "manual_request_conflict",
+                        str(exc),
+                        status_code=409,
+                    ) from exc
+            else:
+                self.history_store.save_edit(record)
+            history_committed = created
+            return self._record_response(
+                persisted_record,
+                client_request_id=request_id,
+                idempotent_replay=not created,
+                request_total_ms=_elapsed_ms(request_started),
+            )
+        finally:
+            if not history_committed and result_path.parent.is_dir():
+                shutil.rmtree(result_path.parent, ignore_errors=True)
 
     def _build_context(
         self,
@@ -492,6 +575,94 @@ class ManualEditService:
     def _preview_lock(self, preview_id: str) -> threading.Lock:
         with self._preview_locks_guard:
             return self._preview_locks.setdefault(preview_id, threading.Lock())
+
+    @staticmethod
+    def _manual_request_hash(
+        *,
+        context: ManualEditContext,
+        instruction: str,
+        command_plan_hash: str | None,
+    ) -> str:
+        payload = {
+            "session_id": context.session_id,
+            "source_edit_id": context.source_edit_id,
+            "parameter_overrides": context.parameter_overrides,
+            "instruction": instruction,
+            "command_plan_hash": command_plan_hash,
+        }
+        encoded = json.dumps(
+            payload,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+        return hashlib.sha256(encoded).hexdigest()
+
+    def _record_response(
+        self,
+        record: Mapping[str, Any],
+        *,
+        client_request_id: str | None,
+        idempotent_replay: bool,
+        request_total_ms: float,
+    ) -> dict[str, Any]:
+        result_saved_path = str(record.get("result_image_path") or "")
+        parameters = record.get("engine_parameters")
+        if not isinstance(parameters, Mapping):
+            parameters = record.get("parameters") or {}
+        source_edit_id = str(
+            record.get("manual_source_edit_id")
+            or record.get("parent_edit_id")
+            or ""
+        )
+        return {
+            "message": (
+                "Existing manual edit returned for idempotent request"
+                if idempotent_replay
+                else "Manual edit committed"
+            ),
+            "task_id": record.get("edit_id"),
+            "session_id": record.get("session_id"),
+            "edit_id": record.get("edit_id"),
+            "parent_edit_id": record.get("parent_edit_id"),
+            "source_edit_id": source_edit_id,
+            "manual_source_edit_id": source_edit_id,
+            "original_saved_path": record.get("original_image_path"),
+            "base_image_path": record.get("base_image_path"),
+            "result_saved_path": result_saved_path,
+            "result_url": f"/{result_saved_path}",
+            "engine": record.get("engine"),
+            "edit_mode": record.get("edit_mode"),
+            "edit_plan": record.get("edit_plan"),
+            "parameter_overrides": record.get("parameter_overrides") or {},
+            "engine_parameters": dict(parameters),
+            "parameters": dict(parameters),
+            "mask_info": record.get("mask_info"),
+            "processing_timings": record.get("processing_timings"),
+            "style": record.get("style"),
+            "client_request_id": client_request_id,
+            "resolved_intent": record.get("resolved_intent"),
+            "parser_source": record.get("parser_source"),
+            "explanation": record.get("explanation"),
+            "command": record.get("command"),
+            "idempotent_replay": idempotent_replay,
+            "timings_ms": {
+                **dict(record.get("processing_timings") or {}),
+                "request_total": round(request_total_ms, 3),
+            },
+        }
+
+    @staticmethod
+    def _validate_command_plan_hash(value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = str(value).strip().lower()
+        if re.fullmatch(r"[0-9a-f]{64}", normalized) is None:
+            raise ManualEditError(
+                "invalid_command_plan_hash",
+                "command_plan_hash must be a 64-character SHA-256 hash",
+            )
+        return normalized
 
     @staticmethod
     def _validate_client_request_id(value: str | None) -> str | None:

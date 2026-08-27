@@ -13,6 +13,7 @@ import 'editor_controller.dart';
 import 'editor_localizations.dart';
 import 'editor_panels.dart';
 import 'l10n/l10n_context.dart';
+import 'speech_input_service.dart';
 import 'tool_dock.dart';
 
 class EditorScreen extends StatefulWidget {
@@ -40,7 +41,12 @@ class _EditorScreenState extends State<EditorScreen> {
   void initState() {
     super.initState();
     _ownsController = widget.controller == null;
-    _controller = widget.controller ?? EditorController(api: ApiService());
+    _controller =
+        widget.controller ??
+        EditorController(
+          api: ApiService(),
+          speechInputService: RecordSpeechInputService(),
+        );
     _imagePicker = widget.imagePicker ?? ImagePicker();
     _promptTextController = TextEditingController.fromValue(
       TextEditingValue(
@@ -52,6 +58,14 @@ class _EditorScreenState extends State<EditorScreen> {
     );
     _promptTextController.addListener(_syncPromptDraftFromTextController);
     _controller.addListener(_syncPromptTextFromEditorController);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _controller.applyDefaultSpeechLanguageForLocale(
+      Localizations.localeOf(context).languageCode,
+    );
   }
 
   @override

@@ -4,6 +4,7 @@ import re
 from dataclasses import dataclass
 from typing import Any
 
+from app.services.command_number_normalizer import find_percentage
 from app.services.edit_engines import build_engine_parameters
 from app.services.edit_plan import build_style_edit_plan
 from app.services.style_registry import (
@@ -25,20 +26,24 @@ class StyleSelectionError(ValueError):
         return self.message
 
 
-_PERCENT_PATTERN = re.compile(r"(?<![0-9])([0-9]{1,3}(?:\.[0-9]+)?)\s*%")
 _DECIMAL_PATTERN = re.compile(
     r"(?:strength|強度)\s*[:：=]?\s*(0(?:\.[0-9]+)?|1(?:\.0+)?)\b",
     re.IGNORECASE,
 )
 _ALLOWED_REMAINDER = re.compile(
     r"^(?:"
-    r"請|幫我|給我|套用|使用|換成|改成|選擇|"
-    r"please|apply|use|select|the|a|an|"
+    r"請|幫我|給我|把|以|套用|使用|換成|改成|調成|設定為|選擇|"
+    r"please|apply|use|select|the|a|an|at|with|to|"
     r"style|look|風格|效果|"
-    r"strength|強度|"
+    r"strength|強度|的|到|"
     r"輕微|淡一點|柔和一點|正常|完整|強烈|"
     r"subtle|light|medium|normal|full|strong|"
-    r"[0-9.%：:=\s]"
+    r"百分之|百分|趴|percent|percentage|"
+    r"zero|one|two|three|four|five|six|seven|eight|nine|ten|"
+    r"eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|"
+    r"eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|"
+    r"eighty|ninety|hundred|and|minus|"
+    r"[零〇○一二兩两三四五六七八九十百千點点0-9.%：:=\s]"
     r")*$",
     re.IGNORECASE,
 )
@@ -98,9 +103,9 @@ def try_resolve_style_prompt(prompt: str) -> dict[str, Any] | None:
 
 
 def _parse_strength(prompt: str, style: StyleDefinition) -> float:
-    percent_match = _PERCENT_PATTERN.search(prompt)
-    if percent_match is not None:
-        return style.validate_strength(float(percent_match.group(1)) / 100.0)
+    percentage = find_percentage(prompt)
+    if percentage is not None:
+        return style.validate_strength(percentage.value)
     decimal_match = _DECIMAL_PATTERN.search(prompt)
     if decimal_match is not None:
         return style.validate_strength(float(decimal_match.group(1)))

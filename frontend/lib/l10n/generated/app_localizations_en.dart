@@ -210,11 +210,133 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get promptHint =>
-      'For example: brighten the person, darken the sky, and reduce saturation';
+      'For example: increase brightness by ten, apply Cinematic at 100%, or merge version 4 and version 6';
 
   @override
   String get promptModeNotice =>
-      'Prompt and reference image are separate modes. This panel only sends text.';
+      'Type or speak one action. Apply routes it to editing, exact parameters, styles, or version tools.';
+
+  @override
+  String get commandPlanning => 'Understanding command…';
+
+  @override
+  String get commandPlanTitle => 'Command plan';
+
+  @override
+  String get commandPreviewNotice =>
+      'Version operations always require a preview and your confirmation before a new version is created.';
+
+  @override
+  String get speechLanguageLabel => 'Recognition language';
+
+  @override
+  String get speechLanguageHelp =>
+      'Choose Chinese or English for short commands; use automatic for mixed speech.';
+
+  @override
+  String get speechLanguageTraditionalChinese => 'Traditional Chinese';
+
+  @override
+  String get speechLanguageEnglish => 'English';
+
+  @override
+  String get speechLanguageAutomatic => 'Automatic detection';
+
+  @override
+  String speechResultMetadata(String language, String model) {
+    return 'Recognized as $language · $model';
+  }
+
+  @override
+  String get speechStart => 'Use microphone';
+
+  @override
+  String get speechStop => 'Stop';
+
+  @override
+  String get speechCancel => 'Cancel';
+
+  @override
+  String get speechRequestingPermission => 'Requesting microphone permission…';
+
+  @override
+  String speechRecordingSeconds(int seconds) {
+    return 'Recording · ${seconds}s';
+  }
+
+  @override
+  String get speechTranscribing => 'Turning speech into editable text…';
+
+  @override
+  String get speechPrivacyNotice =>
+      'Audio is processed by the local backend and is not saved to edit history.';
+
+  @override
+  String get speechUnavailable =>
+      'Microphone input is unavailable here. You can still type a prompt.';
+
+  @override
+  String get statusSpeechCompleted =>
+      'Speech was added as editable text. Review it before applying.';
+
+  @override
+  String get statusSpeechCancelled => 'Voice input was cancelled.';
+
+  @override
+  String get errorSpeechPermissionDenied =>
+      'Microphone permission was denied. Allow it in Chrome settings or type the prompt instead.';
+
+  @override
+  String get errorSpeechNoMicrophone =>
+      'No usable microphone was found. Check the device or type the prompt instead.';
+
+  @override
+  String get errorSpeechRecorderUnavailable =>
+      'This browser cannot provide the required microphone format. Use current Chrome or type the prompt instead.';
+
+  @override
+  String get errorSpeechRecordingFailed =>
+      'Recording failed. Check the microphone and try again.';
+
+  @override
+  String get errorSpeechNoAudio =>
+      'The microphone returned no usable audio. Please record again.';
+
+  @override
+  String get errorSpeechInvalidAudio =>
+      'The recording could not be read. Please record again.';
+
+  @override
+  String get errorSpeechUnsupportedFormat =>
+      'This recording format is not supported. Please record again in Chrome.';
+
+  @override
+  String get errorSpeechNoSpeech =>
+      'No usable speech was detected. Move closer to the microphone and try again.';
+
+  @override
+  String get errorSpeechTooLong =>
+      'The recording is longer than 15 seconds. Please use a shorter editing prompt.';
+
+  @override
+  String get errorSpeechTooLarge =>
+      'The recording is too large. Please use a shorter editing prompt.';
+
+  @override
+  String get errorSpeechModelUnavailable =>
+      'The local speech model is unavailable. Check the backend model and device settings.';
+
+  @override
+  String get errorSpeechTranscriptionFailed =>
+      'Speech recognition failed. Please record again.';
+
+  @override
+  String get errorSpeechTimeout =>
+      'Speech recognition took too long. Please try again.';
+
+  @override
+  String get errorSpeechBackendUnavailable =>
+      'Could not connect to the local speech backend. Typing is still available.';
 
   @override
   String get applyPrompt => 'Apply prompt';

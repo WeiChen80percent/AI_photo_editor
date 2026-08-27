@@ -1,12 +1,20 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
 import 'edit_models.dart';
+import 'speech_models.dart';
 
 abstract class EditorApi {
   String buildImageUrl(String path);
+
+  Future<SpeechTranscription> transcribeSpeech({
+    required Uint8List audioBytes,
+    required SpeechLanguageMode languageMode,
+    String filename,
+  });
 
   Future<EditHistoryItem> submitEdit({
     required Uint8List? originalBytes,
@@ -15,6 +23,15 @@ abstract class EditorApi {
     required String clientRequestId,
     String? sessionId,
     String? parentEditId,
+    String? commandType,
+    String? commandPlanHash,
+  });
+
+  Future<CommandPlan> planCommand({
+    required String instruction,
+    String? sessionId,
+    String? selectedEditId,
+    String? locale,
   });
 
   Future<EditSession> fetchSession(String sessionId);
@@ -38,6 +55,8 @@ abstract class EditorApi {
     required String sourceEditId,
     required Map<String, double> parameterOverrides,
     required String clientRequestId,
+    String instruction,
+    String? commandPlanHash,
   });
 
   Future<PhotoGitPlan> planPhotoGit({
@@ -92,6 +111,61 @@ class ApiService implements EditorApi {
   final bool _ownsClient;
 
   @override
+  Future<SpeechTranscription> transcribeSpeech({
+    required Uint8List audioBytes,
+    required SpeechLanguageMode languageMode,
+    String filename = 'speech.wav',
+  }) async {
+    final request = createSpeechTranscriptionRequest(
+      audioBytes: audioBytes,
+      languageMode: languageMode,
+      filename: filename,
+    );
+    try {
+      final streamedResponse = await _client
+          .send(request)
+          .timeout(const Duration(seconds: 75));
+      final response = await http.Response.fromStream(streamedResponse);
+      return SpeechTranscription.fromJson(_decodeResponse(response));
+    } on ApiException {
+      rethrow;
+    } on TimeoutException {
+      throw const ApiException(
+        statusCode: 0,
+        code: 'speech_network_timeout',
+        message: '語音辨識等待逾時，請稍後重試。',
+      );
+    } catch (error) {
+      throw ApiException(
+        statusCode: 0,
+        code: 'speech_network_error',
+        message: '無法連線到語音辨識後端：$error',
+      );
+    }
+  }
+
+  http.MultipartRequest createSpeechTranscriptionRequest({
+    required Uint8List audioBytes,
+    required SpeechLanguageMode languageMode,
+    String filename = 'speech.wav',
+  }) {
+    final request =
+        http.MultipartRequest('POST', Uri.parse('$baseUrl/speech/transcribe'))
+          ..files.add(
+            http.MultipartFile.fromBytes(
+              'audio',
+              audioBytes,
+              filename: filename,
+            ),
+          );
+    final hint = languageMode.apiHint;
+    if (hint != null) {
+      request.fields['language_hint'] = hint;
+    }
+    return request;
+  }
+
+  @override
   Future<EditHistoryItem> submitEdit({
     required Uint8List? originalBytes,
     required Uint8List? referenceBytes,
@@ -99,6 +173,8 @@ class ApiService implements EditorApi {
     required String clientRequestId,
     String? sessionId,
     String? parentEditId,
+    String? commandType,
+    String? commandPlanHash,
   }) async {
     final request = createEditRequest(
       originalBytes: originalBytes,
@@ -107,6 +183,8 @@ class ApiService implements EditorApi {
       clientRequestId: clientRequestId,
       sessionId: sessionId,
       parentEditId: parentEditId,
+      commandType: commandType,
+      commandPlanHash: commandPlanHash,
     );
     try {
       final streamedResponse = await _client.send(request);
@@ -131,6 +209,8 @@ class ApiService implements EditorApi {
     required String clientRequestId,
     String? sessionId,
     String? parentEditId,
+    String? commandType,
+    String? commandPlanHash,
   }) {
     final request = http.MultipartRequest('POST', Uri.parse('$baseUrl/edit'))
       ..fields['prompt'] = prompt
@@ -141,6 +221,12 @@ class ApiService implements EditorApi {
     }
     if (parentEditId != null && parentEditId.isNotEmpty) {
       request.fields['parent_edit_id'] = parentEditId;
+    }
+    if (commandType != null && commandType.isNotEmpty) {
+      request.fields['command_type'] = commandType;
+    }
+    if (commandPlanHash != null && commandPlanHash.isNotEmpty) {
+      request.fields['command_plan_hash'] = commandPlanHash;
     }
     if (originalBytes != null) {
       request.files.add(
@@ -162,6 +248,23 @@ class ApiService implements EditorApi {
     }
 
     return request;
+  }
+
+  @override
+  Future<CommandPlan> planCommand({
+    required String instruction,
+    String? sessionId,
+    String? selectedEditId,
+    String? locale,
+  }) async {
+    final response = await _postJson('/edit/commands/plan', {
+      'instruction': instruction,
+      if (sessionId != null && sessionId.isNotEmpty) 'session_id': sessionId,
+      if (selectedEditId != null && selectedEditId.isNotEmpty)
+        'selected_edit_id': selectedEditId,
+      if (locale != null && locale.isNotEmpty) 'locale': locale,
+    });
+    return CommandPlan.fromJson(response);
   }
 
   @override
@@ -211,13 +314,20 @@ class ApiService implements EditorApi {
     required String sourceEditId,
     required Map<String, double> parameterOverrides,
     required String clientRequestId,
+    String instruction = '',
+    String? commandPlanHash,
   }) async {
-    final response = await _postJson('/edit/manual/commit', {
+    final body = <String, dynamic>{
       'session_id': sessionId,
       'source_edit_id': sourceEditId,
       'parameter_overrides': parameterOverrides,
       'client_request_id': clientRequestId,
-    });
+      if (instruction.isNotEmpty) 'instruction': instruction,
+    };
+    if (commandPlanHash case final planHash?) {
+      body['command_plan_hash'] = planHash;
+    }
+    final response = await _postJson('/edit/manual/commit', body);
     return ManualEditResponse.fromJson(response, buildImageUrl: buildImageUrl);
   }
 

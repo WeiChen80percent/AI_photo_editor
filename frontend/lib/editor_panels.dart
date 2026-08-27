@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/gestures.dart';
@@ -8,6 +9,7 @@ import 'editor_localizations.dart';
 import 'edit_models.dart';
 import 'editor_controller.dart';
 import 'l10n/l10n_context.dart';
+import 'speech_models.dart';
 
 class PromptPanel extends StatelessWidget {
   const PromptPanel({
@@ -26,6 +28,7 @@ class PromptPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final plan = controller.commandPlan;
     return PanelScaffold(
       title: l10n.promptEditTitle,
       subtitle: controller.selectedEdit == null
@@ -55,6 +58,8 @@ class PromptPanel extends StatelessWidget {
             decoration: InputDecoration(hintText: l10n.promptHint),
           ),
           const SizedBox(height: AppSpacing.sm),
+          _SpeechControls(controller: controller),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             l10n.promptModeNotice,
             style: TextStyle(
@@ -62,11 +67,19 @@ class PromptPanel extends StatelessWidget {
               fontSize: 12,
             ),
           ),
+          if (plan != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            _CommandPlanCard(
+              controller: controller,
+              plan: plan,
+              onCompleted: onClose,
+            ),
+          ],
           const SizedBox(height: AppSpacing.lg),
           FilledButton.icon(
             key: const Key('submit_prompt_button'),
             onPressed: controller.canSubmitPrompt ? onSubmit : null,
-            icon: controller.isProcessing
+            icon: controller.isProcessing || controller.isPlanningCommand
                 ? SizedBox(
                     width: 18,
                     height: 18,
@@ -77,11 +90,342 @@ class PromptPanel extends StatelessWidget {
                   )
                 : const Icon(Icons.auto_fix_high),
             label: Text(
-              controller.isProcessing ? l10n.processing : l10n.applyPrompt,
+              controller.isPlanningCommand
+                  ? l10n.commandPlanning
+                  : controller.isProcessing
+                  ? l10n.processing
+                  : l10n.applyPrompt,
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _CommandPlanCard extends StatelessWidget {
+  const _CommandPlanCard({
+    required this.controller,
+    required this.plan,
+    required this.onCompleted,
+  });
+
+  final EditorController controller;
+  final CommandPlan plan;
+  final VoidCallback onCompleted;
+
+  @override
+  Widget build(BuildContext context) {
+    final languageCode = Localizations.localeOf(context).languageCode;
+    final colors = context.editorColors;
+    final clarification = plan.clarification;
+    return DecoratedBox(
+      key: const Key('command_plan_card'),
+      decoration: BoxDecoration(
+        color: colors.surfaceSoft,
+        borderRadius: BorderRadius.circular(AppRadii.small),
+        border: Border.all(color: colors.border),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.account_tree_outlined, size: 18),
+                const SizedBox(width: AppSpacing.xs),
+                Expanded(
+                  child: Text(
+                    context.l10n.commandPlanTitle,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              plan.summary.forLanguage(languageCode),
+              style: TextStyle(color: colors.textSecondary, fontSize: 12),
+            ),
+            if (clarification != null) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                clarification.question.forLanguage(languageCode),
+                key: const Key('command_clarification_question'),
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              if (clarification.options.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.xs),
+                Wrap(
+                  spacing: AppSpacing.xs,
+                  runSpacing: AppSpacing.xs,
+                  children: [
+                    for (final option in clarification.options)
+                      OutlinedButton(
+                        key: Key('command_option_${option.optionId}'),
+                        onPressed: controller.isPlanningCommand
+                            ? null
+                            : () async {
+                                final completed = await controller
+                                    .chooseCommandClarificationOption(option);
+                                if (completed) {
+                                  onCompleted();
+                                }
+                              },
+                        child: Text(option.label.forLanguage(languageCode)),
+                      ),
+                  ],
+                ),
+              ],
+            ],
+            if (plan.isPhotoGit && controller.photoGitPlan != null) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                context.l10n.commandPreviewNotice,
+                style: TextStyle(color: colors.textMuted, fontSize: 12),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              _PhotoGitPlanCard(
+                controller: controller,
+                versionLabel: (editId) =>
+                    _promptVersionLabel(context, controller, editId),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Wrap(
+                spacing: AppSpacing.xs,
+                runSpacing: AppSpacing.xs,
+                children: [
+                  if (controller.photoGitPreview == null)
+                    FilledButton.tonalIcon(
+                      key: const Key('command_photo_git_preview'),
+                      onPressed: controller.canPreviewPhotoGit
+                          ? () => unawaited(controller.previewPhotoGit())
+                          : null,
+                      icon: controller.isPreviewingPhotoGit
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.preview_outlined),
+                      label: Text(context.l10n.photoGitPreview),
+                    ),
+                  if (controller.photoGitPreview != null)
+                    FilledButton.icon(
+                      key: const Key('command_photo_git_commit'),
+                      onPressed: controller.canCommitPhotoGit
+                          ? () async {
+                              final completed = await controller
+                                  .commitPhotoGit();
+                              if (completed) {
+                                onCompleted();
+                              }
+                            }
+                          : null,
+                      icon: controller.isCommittingPhotoGit
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.call_merge),
+                      label: Text(context.l10n.photoGitCommit),
+                    ),
+                  TextButton(
+                    key: const Key('command_photo_git_cancel'),
+                    onPressed:
+                        controller.isPreviewingPhotoGit ||
+                            controller.isCommittingPhotoGit
+                        ? null
+                        : controller.discardPhotoGitDraft,
+                    child: Text(context.l10n.photoGitCancel),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+String _promptVersionLabel(
+  BuildContext context,
+  EditorController controller,
+  String? editId,
+) {
+  if (editId == null || editId == EditorController.originalParentSentinel) {
+    return context.l10n.labelOriginal;
+  }
+  final index = controller.history.indexWhere((edit) => edit.editId == editId);
+  if (index < 0) {
+    return editId;
+  }
+  return 'v${index + 1} · '
+      '${localizedEditDisplayTitle(context.l10n, controller.history[index])}';
+}
+
+class _SpeechControls extends StatelessWidget {
+  const _SpeechControls({required this.controller});
+
+  final EditorController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final colors = context.editorColors;
+    if (!controller.hasSpeechInput) {
+      return Text(
+        l10n.speechUnavailable,
+        key: const Key('speech_unavailable'),
+        style: TextStyle(color: colors.textMuted, fontSize: 12),
+      );
+    }
+
+    switch (controller.speechInputState) {
+      case SpeechInputState.requestingPermission:
+        return _SpeechProgress(
+          key: const Key('speech_requesting_permission'),
+          label: l10n.speechRequestingPermission,
+        );
+      case SpeechInputState.recording:
+        return Wrap(
+          key: const Key('speech_recording_controls'),
+          spacing: AppSpacing.sm,
+          runSpacing: AppSpacing.xs,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.fiber_manual_record, size: 14, color: colors.error),
+                const SizedBox(width: AppSpacing.xxs),
+                Text(
+                  l10n.speechRecordingSeconds(
+                    controller.speechRecordingElapsedSeconds,
+                  ),
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ],
+            ),
+            FilledButton.tonalIcon(
+              key: const Key('stop_speech_recording'),
+              onPressed: () => unawaited(controller.stopSpeechRecording()),
+              icon: const Icon(Icons.stop_rounded),
+              label: Text(l10n.speechStop),
+            ),
+            TextButton.icon(
+              key: const Key('cancel_speech_recording'),
+              onPressed: () => unawaited(controller.cancelSpeechRecording()),
+              icon: const Icon(Icons.close),
+              label: Text(l10n.speechCancel),
+            ),
+          ],
+        );
+      case SpeechInputState.transcribing:
+        return _SpeechProgress(
+          key: const Key('speech_transcribing'),
+          label: l10n.speechTranscribing,
+        );
+      case SpeechInputState.idle:
+      case SpeechInputState.completed:
+      case SpeechInputState.cancelled:
+      case SpeechInputState.error:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            DropdownButtonFormField<SpeechLanguageMode>(
+              key: ValueKey<String>(
+                'speech_language_${controller.speechLanguageMode.name}',
+              ),
+              initialValue: controller.speechLanguageMode,
+              isExpanded: true,
+              decoration: InputDecoration(
+                labelText: l10n.speechLanguageLabel,
+                helperText: l10n.speechLanguageHelp,
+              ),
+              items: [
+                DropdownMenuItem<SpeechLanguageMode>(
+                  value: SpeechLanguageMode.traditionalChinese,
+                  child: Text(l10n.speechLanguageTraditionalChinese),
+                ),
+                DropdownMenuItem<SpeechLanguageMode>(
+                  value: SpeechLanguageMode.english,
+                  child: Text(l10n.speechLanguageEnglish),
+                ),
+                DropdownMenuItem<SpeechLanguageMode>(
+                  value: SpeechLanguageMode.automatic,
+                  child: Text(l10n.speechLanguageAutomatic),
+                ),
+              ],
+              onChanged: controller.isProcessing
+                  ? null
+                  : (mode) {
+                      if (mode != null) {
+                        controller.setSpeechLanguageMode(mode);
+                      }
+                    },
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            OutlinedButton.icon(
+              key: const Key('start_speech_recording'),
+              onPressed: controller.canStartSpeechRecording
+                  ? () => unawaited(controller.startSpeechRecording())
+                  : null,
+              icon: const Icon(Icons.mic_none_outlined),
+              label: Text(l10n.speechStart),
+            ),
+            const SizedBox(height: AppSpacing.xxs),
+            Text(
+              l10n.speechPrivacyNotice,
+              style: TextStyle(color: colors.textMuted, fontSize: 12),
+            ),
+            if (controller.lastSpeechTranscription case final result?) ...[
+              const SizedBox(height: AppSpacing.xxs),
+              Text(
+                l10n.speechResultMetadata(
+                  _speechLanguageLabel(context, result.language),
+                  result.modelId.split('/').last,
+                ),
+                key: const Key('speech_result_metadata'),
+                style: TextStyle(color: colors.textMuted, fontSize: 12),
+              ),
+            ],
+          ],
+        );
+    }
+  }
+}
+
+String _speechLanguageLabel(BuildContext context, String language) {
+  final normalized = language.trim().toLowerCase();
+  return switch (normalized) {
+    'zh' => context.l10n.speechLanguageTraditionalChinese,
+    'en' => context.l10n.speechLanguageEnglish,
+    '' || 'auto' => context.l10n.speechLanguageAutomatic,
+    _ => normalized.toUpperCase(),
+  };
+}
+
+class _SpeechProgress extends StatelessWidget {
+  const _SpeechProgress({super.key, required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        const SizedBox(
+          width: 18,
+          height: 18,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(child: Text(label)),
+      ],
     );
   }
 }

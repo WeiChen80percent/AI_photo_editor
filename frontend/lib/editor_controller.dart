@@ -5,12 +5,24 @@ import 'package:http/http.dart' as http;
 
 import 'api_service.dart';
 import 'edit_models.dart';
+import 'speech_input_service.dart';
+import 'speech_models.dart';
 
 enum EditorTool { prompt, styles, reference, manual, history }
 
 enum ComparisonView { original, compare, result }
 
 enum ComparisonBaseline { original, parent }
+
+enum SpeechInputState {
+  idle,
+  requestingPermission,
+  recording,
+  transcribing,
+  completed,
+  cancelled,
+  error,
+}
 
 @immutable
 class EditorPresentationMessage {
@@ -30,10 +42,13 @@ class EditorController extends ChangeNotifier {
 
   EditorController({
     required EditorApi api,
+    SpeechInputService? speechInputService,
     this.previewDebounce = const Duration(milliseconds: 250),
-  }) : _api = api;
+  }) : _api = api,
+       _speechInputService = speechInputService;
 
   final EditorApi _api;
+  final SpeechInputService? _speechInputService;
   final Duration previewDebounce;
 
   Uint8List? originalImageBytes;
@@ -50,10 +65,17 @@ class EditorController extends ChangeNotifier {
   double comparisonSplit = 0.5;
 
   bool isProcessing = false;
+  bool isPlanningCommand = false;
+  CommandPlan? commandPlan;
   String? errorMessage;
   String? statusMessage;
   EditorPresentationMessage? errorPresentation;
   EditorPresentationMessage? statusPresentation;
+
+  SpeechInputState speechInputState = SpeechInputState.idle;
+  SpeechLanguageMode speechLanguageMode = SpeechLanguageMode.automatic;
+  int speechRecordingElapsedSeconds = 0;
+  SpeechTranscription? lastSpeechTranscription;
 
   ManualSchema? manualSchema;
   EditContractSchema? editContractSchema;
@@ -89,7 +111,12 @@ class EditorController extends ChangeNotifier {
   int _previewSequence = 0;
   int _photoGitRequestSequence = 0;
   int _editRequestSequence = 0;
+  int _speechRequestSequence = 0;
+  bool _speechLanguageExplicitlySelected = false;
+  Timer? _speechRecordingTimer;
   String? _photoGitClientRequestId;
+  String? _commandClientRequestId;
+  PhotoGitRequest? _commandPhotoGitRequest;
   String? _pendingEditClientRequestId;
   int? _pendingEditFingerprint;
   bool _disposed = false;
@@ -148,6 +175,7 @@ class EditorController extends ChangeNotifier {
       photoGitPreview != null || (manualPreview != null && manualIsDirty);
 
   bool get hasPhotoGitDraft =>
+      _commandPhotoGitRequest != null ||
       photoGitSourceEditId != null ||
       photoGitRevertEditId != null ||
       photoGitInstruction.trim().isNotEmpty ||
@@ -257,15 +285,55 @@ class EditorController extends ChangeNotifier {
 
   bool get canSubmitPrompt =>
       !isProcessing &&
+      !isPlanningCommand &&
+      !isSpeechBusy &&
       !hasPhotoGitDraft &&
       promptDraft.trim().isNotEmpty &&
       (hasOriginal || selectedEdit != null);
 
   bool get canSubmitReference =>
       !isProcessing &&
+      !isSpeechBusy &&
       !hasPhotoGitDraft &&
       referenceImageBytes != null &&
       (hasOriginal || selectedEdit != null);
+
+  bool get hasSpeechInput => _speechInputService != null;
+
+  bool get isSpeechRecording => speechInputState == SpeechInputState.recording;
+
+  bool get isSpeechTranscribing =>
+      speechInputState == SpeechInputState.transcribing;
+
+  bool get isSpeechBusy =>
+      speechInputState == SpeechInputState.requestingPermission ||
+      speechInputState == SpeechInputState.recording ||
+      speechInputState == SpeechInputState.transcribing;
+
+  bool get canStartSpeechRecording =>
+      hasSpeechInput && !isProcessing && !isPlanningCommand && !isSpeechBusy;
+
+  void applyDefaultSpeechLanguageForLocale(String languageCode) {
+    if (_speechLanguageExplicitlySelected) {
+      return;
+    }
+    speechLanguageMode = languageCode.toLowerCase() == 'en'
+        ? SpeechLanguageMode.english
+        : SpeechLanguageMode.traditionalChinese;
+  }
+
+  void setSpeechLanguageMode(SpeechLanguageMode mode) {
+    if (isSpeechBusy) {
+      return;
+    }
+    _speechLanguageExplicitlySelected = true;
+    if (speechLanguageMode == mode) {
+      return;
+    }
+    speechLanguageMode = mode;
+    lastSpeechTranscription = null;
+    _notify();
+  }
 
   List<StyleCatalogItem> get visibleStyles {
     final styles = styleCatalog?.styles ?? const <StyleCatalogItem>[];
@@ -632,6 +700,9 @@ class EditorController extends ChangeNotifier {
   }
 
   void setActiveTool(EditorTool? tool) {
+    if (tool != EditorTool.prompt && isSpeechBusy) {
+      unawaited(cancelSpeechRecording());
+    }
     activeTool = tool;
     clearMessages();
     _notify();
@@ -670,15 +741,196 @@ class EditorController extends ChangeNotifier {
   }
 
   void setPromptDraft(String value) {
+    if (promptDraft == value) {
+      return;
+    }
+    if (_commandPhotoGitRequest != null) {
+      _clearPhotoGitDraft(notify: false);
+    }
     promptDraft = value;
+    _clearCommandPlan();
     _clearError();
     _clearStatus();
     _notify();
   }
 
+  Future<bool> startSpeechRecording() async {
+    final service = _speechInputService;
+    if (service == null || !canStartSpeechRecording) {
+      return false;
+    }
+
+    final requestSequence = ++_speechRequestSequence;
+    speechInputState = SpeechInputState.requestingPermission;
+    speechRecordingElapsedSeconds = 0;
+    lastSpeechTranscription = null;
+    _clearError();
+    _setStatus('正在請求麥克風權限…', 'speech_requesting_permission');
+    _notify();
+
+    try {
+      await service.start();
+      if (_disposed || requestSequence != _speechRequestSequence) {
+        await service.cancel();
+        return false;
+      }
+      speechInputState = SpeechInputState.recording;
+      _setStatus('正在錄音…', 'speech_recording');
+      _speechRecordingTimer?.cancel();
+      _speechRecordingTimer = Timer.periodic(const Duration(seconds: 1), (
+        timer,
+      ) {
+        if (_disposed || speechInputState != SpeechInputState.recording) {
+          timer.cancel();
+          return;
+        }
+        speechRecordingElapsedSeconds += 1;
+        _notify();
+        if (speechRecordingElapsedSeconds >= maxSpeechRecordingSeconds) {
+          timer.cancel();
+          unawaited(stopSpeechRecording());
+        }
+      });
+      _notify();
+      return true;
+    } on SpeechRecordingException catch (error) {
+      if (requestSequence != _speechRequestSequence || _disposed) {
+        return false;
+      }
+      speechInputState = SpeechInputState.error;
+      _setError(error.message, error.code);
+      _clearStatus();
+      _notify();
+      return false;
+    } catch (error) {
+      if (requestSequence != _speechRequestSequence || _disposed) {
+        return false;
+      }
+      speechInputState = SpeechInputState.error;
+      _setError(
+        '無法啟動麥克風錄音。',
+        'speech_recording_failed',
+        arguments: <String, Object?>{'error': error.runtimeType.toString()},
+      );
+      _clearStatus();
+      _notify();
+      return false;
+    }
+  }
+
+  Future<bool> stopSpeechRecording() async {
+    final service = _speechInputService;
+    if (service == null || speechInputState != SpeechInputState.recording) {
+      return false;
+    }
+
+    _speechRecordingTimer?.cancel();
+    _speechRecordingTimer = null;
+    final requestSequence = _speechRequestSequence;
+    final draftSnapshot = promptDraft;
+    speechInputState = SpeechInputState.transcribing;
+    _clearError();
+    _setStatus('正在將語音轉成文字…', 'speech_transcribing');
+    _notify();
+
+    try {
+      final recording = await service.stop();
+      if (_disposed || requestSequence != _speechRequestSequence) {
+        return false;
+      }
+      final transcription = await _api.transcribeSpeech(
+        audioBytes: recording.bytes,
+        languageMode: speechLanguageMode,
+        filename: recording.filename,
+      );
+      if (_disposed || requestSequence != _speechRequestSequence) {
+        return false;
+      }
+      final transcript = transcription.transcript.trim();
+      if (transcript.isEmpty) {
+        throw const SpeechRecordingException('no_speech', '沒有辨識到可用文字。');
+      }
+
+      final currentDraft = promptDraft;
+      final appendBase = currentDraft == draftSnapshot
+          ? draftSnapshot
+          : currentDraft;
+      promptDraft = _appendTranscript(appendBase, transcript);
+      lastSpeechTranscription = transcription;
+      speechInputState = SpeechInputState.completed;
+      _clearError();
+      _setStatus('語音已轉成文字，確認後再套用指令。', 'speech_completed');
+      _notify();
+      return true;
+    } on SpeechRecordingException catch (error) {
+      if (requestSequence != _speechRequestSequence || _disposed) {
+        return false;
+      }
+      speechInputState = SpeechInputState.error;
+      _setError(error.message, error.code);
+      _clearStatus();
+      _notify();
+      return false;
+    } on ApiException catch (error) {
+      if (requestSequence != _speechRequestSequence || _disposed) {
+        return false;
+      }
+      speechInputState = SpeechInputState.error;
+      _setApiError(error);
+      _clearStatus();
+      _notify();
+      return false;
+    } catch (error) {
+      if (requestSequence != _speechRequestSequence || _disposed) {
+        return false;
+      }
+      speechInputState = SpeechInputState.error;
+      _setError(
+        '語音辨識失敗，請重新錄音。',
+        'transcription_failed',
+        arguments: <String, Object?>{'error': error.runtimeType.toString()},
+      );
+      _clearStatus();
+      _notify();
+      return false;
+    }
+  }
+
+  Future<void> cancelSpeechRecording() async {
+    final service = _speechInputService;
+    if (service == null || !isSpeechBusy) {
+      return;
+    }
+    ++_speechRequestSequence;
+    _speechRecordingTimer?.cancel();
+    _speechRecordingTimer = null;
+    speechRecordingElapsedSeconds = 0;
+    try {
+      await service.cancel();
+    } finally {
+      if (!_disposed) {
+        speechInputState = SpeechInputState.cancelled;
+        _clearError();
+        _setStatus('已取消這次語音輸入。', 'speech_cancelled');
+        _notify();
+      }
+    }
+  }
+
+  String _appendTranscript(String draft, String transcript) {
+    if (draft.isEmpty) {
+      return transcript;
+    }
+    if (RegExp(r'\s$').hasMatch(draft)) {
+      return '$draft$transcript';
+    }
+    return '$draft $transcript';
+  }
+
   void setOriginalImage(Uint8List bytes) {
     _cancelPreview(clearDraft: true);
     _clearPhotoGitDraft(notify: false);
+    _clearCommandPlan();
     originalImageBytes = bytes;
     originalImageUrl = null;
     referenceImageBytes = null;
@@ -698,6 +950,7 @@ class EditorController extends ChangeNotifier {
   void clearOriginalImage() {
     _cancelPreview(clearDraft: true);
     _clearPhotoGitDraft(notify: false);
+    _clearCommandPlan();
     originalImageBytes = null;
     originalImageUrl = null;
     referenceImageBytes = null;
@@ -780,13 +1033,216 @@ class EditorController extends ChangeNotifier {
   }
 
   Future<bool> submitPrompt() async {
-    final prompt = promptDraft;
-    if (prompt.trim().isEmpty) {
+    final instruction = promptDraft;
+    if (instruction.trim().isEmpty) {
       _setError('請輸入修圖指令。', 'prompt_required');
       _notify();
       return false;
     }
-    return _submitEdit(prompt: prompt, referenceBytes: null);
+    if (isProcessing || isPlanningCommand || isSpeechBusy) {
+      return false;
+    }
+    if (hasPhotoGitDraft) {
+      _setError('請先完成或取消目前的版本操作。', 'photo_git_draft_active');
+      _notify();
+      return false;
+    }
+
+    isPlanningCommand = true;
+    _clearError();
+    _setStatus('正在理解要使用的修圖工具…', 'command_planning');
+    _notify();
+    late final CommandPlan planned;
+    try {
+      planned = await _api.planCommand(
+        instruction: instruction,
+        sessionId: sessionId,
+        selectedEditId: selectedEditId == originalParentSentinel
+            ? null
+            : selectedEditId,
+        locale: speechLanguageMode == SpeechLanguageMode.english
+            ? 'en'
+            : 'zh-TW',
+      );
+      if (promptDraft != instruction) {
+        _setStatus('指令內容已變更，請重新套用。', 'command_draft_changed');
+        return false;
+      }
+      commandPlan = planned;
+    } on ApiException catch (error) {
+      _setApiError(error);
+      _clearStatus();
+      return false;
+    } catch (error) {
+      _setError(
+        '無法規劃這次指令：$error',
+        'command_plan_failed',
+        arguments: <String, Object?>{'error': error.runtimeType.toString()},
+      );
+      _clearStatus();
+      return false;
+    } finally {
+      isPlanningCommand = false;
+      _notify();
+    }
+
+    if (planned.isPhotoGit && planned.disposition == 'conflict') {
+      await _prepareCommandPhotoGit(planned);
+      return false;
+    }
+    if (!planned.isReady) {
+      final code = planned.clarification?.code ?? 'command_not_ready';
+      _setStatus(planned.summary.zh, code);
+      _notify();
+      return false;
+    }
+    switch (planned.commandType) {
+      case 'edit_prompt':
+      case 'apply_style':
+        return _submitEdit(
+          prompt: instruction,
+          referenceBytes: null,
+          commandType: planned.commandType,
+          commandPlanHash: planned.planHash,
+        );
+      case 'manual_adjust':
+        return _commitCommandManual(planned);
+      case 'photo_git_merge':
+      case 'photo_git_revert':
+        await _prepareCommandPhotoGit(planned);
+        return false;
+      default:
+        _setError('這個指令目前沒有安全的執行方式。', 'command_unsupported');
+        _notify();
+        return false;
+    }
+  }
+
+  Future<bool> chooseCommandClarificationOption(
+    CommandClarificationOption option,
+  ) async {
+    final targetId = option.action['select_target_edit_id']?.toString();
+    if (targetId == null || targetId.isEmpty) {
+      return false;
+    }
+    final target = _findEdit(targetId);
+    if (target == null || !selectHistoryItem(target, discardDraft: true)) {
+      return false;
+    }
+    return submitPrompt();
+  }
+
+  Future<bool> _commitCommandManual(CommandPlan plan) async {
+    final currentSession = sessionId;
+    final sourceEditId = plan.action['source_edit_id']?.toString();
+    final rawOverrides = plan.action['parameter_overrides'];
+    if (currentSession == null ||
+        sourceEditId == null ||
+        rawOverrides is! Map) {
+      _setError('精確調參計畫缺少來源版本或參數。', 'command_manual_invalid');
+      _notify();
+      return false;
+    }
+    final overrides = <String, double>{};
+    for (final entry in rawOverrides.entries) {
+      if (entry.value is num) {
+        overrides[entry.key.toString()] = (entry.value as num).toDouble();
+      }
+    }
+    if (overrides.isEmpty) {
+      _setError('精確調參計畫沒有可套用的數值。', 'command_manual_invalid');
+      _notify();
+      return false;
+    }
+
+    _commandClientRequestId ??=
+        'flutter_command_${DateTime.now().microsecondsSinceEpoch}_'
+        '${++_editRequestSequence}';
+    isProcessing = true;
+    _clearError();
+    _setStatus('正在套用精確參數…', 'command_manual_applying');
+    _notify();
+    try {
+      final response = await _api.commitManual(
+        sessionId: currentSession,
+        sourceEditId: sourceEditId,
+        parameterOverrides: overrides,
+        clientRequestId: _commandClientRequestId!,
+        instruction: plan.originalInstruction,
+        commandPlanHash: plan.planHash,
+      );
+      final item = response.toHistoryItem();
+      _applyCommittedItem(item);
+      await refreshHistory(preferredEditId: item.editId, quiet: true);
+      _clearCommandPlan();
+      _setStatus('精確參數已套用並加入歷史。', 'command_manual_committed');
+      comparisonView = ComparisonView.result;
+      return true;
+    } on ApiException catch (error) {
+      _setApiError(error);
+      _clearStatus();
+      return false;
+    } catch (error) {
+      _setError(
+        '精確參數套用失敗：$error',
+        'command_manual_failed',
+        arguments: <String, Object?>{'error': error.runtimeType.toString()},
+      );
+      _clearStatus();
+      return false;
+    } finally {
+      isProcessing = false;
+      _notify();
+    }
+  }
+
+  Future<void> _prepareCommandPhotoGit(CommandPlan plan) async {
+    final requestJson = plan.action['photo_git_request'];
+    final planJson = plan.action['photo_git_plan'];
+    if (requestJson is! Map || planJson is! Map) {
+      _setError('版本操作計畫資料不完整。', 'command_photo_git_invalid');
+      _notify();
+      return;
+    }
+    final parsedRequest = PhotoGitRequest.fromJson(
+      Map<String, dynamic>.from(requestJson),
+    );
+    final request = PhotoGitRequest(
+      operation: parsedRequest.operation,
+      targetEditId: parsedRequest.targetEditId,
+      sourceEditId: parsedRequest.sourceEditId,
+      revertEditId: parsedRequest.revertEditId,
+      instruction: parsedRequest.instruction,
+      commandPlanHash: plan.planHash,
+      selectors: parsedRequest.selectors,
+      resolutions: parsedRequest.resolutions,
+    );
+    if (request.targetEditId.isEmpty) {
+      _setError('版本操作缺少目標版本。', 'command_photo_git_invalid');
+      _notify();
+      return;
+    }
+    _commandPhotoGitRequest = request;
+    photoGitOperation = request.operation;
+    photoGitInstruction = request.instruction;
+    photoGitSourceEditId = request.sourceEditId;
+    photoGitRevertEditId = request.revertEditId;
+    photoGitResolutions = Map<String, String>.from(request.resolutions);
+    photoGitPlan = PhotoGitPlan.fromJson(
+      Map<String, dynamic>.from(planJson),
+      buildImageUrl: _api.buildImageUrl,
+    );
+    photoGitPreview = null;
+    _photoGitClientRequestId = null;
+    _clearError();
+    if (photoGitPlan!.isReady) {
+      _setStatus('版本計畫已建立，正在產生確認預覽…', 'command_photo_git_ready');
+      _notify();
+      await previewPhotoGit();
+    } else {
+      _setStatus('版本計畫有衝突，請先選擇每一項處理方式。', 'photo_git_conflicts_found');
+      _notify();
+    }
   }
 
   Future<bool> submitReference() async {
@@ -841,8 +1297,10 @@ class EditorController extends ChangeNotifier {
   Future<bool> _submitEdit({
     required String prompt,
     required Uint8List? referenceBytes,
+    String? commandType,
+    String? commandPlanHash,
   }) async {
-    if (isProcessing) {
+    if (isProcessing || isSpeechBusy) {
       return false;
     }
     if (hasPhotoGitDraft) {
@@ -863,6 +1321,8 @@ class EditorController extends ChangeNotifier {
       canContinue ? sessionId : null,
       canContinue ? selectedEditId : null,
       canContinue ? null : originalImageBytes,
+      commandType,
+      commandPlanHash,
     );
     if (_pendingEditFingerprint != requestFingerprint ||
         _pendingEditClientRequestId == null) {
@@ -890,6 +1350,8 @@ class EditorController extends ChangeNotifier {
         clientRequestId: clientRequestId,
         sessionId: canContinue ? sessionId : null,
         parentEditId: canContinue ? selectedEditId : null,
+        commandType: commandType,
+        commandPlanHash: commandPlanHash,
       );
       _applyCommittedItem(item);
       await refreshHistory(preferredEditId: item.editId, quiet: true);
@@ -897,6 +1359,7 @@ class EditorController extends ChangeNotifier {
         await loadEditContractSchema(quiet: true);
       }
       _clearPendingEditRequest();
+      _clearCommandPlan();
       _setStatus('修圖完成', 'edit_complete');
       comparisonView = ComparisonView.result;
       return true;
@@ -1023,6 +1486,7 @@ class EditorController extends ChangeNotifier {
     }
     selectedEdit = item;
     selectedEditId = item.editId;
+    _clearCommandPlan();
     originalImageUrl = item.originalUrl ?? originalImageUrl;
     comparisonView = ComparisonView.result;
     _ensureComparisonState();
@@ -1038,6 +1502,7 @@ class EditorController extends ChangeNotifier {
     }
     _cancelPreview(clearDraft: true);
     _clearPhotoGitDraft(notify: false);
+    _clearCommandPlan();
     selectedEdit = null;
     selectedEditId = originalParentSentinel;
     comparisonView = ComparisonView.original;
@@ -1406,6 +1871,19 @@ class EditorController extends ChangeNotifier {
   }
 
   PhotoGitRequest? _buildPhotoGitRequest() {
+    final commandRequest = _commandPhotoGitRequest;
+    if (commandRequest != null) {
+      return PhotoGitRequest(
+        operation: commandRequest.operation,
+        targetEditId: commandRequest.targetEditId,
+        sourceEditId: commandRequest.sourceEditId,
+        revertEditId: commandRequest.revertEditId,
+        instruction: commandRequest.instruction,
+        commandPlanHash: commandRequest.commandPlanHash,
+        selectors: commandRequest.selectors,
+        resolutions: photoGitResolutions,
+      );
+    }
     final targetId = selectedEditId;
     if (targetId == null || targetId == originalParentSentinel) {
       return null;
@@ -1437,6 +1915,7 @@ class EditorController extends ChangeNotifier {
   }
 
   void _clearPhotoGitDraft({required bool notify}) {
+    _commandPhotoGitRequest = null;
     photoGitOperation = PhotoGitOperation.merge;
     photoGitInstruction = '';
     photoGitSourceEditId = null;
@@ -1450,9 +1929,17 @@ class EditorController extends ChangeNotifier {
     isPreviewingPhotoGit = false;
     isCommittingPhotoGit = false;
     _photoGitClientRequestId = null;
+    if (commandPlan?.isPhotoGit == true) {
+      _clearCommandPlan();
+    }
     if (notify) {
       _notify();
     }
+  }
+
+  void _clearCommandPlan() {
+    commandPlan = null;
+    _commandClientRequestId = null;
   }
 
   static bool _isPhotoGitCapableMode(String editMode) {
@@ -1488,6 +1975,12 @@ class EditorController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    ++_speechRequestSequence;
+    _speechRecordingTimer?.cancel();
+    _speechRecordingTimer = null;
+    if (_speechInputService case final service?) {
+      unawaited(service.dispose());
+    }
     _cancelPreview(clearDraft: true);
     _clearPhotoGitDraft(notify: false);
     if (_api case final ApiService service) {

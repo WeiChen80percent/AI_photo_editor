@@ -468,14 +468,212 @@ abstract class AppLocalizations {
   /// No description provided for @promptHint.
   ///
   /// In en, this message translates to:
-  /// **'For example: brighten the person, darken the sky, and reduce saturation'**
+  /// **'For example: increase brightness by ten, apply Cinematic at 100%, or merge version 4 and version 6'**
   String get promptHint;
 
   /// No description provided for @promptModeNotice.
   ///
   /// In en, this message translates to:
-  /// **'Prompt and reference image are separate modes. This panel only sends text.'**
+  /// **'Type or speak one action. Apply routes it to editing, exact parameters, styles, or version tools.'**
   String get promptModeNotice;
+
+  /// No description provided for @commandPlanning.
+  ///
+  /// In en, this message translates to:
+  /// **'Understanding command…'**
+  String get commandPlanning;
+
+  /// No description provided for @commandPlanTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Command plan'**
+  String get commandPlanTitle;
+
+  /// No description provided for @commandPreviewNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Version operations always require a preview and your confirmation before a new version is created.'**
+  String get commandPreviewNotice;
+
+  /// No description provided for @speechLanguageLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Recognition language'**
+  String get speechLanguageLabel;
+
+  /// No description provided for @speechLanguageHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Chinese or English for short commands; use automatic for mixed speech.'**
+  String get speechLanguageHelp;
+
+  /// No description provided for @speechLanguageTraditionalChinese.
+  ///
+  /// In en, this message translates to:
+  /// **'Traditional Chinese'**
+  String get speechLanguageTraditionalChinese;
+
+  /// No description provided for @speechLanguageEnglish.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get speechLanguageEnglish;
+
+  /// No description provided for @speechLanguageAutomatic.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic detection'**
+  String get speechLanguageAutomatic;
+
+  /// No description provided for @speechResultMetadata.
+  ///
+  /// In en, this message translates to:
+  /// **'Recognized as {language} · {model}'**
+  String speechResultMetadata(String language, String model);
+
+  /// No description provided for @speechStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Use microphone'**
+  String get speechStart;
+
+  /// No description provided for @speechStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get speechStop;
+
+  /// No description provided for @speechCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get speechCancel;
+
+  /// No description provided for @speechRequestingPermission.
+  ///
+  /// In en, this message translates to:
+  /// **'Requesting microphone permission…'**
+  String get speechRequestingPermission;
+
+  /// No description provided for @speechRecordingSeconds.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording · {seconds}s'**
+  String speechRecordingSeconds(int seconds);
+
+  /// No description provided for @speechTranscribing.
+  ///
+  /// In en, this message translates to:
+  /// **'Turning speech into editable text…'**
+  String get speechTranscribing;
+
+  /// No description provided for @speechPrivacyNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio is processed by the local backend and is not saved to edit history.'**
+  String get speechPrivacyNotice;
+
+  /// No description provided for @speechUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Microphone input is unavailable here. You can still type a prompt.'**
+  String get speechUnavailable;
+
+  /// No description provided for @statusSpeechCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Speech was added as editable text. Review it before applying.'**
+  String get statusSpeechCompleted;
+
+  /// No description provided for @statusSpeechCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice input was cancelled.'**
+  String get statusSpeechCancelled;
+
+  /// No description provided for @errorSpeechPermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Microphone permission was denied. Allow it in Chrome settings or type the prompt instead.'**
+  String get errorSpeechPermissionDenied;
+
+  /// No description provided for @errorSpeechNoMicrophone.
+  ///
+  /// In en, this message translates to:
+  /// **'No usable microphone was found. Check the device or type the prompt instead.'**
+  String get errorSpeechNoMicrophone;
+
+  /// No description provided for @errorSpeechRecorderUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This browser cannot provide the required microphone format. Use current Chrome or type the prompt instead.'**
+  String get errorSpeechRecorderUnavailable;
+
+  /// No description provided for @errorSpeechRecordingFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording failed. Check the microphone and try again.'**
+  String get errorSpeechRecordingFailed;
+
+  /// No description provided for @errorSpeechNoAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'The microphone returned no usable audio. Please record again.'**
+  String get errorSpeechNoAudio;
+
+  /// No description provided for @errorSpeechInvalidAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'The recording could not be read. Please record again.'**
+  String get errorSpeechInvalidAudio;
+
+  /// No description provided for @errorSpeechUnsupportedFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'This recording format is not supported. Please record again in Chrome.'**
+  String get errorSpeechUnsupportedFormat;
+
+  /// No description provided for @errorSpeechNoSpeech.
+  ///
+  /// In en, this message translates to:
+  /// **'No usable speech was detected. Move closer to the microphone and try again.'**
+  String get errorSpeechNoSpeech;
+
+  /// No description provided for @errorSpeechTooLong.
+  ///
+  /// In en, this message translates to:
+  /// **'The recording is longer than 15 seconds. Please use a shorter editing prompt.'**
+  String get errorSpeechTooLong;
+
+  /// No description provided for @errorSpeechTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'The recording is too large. Please use a shorter editing prompt.'**
+  String get errorSpeechTooLarge;
+
+  /// No description provided for @errorSpeechModelUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The local speech model is unavailable. Check the backend model and device settings.'**
+  String get errorSpeechModelUnavailable;
+
+  /// No description provided for @errorSpeechTranscriptionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Speech recognition failed. Please record again.'**
+  String get errorSpeechTranscriptionFailed;
+
+  /// No description provided for @errorSpeechTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'Speech recognition took too long. Please try again.'**
+  String get errorSpeechTimeout;
+
+  /// No description provided for @errorSpeechBackendUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not connect to the local speech backend. Typing is still available.'**
+  String get errorSpeechBackendUnavailable;
 
   /// No description provided for @applyPrompt.
   ///

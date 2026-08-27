@@ -381,10 +381,44 @@ String localizedPresentationMessage(
   final base = switch (message.code) {
     'status_selected_new_original' => l10n.statusSelectedNewOriginal,
     'status_reference_ready' => l10n.statusReferenceReady,
+    'speech_requesting_permission' => l10n.speechRequestingPermission,
+    'speech_recording' => l10n.speechRecordingSeconds(0),
+    'speech_transcribing' => l10n.speechTranscribing,
+    'speech_completed' => l10n.statusSpeechCompleted,
+    'speech_cancelled' => l10n.statusSpeechCancelled,
+    'speech_permission_denied' => l10n.errorSpeechPermissionDenied,
+    'speech_no_microphone' => l10n.errorSpeechNoMicrophone,
+    'speech_recorder_unavailable' ||
+    'speech_recorder_busy' ||
+    'speech_recorder_not_recording' => l10n.errorSpeechRecorderUnavailable,
+    'speech_recording_failed' => l10n.errorSpeechRecordingFailed,
+    'speech_no_audio' => l10n.errorSpeechNoAudio,
+    'invalid_audio' => l10n.errorSpeechInvalidAudio,
+    'unsupported_audio_format' => l10n.errorSpeechUnsupportedFormat,
+    'no_speech' => l10n.errorSpeechNoSpeech,
+    'audio_too_long' => l10n.errorSpeechTooLong,
+    'audio_too_large' => l10n.errorSpeechTooLarge,
+    'model_unavailable' => l10n.errorSpeechModelUnavailable,
+    'transcription_failed' => l10n.errorSpeechTranscriptionFailed,
+    'transcription_timeout' ||
+    'speech_network_timeout' => l10n.errorSpeechTimeout,
+    'speech_network_error' => l10n.errorSpeechBackendUnavailable,
     'prompt_required' => l10n.errorPromptRequired,
     'reference_required' => l10n.errorReferenceRequired,
     'original_required' => l10n.errorOriginalRequired,
     'parsing_prompt' => l10n.statusParsingPrompt,
+    'command_planning' => l10n.statusParsingPrompt,
+    'command_draft_changed' => l10n.errorPromptRequired,
+    'command_manual_applying' => l10n.statusApplyingManual,
+    'command_manual_committed' => l10n.statusManualCommitted,
+    'command_manual_failed' => l10n.errorManualCommit(error),
+    'command_photo_git_ready' => l10n.statusPhotoGitPlanReady,
+    'command_photo_git_invalid' => l10n.errorPhotoGitRequestIncomplete,
+    'command_plan_stale' => l10n.errorPhotoGitStale,
+    'command_plan_failed' => l10n.errorEditFailed(error),
+    'command_request_conflict' => l10n.errorContractConflict,
+    'command_action_mismatch' => l10n.errorPhotoGitStale,
+    'command_unsupported' => l10n.errorContractUnsupported,
     'applying_reference' => l10n.statusApplyingReference,
     'edit_complete' => l10n.statusEditComplete,
     'history_synced' => l10n.statusHistorySynced,
@@ -457,6 +491,20 @@ String localizedPresentationMessage(
     'adaptive_step_converged' => l10n.errorAdaptiveConverged,
     'adaptive_feedback_satisfied' => l10n.errorAdaptiveSatisfied,
     'manual_source_mode_unsupported' => l10n.errorManualSourceUnsupported,
+    final code
+        when code.startsWith('command_') &&
+            (code.contains('required') ||
+                code.contains('unclear') ||
+                code.contains('ambiguous') ||
+                code.contains('not_ready')) =>
+      l10n.errorContractClarification,
+    final code
+        when code.startsWith('command_') &&
+            (code.contains('unsupported') ||
+                code.contains('multiple') ||
+                code.contains('invalid') ||
+                code.contains('conflict')) =>
+      l10n.errorContractUnsupported,
     'network_error' => l10n.errorBackendUnavailable,
     'invalid_response' => l10n.backendInvalidResponse,
     _ when statusCode is int => l10n.backendHttpError(statusCode),

@@ -638,6 +638,133 @@ class StyleCatalog {
   }
 }
 
+class CommandLocalizedText {
+  const CommandLocalizedText({required this.zh, required this.en});
+
+  final String zh;
+  final String en;
+
+  String forLanguage(String languageCode) =>
+      languageCode.toLowerCase() == 'en' ? en : zh;
+
+  factory CommandLocalizedText.fromJson(dynamic value) {
+    final json = _mapValue(value);
+    return CommandLocalizedText(
+      zh: _stringValue(json['zh']) ?? '',
+      en: _stringValue(json['en']) ?? '',
+    );
+  }
+}
+
+class CommandClarificationOption {
+  const CommandClarificationOption({
+    required this.optionId,
+    required this.label,
+    this.action = const <String, dynamic>{},
+  });
+
+  final String optionId;
+  final CommandLocalizedText label;
+  final Map<String, dynamic> action;
+
+  factory CommandClarificationOption.fromJson(Map<String, dynamic> json) {
+    return CommandClarificationOption(
+      optionId: _stringValue(json['option_id']) ?? '',
+      label: CommandLocalizedText.fromJson(json['label']),
+      action: _mapValue(json['action']),
+    );
+  }
+}
+
+class CommandClarification {
+  const CommandClarification({
+    required this.code,
+    required this.question,
+    this.options = const <CommandClarificationOption>[],
+  });
+
+  final String code;
+  final CommandLocalizedText question;
+  final List<CommandClarificationOption> options;
+
+  factory CommandClarification.fromJson(Map<String, dynamic> json) {
+    return CommandClarification(
+      code: _stringValue(json['code']) ?? 'command_clarification_required',
+      question: CommandLocalizedText.fromJson(json['question']),
+      options: _mapList(
+        json['options'],
+      ).map(CommandClarificationOption.fromJson).toList(growable: false),
+    );
+  }
+}
+
+class CommandPlan {
+  const CommandPlan({
+    required this.schemaVersion,
+    required this.disposition,
+    required this.commandType,
+    required this.originalInstruction,
+    required this.planHash,
+    required this.parserSource,
+    required this.confirmationPolicy,
+    required this.summary,
+    this.sessionId,
+    this.selectedEditId,
+    this.targetEditId,
+    this.sourceEditId,
+    this.revertEditId,
+    this.normalizedSlots = const <String, dynamic>{},
+    this.action = const <String, dynamic>{},
+    this.clarification,
+  });
+
+  final String schemaVersion;
+  final String disposition;
+  final String commandType;
+  final String originalInstruction;
+  final String? sessionId;
+  final String? selectedEditId;
+  final String? targetEditId;
+  final String? sourceEditId;
+  final String? revertEditId;
+  final Map<String, dynamic> normalizedSlots;
+  final Map<String, dynamic> action;
+  final String confirmationPolicy;
+  final String planHash;
+  final String parserSource;
+  final CommandLocalizedText summary;
+  final CommandClarification? clarification;
+
+  bool get isReady => disposition == 'ready';
+  bool get requiresClarification => disposition == 'clarification_required';
+  bool get isPhotoGit =>
+      commandType == 'photo_git_merge' || commandType == 'photo_git_revert';
+
+  factory CommandPlan.fromJson(Map<String, dynamic> json) {
+    final clarification = _mapValue(json['clarification']);
+    return CommandPlan(
+      schemaVersion: _stringValue(json['schema_version']) ?? '',
+      disposition: _stringValue(json['disposition']) ?? 'unsupported',
+      commandType: _stringValue(json['command_type']) ?? 'unknown',
+      originalInstruction: _stringValue(json['original_instruction']) ?? '',
+      sessionId: _stringValue(json['session_id']),
+      selectedEditId: _stringValue(json['selected_edit_id']),
+      targetEditId: _stringValue(json['target_edit_id']),
+      sourceEditId: _stringValue(json['source_edit_id']),
+      revertEditId: _stringValue(json['revert_edit_id']),
+      normalizedSlots: _mapValue(json['normalized_slots']),
+      action: _mapValue(json['action']),
+      confirmationPolicy: _stringValue(json['confirmation_policy']) ?? 'none',
+      planHash: _stringValue(json['plan_hash']) ?? '',
+      parserSource: _stringValue(json['parser_source']) ?? '',
+      summary: CommandLocalizedText.fromJson(json['summary']),
+      clarification: clarification.isEmpty
+          ? null
+          : CommandClarification.fromJson(clarification),
+    );
+  }
+}
+
 enum PhotoGitOperation {
   merge('merge'),
   selectiveRevert('selective_revert');
@@ -658,17 +785,29 @@ class PhotoGitSelector {
     this.region,
     this.maskType,
     this.parameters = const <String>[],
+    this.allContributions = false,
   });
 
   final String? region;
   final String? maskType;
   final List<String> parameters;
+  final bool allContributions;
 
   Map<String, dynamic> toJson() => <String, dynamic>{
     if (region != null) 'region': region,
     if (maskType != null) 'mask_type': maskType,
     if (parameters.isNotEmpty) 'parameters': parameters,
+    if (allContributions) 'all_contributions': true,
   };
+
+  factory PhotoGitSelector.fromJson(Map<String, dynamic> json) {
+    return PhotoGitSelector(
+      region: _stringValue(json['region']),
+      maskType: _stringValue(json['mask_type']),
+      parameters: _stringList(json['parameters']),
+      allContributions: _nullableBoolValue(json['all_contributions']) ?? false,
+    );
+  }
 }
 
 class PhotoGitRequest {
@@ -678,6 +817,7 @@ class PhotoGitRequest {
     this.sourceEditId,
     this.revertEditId,
     this.instruction = '',
+    this.commandPlanHash,
     this.selectors = const <PhotoGitSelector>[],
     this.resolutions = const <String, String>{},
   });
@@ -687,6 +827,7 @@ class PhotoGitRequest {
   final String? sourceEditId;
   final String? revertEditId;
   final String instruction;
+  final String? commandPlanHash;
   final List<PhotoGitSelector> selectors;
   final Map<String, String> resolutions;
 
@@ -697,9 +838,28 @@ class PhotoGitRequest {
     if (sourceEditId != null) 'source_edit_id': sourceEditId,
     if (revertEditId != null) 'revert_edit_id': revertEditId,
     'instruction': instruction.trim(),
+    if (commandPlanHash != null) 'command_plan_hash': commandPlanHash,
     'selectors': selectors.map((selector) => selector.toJson()).toList(),
     'resolutions': resolutions,
   };
+
+  factory PhotoGitRequest.fromJson(Map<String, dynamic> json) {
+    return PhotoGitRequest(
+      operation: PhotoGitOperation.fromWire(_stringValue(json['operation'])),
+      targetEditId: _stringValue(json['target_edit_id']) ?? '',
+      sourceEditId: _stringValue(json['source_edit_id']),
+      revertEditId: _stringValue(json['revert_edit_id']),
+      instruction: _stringValue(json['instruction']) ?? '',
+      commandPlanHash: _stringValue(json['command_plan_hash']),
+      selectors: _mapList(
+        json['selectors'],
+      ).map(PhotoGitSelector.fromJson).toList(growable: false),
+      resolutions: <String, String>{
+        for (final entry in _mapValue(json['resolutions']).entries)
+          entry.key: entry.value.toString(),
+      },
+    );
+  }
 }
 
 class PhotoGitConflict {

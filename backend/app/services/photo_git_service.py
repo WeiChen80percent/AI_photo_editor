@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import copy
 import re
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from app.services.edit_history import (
     EditHistoryConflict,
@@ -129,7 +130,14 @@ class PhotoGitService:
         )
         return response
 
-    def commit(self, request: PhotoGitCommitRequest) -> dict[str, Any]:
+    def commit(
+        self,
+        request: PhotoGitCommitRequest,
+        *,
+        command_provenance: Mapping[str, Any] | None = None,
+        command_provenance_loader: Callable[[], Mapping[str, Any] | None]
+        | None = None,
+    ) -> dict[str, Any]:
         plan = self._validated_execution_plan(request)
         existing = self._find_idempotent_record(
             session_id=request.session_id,
@@ -147,6 +155,9 @@ class PhotoGitService:
                     status_code=409,
                 )
             return self._record_response(existing, idempotent_replay=True)
+
+        if command_provenance_loader is not None:
+            command_provenance = command_provenance_loader()
 
         graph = self._graph(
             PhotoGitPlanRequest.model_validate(
@@ -167,6 +178,16 @@ class PhotoGitService:
                 request=request,
                 plan=plan,
             )
+            command_metadata = (
+                copy.deepcopy(dict(command_provenance))
+                if command_provenance is not None
+                else None
+            )
+            if command_metadata is not None:
+                command_metadata["execution_client_request_id"] = (
+                    request.client_request_id
+                )
+                command_metadata["photo_git_plan_hash"] = request.plan_hash
             edit_mode = (
                 "photo_git_merge"
                 if request.operation == "merge"
@@ -220,6 +241,7 @@ class PhotoGitService:
                 adaptive=None,
                 style=None,
                 photo_git=metadata,
+                command=command_metadata,
             )
             try:
                 _, persisted, created = (
@@ -395,6 +417,7 @@ class PhotoGitService:
             "recipe": copy.deepcopy(plan["recipe"]),
             "plan_hash": request.plan_hash,
             "client_request_id": request.client_request_id,
+            "command_plan_hash": request.command_plan_hash,
         }
 
     @staticmethod

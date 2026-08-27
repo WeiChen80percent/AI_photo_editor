@@ -135,6 +135,7 @@ class EditHistoryStore:
         namespace: str,
         client_request_id: str,
         request_hash: str,
+        scope_session_id: str | None = None,
     ) -> tuple[dict[str, Any], dict[str, Any]] | None:
         """Find one previously committed request across edit sessions.
 
@@ -153,11 +154,17 @@ class EditHistoryStore:
             request_hash,
             "request_hash",
         )
+        normalized_scope_session_id = (
+            self._validate_session_id(scope_session_id)
+            if scope_session_id is not None
+            else None
+        )
         with self._idempotency_lock:
             return self._find_edit_request_idempotent_locked(
                 namespace=normalized_namespace,
                 client_request_id=normalized_request_id,
                 request_hash=normalized_hash,
+                scope_session_id=normalized_scope_session_id,
             )
 
     def save_edit_request_idempotent(
@@ -167,6 +174,7 @@ class EditHistoryStore:
         namespace: str,
         client_request_id: str,
         request_hash: str,
+        scope_session_id: str | None = None,
     ) -> tuple[dict[str, Any], dict[str, Any], bool]:
         """Atomically append one namespaced request across all sessions."""
 
@@ -184,6 +192,18 @@ class EditHistoryStore:
             request_hash,
             "request_hash",
         )
+        normalized_scope_session_id = (
+            self._validate_session_id(scope_session_id)
+            if scope_session_id is not None
+            else None
+        )
+        if (
+            normalized_scope_session_id is not None
+            and normalized_scope_session_id != session_id
+        ):
+            raise EditHistoryConflict(
+                "Idempotency session scope does not match the record"
+            )
         metadata = record.get(normalized_namespace)
         if not isinstance(metadata, dict):
             raise EditHistoryConflict(
@@ -192,7 +212,7 @@ class EditHistoryStore:
         if (
             str(metadata.get("client_request_id") or "")
             != normalized_request_id
-            or str(metadata.get("contract_hash") or "") != normalized_hash
+            or self._metadata_request_hash(metadata) != normalized_hash
         ):
             raise EditHistoryConflict(
                 f"{normalized_namespace} idempotency metadata does not match request"
@@ -203,6 +223,7 @@ class EditHistoryStore:
                 namespace=normalized_namespace,
                 client_request_id=normalized_request_id,
                 request_hash=normalized_hash,
+                scope_session_id=normalized_scope_session_id,
             )
             if existing is not None:
                 session, persisted = existing
@@ -260,6 +281,8 @@ class EditHistoryStore:
         style: dict[str, Any] | None = None,
         photo_git: dict[str, Any] | None = None,
         edit_contract: dict[str, Any] | None = None,
+        manual: dict[str, Any] | None = None,
+        command: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         return {
             "session_id": session_id,
@@ -283,6 +306,8 @@ class EditHistoryStore:
             "style": style,
             "photo_git": photo_git,
             "edit_contract": edit_contract,
+            "manual": manual,
+            "command": command,
             "parameters": parameters,
             "preset_name": preset_name,
             "explanation": explanation,
@@ -338,10 +363,18 @@ class EditHistoryStore:
         namespace: str,
         client_request_id: str,
         request_hash: str,
+        scope_session_id: str | None = None,
     ) -> tuple[dict[str, Any], dict[str, Any]] | None:
         if not self.storage_dir.exists():
             return None
-        for session_path in sorted(self.storage_dir.glob("session_*.json")):
+        session_paths = (
+            [self._session_path(scope_session_id)]
+            if scope_session_id is not None
+            else sorted(self.storage_dir.glob("session_*.json"))
+        )
+        for session_path in session_paths:
+            if not session_path.exists():
+                continue
             session_id = session_path.stem
             if _SESSION_ID_PATTERN.fullmatch(session_id) is None:
                 continue
@@ -358,13 +391,23 @@ class EditHistoryStore:
                     != client_request_id
                 ):
                     continue
-                if str(metadata.get("contract_hash") or "") != request_hash:
+                if self._metadata_request_hash(metadata) != request_hash:
                     raise EditHistoryConflict(
                         "client_request_id was already used for another "
                         f"{namespace} request"
                     )
                 return session, existing
         return None
+
+    @staticmethod
+    def _metadata_request_hash(metadata: dict[str, Any]) -> str:
+        """Read the generic hash while remaining compatible with contract v1."""
+
+        return str(
+            metadata.get("request_hash")
+            or metadata.get("contract_hash")
+            or ""
+        )
 
     @staticmethod
     def _validate_metadata_namespace(namespace: Any) -> str:

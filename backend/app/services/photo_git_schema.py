@@ -17,6 +17,7 @@ class PhotoGitSelector(BaseModel):
     region: str | None = Field(default=None, max_length=40)
     mask_type: str | None = Field(default=None, max_length=60)
     parameters: list[str] = Field(default_factory=list, max_length=15)
+    all_contributions: bool = False
 
 
 class PhotoGitPlanRequest(BaseModel):
@@ -28,6 +29,11 @@ class PhotoGitPlanRequest(BaseModel):
     source_edit_id: str | None = Field(default=None, max_length=80)
     revert_edit_id: str | None = Field(default=None, max_length=80)
     instruction: str = Field(default="", max_length=500)
+    command_plan_hash: str | None = Field(
+        default=None,
+        min_length=64,
+        max_length=64,
+    )
     selectors: list[PhotoGitSelector] = Field(default_factory=list, max_length=12)
     resolutions: dict[str, str] = Field(default_factory=dict)
 

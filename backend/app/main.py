@@ -10,6 +10,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.routes.edit import router as edit_router
 from app.routes.health import router as health_router
+from app.routes.speech import router as speech_router
 from app.services.semantic_mask_service import get_default_semantic_mask_service
 
 
@@ -55,6 +56,7 @@ app.mount(
 
 app.include_router(health_router)
 app.include_router(edit_router)
+app.include_router(speech_router)
 
 
 @app.get("/")

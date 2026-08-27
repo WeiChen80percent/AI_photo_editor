@@ -196,10 +196,114 @@ class AppLocalizationsZh extends AppLocalizations {
   String get promptContinueSelected => '從目前選中的版本繼續調整';
 
   @override
-  String get promptHint => '例如：人物亮一點、天空暗一點、不要太鮮豔';
+  String get promptHint => '例如：亮度加十、套用百分百經典電影感，或合併版本四和版本六';
 
   @override
-  String get promptModeNotice => '指令與參考圖是兩種獨立模式；這裡只會送出文字。';
+  String get promptModeNotice => '一次輸入或口說一個動作；套用後會自動分流到修圖、精確調參、風格或版本工具。';
+
+  @override
+  String get commandPlanning => '正在理解指令…';
+
+  @override
+  String get commandPlanTitle => '指令執行計畫';
+
+  @override
+  String get commandPreviewNotice => '版本操作一定先產生預覽，只有你確認後才會建立新版本。';
+
+  @override
+  String get speechLanguageLabel => '辨識語言';
+
+  @override
+  String get speechLanguageHelp => '短指令請明確選中文或英文；中英混用再使用自動偵測。';
+
+  @override
+  String get speechLanguageTraditionalChinese => '繁體中文';
+
+  @override
+  String get speechLanguageEnglish => 'English';
+
+  @override
+  String get speechLanguageAutomatic => '自動偵測';
+
+  @override
+  String speechResultMetadata(String language, String model) {
+    return '辨識為 $language · $model';
+  }
+
+  @override
+  String get speechStart => '使用麥克風';
+
+  @override
+  String get speechStop => '停止';
+
+  @override
+  String get speechCancel => '取消';
+
+  @override
+  String get speechRequestingPermission => '正在請求麥克風權限…';
+
+  @override
+  String speechRecordingSeconds(int seconds) {
+    return '錄音中 · $seconds 秒';
+  }
+
+  @override
+  String get speechTranscribing => '正在將語音轉成可編輯文字…';
+
+  @override
+  String get speechPrivacyNotice => '音訊只交給本機後端處理，不會寫入修圖歷史。';
+
+  @override
+  String get speechUnavailable => '目前無法使用麥克風輸入，仍可直接輸入文字指令。';
+
+  @override
+  String get statusSpeechCompleted => '語音已加入可編輯文字，確認內容後再套用指令。';
+
+  @override
+  String get statusSpeechCancelled => '已取消這次語音輸入。';
+
+  @override
+  String get errorSpeechPermissionDenied => '麥克風權限被拒絕，請在 Chrome 設定中允許，或改用文字輸入。';
+
+  @override
+  String get errorSpeechNoMicrophone => '找不到可用的麥克風，請檢查裝置，或改用文字輸入。';
+
+  @override
+  String get errorSpeechRecorderUnavailable =>
+      '瀏覽器無法提供需要的錄音格式，請使用目前版本的 Chrome，或改用文字輸入。';
+
+  @override
+  String get errorSpeechRecordingFailed => '錄音失敗，請檢查麥克風後重試。';
+
+  @override
+  String get errorSpeechNoAudio => '麥克風沒有回傳可用音訊，請重新錄音。';
+
+  @override
+  String get errorSpeechInvalidAudio => '無法讀取這段錄音，請重新錄音。';
+
+  @override
+  String get errorSpeechUnsupportedFormat => '目前不支援這段錄音格式，請在 Chrome 重新錄音。';
+
+  @override
+  String get errorSpeechNoSpeech => '沒有偵測到有效語音，請靠近麥克風後重試。';
+
+  @override
+  String get errorSpeechTooLong => '錄音超過 15 秒，請改說較短的修圖指令。';
+
+  @override
+  String get errorSpeechTooLarge => '錄音檔太大，請改說較短的修圖指令。';
+
+  @override
+  String get errorSpeechModelUnavailable => '本機語音模型目前無法使用，請檢查後端模型與裝置設定。';
+
+  @override
+  String get errorSpeechTranscriptionFailed => '語音辨識失敗，請重新錄音。';
+
+  @override
+  String get errorSpeechTimeout => '語音辨識等待過久，請重新嘗試。';
+
+  @override
+  String get errorSpeechBackendUnavailable => '無法連線到本機語音後端，仍可使用文字輸入。';
 
   @override
   String get applyPrompt => '套用指令';
@@ -1170,10 +1274,114 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get promptContinueSelected => '從目前選中的版本繼續調整';
 
   @override
-  String get promptHint => '例如：人物亮一點、天空暗一點、不要太鮮豔';
+  String get promptHint => '例如：亮度加十、套用百分百經典電影感，或合併版本四和版本六';
 
   @override
-  String get promptModeNotice => '指令與參考圖是兩種獨立模式；這裡只會送出文字。';
+  String get promptModeNotice => '一次輸入或口說一個動作；套用後會自動分流到修圖、精確調參、風格或版本工具。';
+
+  @override
+  String get commandPlanning => '正在理解指令…';
+
+  @override
+  String get commandPlanTitle => '指令執行計畫';
+
+  @override
+  String get commandPreviewNotice => '版本操作一定先產生預覽，只有你確認後才會建立新版本。';
+
+  @override
+  String get speechLanguageLabel => '辨識語言';
+
+  @override
+  String get speechLanguageHelp => '短指令請明確選中文或英文；中英混用再使用自動偵測。';
+
+  @override
+  String get speechLanguageTraditionalChinese => '繁體中文';
+
+  @override
+  String get speechLanguageEnglish => 'English';
+
+  @override
+  String get speechLanguageAutomatic => '自動偵測';
+
+  @override
+  String speechResultMetadata(String language, String model) {
+    return '辨識為 $language · $model';
+  }
+
+  @override
+  String get speechStart => '使用麥克風';
+
+  @override
+  String get speechStop => '停止';
+
+  @override
+  String get speechCancel => '取消';
+
+  @override
+  String get speechRequestingPermission => '正在請求麥克風權限…';
+
+  @override
+  String speechRecordingSeconds(int seconds) {
+    return '錄音中 · $seconds 秒';
+  }
+
+  @override
+  String get speechTranscribing => '正在將語音轉成可編輯文字…';
+
+  @override
+  String get speechPrivacyNotice => '音訊只交給本機後端處理，不會寫入修圖歷史。';
+
+  @override
+  String get speechUnavailable => '目前無法使用麥克風輸入，仍可直接輸入文字指令。';
+
+  @override
+  String get statusSpeechCompleted => '語音已加入可編輯文字，確認內容後再套用指令。';
+
+  @override
+  String get statusSpeechCancelled => '已取消這次語音輸入。';
+
+  @override
+  String get errorSpeechPermissionDenied => '麥克風權限被拒絕，請在 Chrome 設定中允許，或改用文字輸入。';
+
+  @override
+  String get errorSpeechNoMicrophone => '找不到可用的麥克風，請檢查裝置，或改用文字輸入。';
+
+  @override
+  String get errorSpeechRecorderUnavailable =>
+      '瀏覽器無法提供需要的錄音格式，請使用目前版本的 Chrome，或改用文字輸入。';
+
+  @override
+  String get errorSpeechRecordingFailed => '錄音失敗，請檢查麥克風後重試。';
+
+  @override
+  String get errorSpeechNoAudio => '麥克風沒有回傳可用音訊，請重新錄音。';
+
+  @override
+  String get errorSpeechInvalidAudio => '無法讀取這段錄音，請重新錄音。';
+
+  @override
+  String get errorSpeechUnsupportedFormat => '目前不支援這段錄音格式，請在 Chrome 重新錄音。';
+
+  @override
+  String get errorSpeechNoSpeech => '沒有偵測到有效語音，請靠近麥克風後重試。';
+
+  @override
+  String get errorSpeechTooLong => '錄音超過 15 秒，請改說較短的修圖指令。';
+
+  @override
+  String get errorSpeechTooLarge => '錄音檔太大，請改說較短的修圖指令。';
+
+  @override
+  String get errorSpeechModelUnavailable => '本機語音模型目前無法使用，請檢查後端模型與裝置設定。';
+
+  @override
+  String get errorSpeechTranscriptionFailed => '語音辨識失敗，請重新錄音。';
+
+  @override
+  String get errorSpeechTimeout => '語音辨識等待過久，請重新嘗試。';
+
+  @override
+  String get errorSpeechBackendUnavailable => '無法連線到本機語音後端，仍可使用文字輸入。';
 
   @override
   String get applyPrompt => '套用指令';
