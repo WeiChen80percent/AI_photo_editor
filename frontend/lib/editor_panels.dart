@@ -103,6 +103,376 @@ class PromptPanel extends StatelessWidget {
   }
 }
 
+class AutoModelsPanel extends StatelessWidget {
+  const AutoModelsPanel({
+    super.key,
+    required this.controller,
+    required this.onClose,
+  });
+
+  static const expertKey = 'expert_faithful_lut';
+  static const vividKey = 'vivid_residual_fusion';
+
+  final EditorController controller;
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final comparison = controller.autoModelComparison;
+    final hasSource = controller.hasOriginal || controller.selectedEdit != null;
+    final sourceUrl =
+        comparison?.sourceUrl ??
+        controller.selectedEdit?.resultUrl ??
+        controller.originalImageUrl;
+    final comparisonSourceEdit = _historyEditById(
+      controller.history,
+      comparison?.sourceEditId,
+    );
+    final sourceBytes = comparison == null && controller.selectedEdit == null
+        ? controller.originalImageBytes
+        : null;
+    final sourceSelected = comparison == null
+        ? controller.selectedEdit == null
+        : comparison.sourceEditId == EditorController.originalParentSentinel
+        ? controller.isOriginalBaseSelected
+        : controller.selectedEditId == comparison.sourceEditId;
+    final message = _localizedControllerMessage(context, controller);
+    return PanelScaffold(
+      title: l10n.autoModelTitle,
+      subtitle: l10n.autoModelSubtitle,
+      icon: Icons.compare_outlined,
+      onClose: onClose,
+      message: message,
+      messageIsError: _hasControllerError(controller),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (!hasSource)
+            _UnavailablePanel(
+              icon: Icons.add_photo_alternate_outlined,
+              message: l10n.autoModelNoSource,
+            )
+          else ...[
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: context.editorColors.surfaceSoft,
+                borderRadius: BorderRadius.circular(AppRadii.small),
+                border: Border.all(color: context.editorColors.border),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.account_tree_outlined,
+                      size: 18,
+                      color: context.editorColors.accentBright,
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                    Expanded(
+                      child: Text(
+                        l10n.autoModelSourceHint,
+                        style: TextStyle(
+                          color: context.editorColors.textSecondary,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (controller.selectedEdit?.editMode == 'auto_model') ...[
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                l10n.autoModelRepeatHint,
+                key: const Key('auto_model_repeat_hint'),
+                style: TextStyle(
+                  color: context.editorColors.warning,
+                  fontSize: 11,
+                ),
+              ),
+            ],
+            const SizedBox(height: AppSpacing.sm),
+            _AutoModelImageCard(
+              key: const Key('auto_model_source_card'),
+              title: l10n.autoModelSource,
+              description:
+                  comparison?.sourceEditId ==
+                      EditorController.originalParentSentinel
+                  ? l10n.labelOriginal
+                  : comparisonSourceEdit?.displayTitle ??
+                        controller.selectedEdit?.displayTitle ??
+                        l10n.labelOriginal,
+              imageBytes: sourceBytes,
+              imageUrl: sourceUrl,
+              selected: sourceSelected,
+              actionLabel: comparison == null ? null : l10n.autoModelSelect,
+              onSelect: comparison == null
+                  ? null
+                  : controller.selectAutoModelSource,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final cardWidth = constraints.maxWidth >= 340
+                    ? (constraints.maxWidth - AppSpacing.sm) / 2
+                    : constraints.maxWidth;
+                return Wrap(
+                  spacing: AppSpacing.sm,
+                  runSpacing: AppSpacing.sm,
+                  children: [
+                    SizedBox(
+                      width: cardWidth,
+                      child: _AutoModelImageCard(
+                        key: const Key('auto_model_expert_card'),
+                        title: l10n.autoModelExpertTitle,
+                        description: l10n.autoModelExpertDescription,
+                        candidate: comparison?.candidates[expertKey],
+                        running:
+                            controller.isRunningAutoModels &&
+                            comparison?.candidates[expertKey]?.isSuccess !=
+                                true,
+                        selected:
+                            controller.selectedEditId ==
+                            comparison?.candidates[expertKey]?.editId,
+                        actionLabel: l10n.autoModelSelect,
+                        onSelect: () =>
+                            controller.selectAutoModelCandidate(expertKey),
+                      ),
+                    ),
+                    SizedBox(
+                      width: cardWidth,
+                      child: _AutoModelImageCard(
+                        key: const Key('auto_model_vivid_card'),
+                        title: l10n.autoModelVividTitle,
+                        description: l10n.autoModelVividDescription,
+                        candidate: comparison?.candidates[vividKey],
+                        running:
+                            controller.isRunningAutoModels &&
+                            comparison?.candidates[vividKey]?.isSuccess != true,
+                        selected:
+                            controller.selectedEditId ==
+                            comparison?.candidates[vividKey]?.editId,
+                        actionLabel: l10n.autoModelSelect,
+                        onSelect: () =>
+                            controller.selectAutoModelCandidate(vividKey),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: AppSpacing.md),
+            if (controller.isRunningAutoModels)
+              OutlinedButton.icon(
+                key: const Key('cancel_auto_models_button'),
+                onPressed: controller.cancelAutoModels,
+                icon: const Icon(Icons.stop_circle_outlined),
+                label: Text(l10n.autoModelCancel),
+              )
+            else
+              FilledButton.icon(
+                key: const Key('run_auto_models_button'),
+                onPressed: controller.canRunAutoModels
+                    ? controller.runAutoModels
+                    : null,
+                icon: const Icon(Icons.auto_fix_high),
+                label: Text(
+                  comparison?.isPartialSuccess == true ||
+                          comparison?.isError == true ||
+                          controller.autoModelRunState ==
+                              AutoModelRunState.cancelled
+                      ? l10n.autoModelRetry
+                      : l10n.autoModelRun,
+                ),
+              ),
+            if (controller.autoModelRunState ==
+                AutoModelRunState.cancelled) ...[
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                l10n.autoModelCancelledHint,
+                style: TextStyle(
+                  color: context.editorColors.textMuted,
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+EditHistoryItem? _historyEditById(
+  List<EditHistoryItem> history,
+  String? editId,
+) {
+  if (editId == null) {
+    return null;
+  }
+  for (final edit in history) {
+    if (edit.editId == editId) {
+      return edit;
+    }
+  }
+  return null;
+}
+
+class _AutoModelImageCard extends StatelessWidget {
+  const _AutoModelImageCard({
+    super.key,
+    required this.title,
+    required this.description,
+    required this.selected,
+    this.candidate,
+    this.imageBytes,
+    this.imageUrl,
+    this.running = false,
+    this.actionLabel,
+    this.onSelect,
+  });
+
+  final String title;
+  final String description;
+  final bool selected;
+  final AutoModelCandidate? candidate;
+  final Uint8List? imageBytes;
+  final String? imageUrl;
+  final bool running;
+  final String? actionLabel;
+  final VoidCallback? onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final resolvedUrl = candidate?.resultUrl ?? imageUrl;
+    final failed = candidate?.isError == true;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 160),
+      decoration: BoxDecoration(
+        color: selected
+            ? context.editorColors.accentSoft
+            : context.editorColors.surfaceRaised,
+        borderRadius: BorderRadius.circular(AppRadii.medium),
+        border: Border.all(
+          color: selected
+              ? context.editorColors.accent
+              : failed
+              ? context.editorColors.error
+              : context.editorColors.border,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AspectRatio(
+            aspectRatio: 4 / 3,
+            child: ColoredBox(
+              color: context.editorColors.surfaceSoft,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (imageBytes != null)
+                    Image.memory(imageBytes!, fit: BoxFit.cover)
+                  else if (resolvedUrl != null)
+                    Image.network(
+                      resolvedUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => const Center(
+                        child: Icon(Icons.broken_image_outlined),
+                      ),
+                    )
+                  else
+                    Center(
+                      child: Icon(
+                        failed ? Icons.error_outline : Icons.image_outlined,
+                        color: failed
+                            ? context.editorColors.error
+                            : context.editorColors.textMuted,
+                      ),
+                    ),
+                  if (running)
+                    ColoredBox(
+                      color: Colors.black.withValues(alpha: 0.36),
+                      child: const Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      ),
+                    ),
+                  if (selected)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Chip(
+                        avatar: const Icon(Icons.check, size: 15),
+                        label: Text(l10n.autoModelSelected),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.sm),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  failed
+                      ? '${l10n.autoModelCandidateFailed}：'
+                            '${candidate?.error?.message ?? ''}'
+                      : description,
+                  maxLines: failed ? 4 : 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: failed
+                        ? context.editorColors.error
+                        : context.editorColors.textSecondary,
+                    fontSize: 11,
+                  ),
+                ),
+                if (candidate?.isSuccess == true && actionLabel != null) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: selected ? null : onSelect,
+                      child: Text(
+                        selected ? l10n.autoModelSelected : actionLabel!,
+                      ),
+                    ),
+                  ),
+                ] else if (onSelect != null && resolvedUrl != null) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: selected ? null : onSelect,
+                      child: Text(
+                        selected ? l10n.autoModelSelected : actionLabel!,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _CommandPlanCard extends StatelessWidget {
   const _CommandPlanCard({
     required this.controller,

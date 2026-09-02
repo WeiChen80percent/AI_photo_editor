@@ -11,6 +11,7 @@ backend/storage/masks/
 backend/storage/manual_previews/
 backend/storage/photo_git_previews/
 backend/storage/sessions/
+backend/storage/auto_model_comparisons/
 model/outputs/
 
 # local test/eval helpers
@@ -50,6 +51,7 @@ backend/tools/run_style_seed_eval.py
 backend/storage/report_runs/
 backend/storage/semantic_model_benchmarks/
 output/playwright/
+.playwright-cli/
 frontend/design/concepts/
 frontend/design/legacy_main_before_mobile_first.txt
 docs/2026-07-15_mobile_first_regression.md

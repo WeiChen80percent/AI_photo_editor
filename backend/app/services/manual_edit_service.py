@@ -327,23 +327,30 @@ class ManualEditService:
                 status_code=404,
             ) from exc
 
-        if str(source.get("engine") or "opencv").lower() != "opencv":
+        source_mode = str(source.get("edit_mode") or "")
+        source_engine = str(source.get("engine") or "opencv").lower()
+        if source_engine != "opencv" and not (
+            source_mode == "auto_model" and source_engine == "auto_model"
+        ):
             raise ManualEditError(
                 "manual_source_engine_unsupported",
-                "Manual adjustment v1 only supports OpenCV source edits",
+                (
+                    "Manual adjustment supports OpenCV edits and immutable "
+                    "auto-model visual anchors only"
+                ),
             )
-        source_mode = str(source.get("edit_mode") or "")
         if source_mode not in {
             "prompt",
             "manual",
             "photo_git_merge",
             "photo_git_revert",
+            "auto_model",
         }:
             raise ManualEditError(
                 "manual_source_mode_unsupported",
                 (
-                    "Manual adjustment v1 supports prompt, manual, "
-                    "or Photo Git source edits only"
+                    "Manual adjustment supports prompt, manual, Photo Git, "
+                    "or auto-model source edits only"
                 ),
             )
 
@@ -363,7 +370,11 @@ class ManualEditService:
             "photo_git_merge",
             "photo_git_revert",
         }
-        source_is_visual_anchor = source_is_style or source_is_photo_git
+        source_is_visual_anchor = (
+            source_is_style
+            or source_is_photo_git
+            or source_mode == "auto_model"
+        )
         if source_is_visual_anchor:
             # A style result becomes the immutable visual anchor for manual
             # micro-adjustments. The same rule applies to a Photo Git composite:

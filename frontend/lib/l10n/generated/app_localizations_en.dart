@@ -52,6 +52,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get toolPrompt => 'Prompt';
 
   @override
+  String get toolAutoModels => 'Auto';
+
+  @override
   String get toolStyles => 'Styles';
 
   @override
@@ -62,6 +65,67 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get toolHistory => 'History';
+
+  @override
+  String get autoModelTitle => 'Automatic comparison';
+
+  @override
+  String get autoModelSubtitle =>
+      'Create two saved candidates from the selected version';
+
+  @override
+  String get autoModelSource => 'Source';
+
+  @override
+  String get autoModelExpertTitle => 'Expert faithful';
+
+  @override
+  String get autoModelExpertDescription =>
+      'A restrained result trained to follow the selected Expert C finish.';
+
+  @override
+  String get autoModelVividTitle => 'Vivid contrast';
+
+  @override
+  String get autoModelVividDescription =>
+      'A brighter, more saturated interpretation with stronger contrast.';
+
+  @override
+  String get autoModelRun => 'Create both candidates';
+
+  @override
+  String get autoModelRetry => 'Retry or recover candidates';
+
+  @override
+  String get autoModelRunning => 'Creating both candidates…';
+
+  @override
+  String get autoModelCancel => 'Stop waiting';
+
+  @override
+  String get autoModelSelect => 'Use this version';
+
+  @override
+  String get autoModelSelected => 'Selected';
+
+  @override
+  String get autoModelSourceHint =>
+      'The selected source is committed as the shared parent. Both successful results stay in history.';
+
+  @override
+  String get autoModelRepeatHint =>
+      'This source already includes automatic enhancement. Running it again is allowed and may strengthen the look.';
+
+  @override
+  String get autoModelNoSource =>
+      'Choose an original photo or a saved version first.';
+
+  @override
+  String get autoModelCandidateFailed => 'This candidate failed';
+
+  @override
+  String get autoModelCancelledHint =>
+      'The backend may still finish. Create again to reconnect to the same request; existing sessions can also recover saved results from History.';
 
   @override
   String get labelOriginal => 'Original';
@@ -631,6 +695,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get modePrompt => 'Prompt';
 
   @override
+  String get modeAutoModel => 'Auto';
+
+  @override
   String get modeStyle => 'Style';
 
   @override
@@ -641,6 +708,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get promptEditFallbackTitle => 'Prompt edit';
+
+  @override
+  String get autoModelExpertHistoryTitle => 'Expert faithful enhancement';
+
+  @override
+  String get autoModelVividHistoryTitle => 'Vivid contrast enhancement';
 
   @override
   String get referenceEditDisplayTitle => 'Reference edit';

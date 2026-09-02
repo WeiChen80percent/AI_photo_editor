@@ -8,7 +8,7 @@ import 'edit_models.dart';
 import 'speech_input_service.dart';
 import 'speech_models.dart';
 
-enum EditorTool { prompt, styles, reference, manual, history }
+enum EditorTool { prompt, autoModels, styles, reference, manual, history }
 
 enum ComparisonView { original, compare, result }
 
@@ -22,6 +22,15 @@ enum SpeechInputState {
   completed,
   cancelled,
   error,
+}
+
+enum AutoModelRunState {
+  idle,
+  running,
+  success,
+  partialSuccess,
+  error,
+  cancelled,
 }
 
 @immutable
@@ -72,6 +81,10 @@ class EditorController extends ChangeNotifier {
   EditorPresentationMessage? errorPresentation;
   EditorPresentationMessage? statusPresentation;
 
+  AutoModelRunState autoModelRunState = AutoModelRunState.idle;
+  AutoModelComparison? autoModelComparison;
+  bool isRunningAutoModels = false;
+
   SpeechInputState speechInputState = SpeechInputState.idle;
   SpeechLanguageMode speechLanguageMode = SpeechLanguageMode.automatic;
   int speechRecordingElapsedSeconds = 0;
@@ -112,6 +125,7 @@ class EditorController extends ChangeNotifier {
   int _photoGitRequestSequence = 0;
   int _editRequestSequence = 0;
   int _speechRequestSequence = 0;
+  int _autoModelRequestSequence = 0;
   bool _speechLanguageExplicitlySelected = false;
   Timer? _speechRecordingTimer;
   String? _photoGitClientRequestId;
@@ -119,6 +133,11 @@ class EditorController extends ChangeNotifier {
   PhotoGitRequest? _commandPhotoGitRequest;
   String? _pendingEditClientRequestId;
   int? _pendingEditFingerprint;
+  String? _pendingAutoModelClientRequestId;
+  String? _pendingAutoModelSessionId;
+  String? _pendingAutoModelSourceEditId;
+  Uint8List? _pendingAutoModelOriginalBytes;
+  http.Client? _autoModelClient;
   bool _disposed = false;
 
   bool get hasOriginal =>
@@ -285,6 +304,7 @@ class EditorController extends ChangeNotifier {
 
   bool get canSubmitPrompt =>
       !isProcessing &&
+      !isRunningAutoModels &&
       !isPlanningCommand &&
       !isSpeechBusy &&
       !hasPhotoGitDraft &&
@@ -293,6 +313,7 @@ class EditorController extends ChangeNotifier {
 
   bool get canSubmitReference =>
       !isProcessing &&
+      !isRunningAutoModels &&
       !isSpeechBusy &&
       !hasPhotoGitDraft &&
       referenceImageBytes != null &&
@@ -311,7 +332,21 @@ class EditorController extends ChangeNotifier {
       speechInputState == SpeechInputState.transcribing;
 
   bool get canStartSpeechRecording =>
-      hasSpeechInput && !isProcessing && !isPlanningCommand && !isSpeechBusy;
+      hasSpeechInput &&
+      !isProcessing &&
+      !isRunningAutoModels &&
+      !isPlanningCommand &&
+      !isSpeechBusy;
+
+  bool get canRunAutoModels =>
+      !isRunningAutoModels &&
+      !isProcessing &&
+      !isPlanningCommand &&
+      !isCommittingManual &&
+      !isCommittingPhotoGit &&
+      !isSpeechBusy &&
+      !hasPendingDraft &&
+      (hasOriginal || selectedEdit != null);
 
   void applyDefaultSpeechLanguageForLocale(String languageCode) {
     if (_speechLanguageExplicitlySelected) {
@@ -365,11 +400,13 @@ class EditorController extends ChangeNotifier {
     final edit = selectedEdit;
     return !hasPhotoGitDraft &&
         edit != null &&
-        edit.engine.toLowerCase() == 'opencv' &&
-        (edit.editMode == 'prompt' ||
-            edit.editMode == 'manual' ||
-            edit.editMode == 'photo_git_merge' ||
-            edit.editMode == 'photo_git_revert');
+        ((edit.engine.toLowerCase() == 'opencv' &&
+                (edit.editMode == 'prompt' ||
+                    edit.editMode == 'manual' ||
+                    edit.editMode == 'photo_git_merge' ||
+                    edit.editMode == 'photo_git_revert')) ||
+            (edit.engine.toLowerCase() == 'auto_model' &&
+                edit.editMode == 'auto_model'));
   }
 
   String get manualDisabledReason {
@@ -383,7 +420,9 @@ class EditorController extends ChangeNotifier {
     if (edit.editMode == 'reference') {
       return '參考圖結果目前不能進入手動調整，請先選擇指令或手動版本。';
     }
-    if (edit.engine.toLowerCase() != 'opencv') {
+    if (edit.engine.toLowerCase() != 'opencv' &&
+        !(edit.engine.toLowerCase() == 'auto_model' &&
+            edit.editMode == 'auto_model')) {
       return '手動調整第一版只支援 OpenCV 結果。';
     }
     return '這個版本目前不支援手動調整。';
@@ -400,7 +439,9 @@ class EditorController extends ChangeNotifier {
     if (edit.editMode == 'reference') {
       return 'manual_reference_unsupported';
     }
-    if (edit.engine.toLowerCase() != 'opencv') {
+    if (edit.engine.toLowerCase() != 'opencv' &&
+        !(edit.engine.toLowerCase() == 'auto_model' &&
+            edit.editMode == 'auto_model')) {
       return 'manual_engine_unsupported';
     }
     return 'manual_unavailable';
@@ -928,6 +969,7 @@ class EditorController extends ChangeNotifier {
   }
 
   void setOriginalImage(Uint8List bytes) {
+    _cancelAutoModelRequest(clearComparison: true);
     _cancelPreview(clearDraft: true);
     _clearPhotoGitDraft(notify: false);
     _clearCommandPlan();
@@ -948,6 +990,7 @@ class EditorController extends ChangeNotifier {
   }
 
   void clearOriginalImage() {
+    _cancelAutoModelRequest(clearComparison: true);
     _cancelPreview(clearDraft: true);
     _clearPhotoGitDraft(notify: false);
     _clearCommandPlan();
@@ -1039,7 +1082,10 @@ class EditorController extends ChangeNotifier {
       _notify();
       return false;
     }
-    if (isProcessing || isPlanningCommand || isSpeechBusy) {
+    if (isProcessing ||
+        isRunningAutoModels ||
+        isPlanningCommand ||
+        isSpeechBusy) {
       return false;
     }
     if (hasPhotoGitDraft) {
@@ -1255,6 +1301,158 @@ class EditorController extends ChangeNotifier {
     return _submitEdit(prompt: '', referenceBytes: reference);
   }
 
+  Future<bool> runAutoModels() async {
+    if (!canRunAutoModels) {
+      if (hasPendingDraft) {
+        _setError('請先完成或取消目前尚未提交的調整。', 'auto_model_draft_active');
+        _notify();
+      }
+      return false;
+    }
+
+    final currentSession = sessionId;
+    final currentSource = currentSession == null
+        ? null
+        : (selectedEditId ?? originalParentSentinel);
+    final retryPending =
+        _pendingAutoModelClientRequestId != null &&
+        autoModelComparison?.isSuccess != true &&
+        _pendingAutoRequestMatchesCurrent(currentSession, currentSource);
+    if (!retryPending) {
+      _pendingAutoModelClientRequestId =
+          'flutter_auto_${DateTime.now().microsecondsSinceEpoch}_'
+          '${++_editRequestSequence}';
+      _pendingAutoModelSessionId = currentSession;
+      _pendingAutoModelSourceEditId = currentSource;
+      _pendingAutoModelOriginalBytes = currentSession == null
+          ? originalImageBytes
+          : null;
+    }
+
+    final requestSequence = ++_autoModelRequestSequence;
+    final client = http.Client();
+    _autoModelClient?.close();
+    _autoModelClient = client;
+    final selectionBeforeRequest = selectedEditId;
+    final sessionBeforeRequest = sessionId;
+    isRunningAutoModels = true;
+    autoModelRunState = AutoModelRunState.running;
+    _clearError();
+    _setStatus('正在依序產生兩個自動修圖候選…', 'auto_model_running');
+    _notify();
+
+    try {
+      final response = await _api.compareAutoModels(
+        originalBytes: _pendingAutoModelOriginalBytes,
+        clientRequestId: _pendingAutoModelClientRequestId!,
+        sessionId: _pendingAutoModelSessionId,
+        sourceEditId: _pendingAutoModelSourceEditId,
+        requestClient: client,
+      );
+      if (requestSequence != _autoModelRequestSequence || _disposed) {
+        return false;
+      }
+      autoModelComparison = response;
+      final hasSuccess = response.successfulCandidates.isNotEmpty;
+      if (hasSuccess) {
+        sessionId = response.sessionId;
+        final selectionWasUnchanged =
+            sessionBeforeRequest == sessionId || sessionBeforeRequest == null
+            ? selectedEditId == selectionBeforeRequest
+            : false;
+        if (sessionBeforeRequest == null && selectionWasUnchanged) {
+          selectedEdit = null;
+          selectedEditId = originalParentSentinel;
+        }
+        await refreshHistory(
+          preferredEditId: selectedEditId ?? originalParentSentinel,
+          quiet: true,
+        );
+      }
+      if (response.isSuccess) {
+        autoModelRunState = AutoModelRunState.success;
+        _clearPendingAutoModelRequest();
+        _setStatus('兩個自動修圖候選都已保存。', 'auto_model_success');
+      } else if (response.isPartialSuccess) {
+        autoModelRunState = AutoModelRunState.partialSuccess;
+        _setStatus('已保存成功候選；失敗的模型可用同一來源重試。', 'auto_model_partial_success');
+      } else {
+        autoModelRunState = AutoModelRunState.error;
+        _setError('兩個自動修圖模型都未完成，原本版本沒有改變。', 'auto_model_all_failed');
+        _clearStatus();
+      }
+      return hasSuccess;
+    } on ApiException catch (error) {
+      if (requestSequence != _autoModelRequestSequence || _disposed) {
+        return false;
+      }
+      autoModelRunState = AutoModelRunState.error;
+      _setApiError(error);
+      _clearStatus();
+      return false;
+    } catch (error) {
+      if (requestSequence != _autoModelRequestSequence || _disposed) {
+        return false;
+      }
+      autoModelRunState = AutoModelRunState.error;
+      _setError(
+        '自動修圖失敗：$error',
+        'auto_model_failed',
+        arguments: <String, Object?>{'error': error.runtimeType.toString()},
+      );
+      _clearStatus();
+      return false;
+    } finally {
+      if (identical(_autoModelClient, client)) {
+        _autoModelClient = null;
+      }
+      client.close();
+      if (requestSequence == _autoModelRequestSequence && !_disposed) {
+        isRunningAutoModels = false;
+        _notify();
+      }
+    }
+  }
+
+  void cancelAutoModels() {
+    if (!isRunningAutoModels) {
+      return;
+    }
+    ++_autoModelRequestSequence;
+    _autoModelClient?.close();
+    _autoModelClient = null;
+    isRunningAutoModels = false;
+    autoModelRunState = AutoModelRunState.cancelled;
+    _clearError();
+    _setStatus('已停止等待；後端若已完成，結果仍會出現在歷史紀錄。', 'auto_model_cancelled');
+    _notify();
+  }
+
+  bool selectAutoModelCandidate(String modelKey) {
+    final candidate = autoModelComparison?.candidates[modelKey];
+    final editId = candidate?.editId;
+    if (candidate?.isSuccess != true || editId == null) {
+      return false;
+    }
+    final edit = _findEdit(editId);
+    if (edit == null) {
+      return false;
+    }
+    return selectHistoryItem(edit, discardDraft: false);
+  }
+
+  bool selectAutoModelSource() {
+    final comparison = autoModelComparison;
+    if (comparison == null) {
+      return false;
+    }
+    if (comparison.sourceEditId == originalParentSentinel) {
+      return selectOriginalAsBase();
+    }
+    final source = _findEdit(comparison.sourceEditId);
+    return source != null && selectHistoryItem(source);
+  }
+
   Future<bool> openStyles() async {
     activeTool = EditorTool.styles;
     if (styleCatalog != null) {
@@ -1300,7 +1498,7 @@ class EditorController extends ChangeNotifier {
     String? commandType,
     String? commandPlanHash,
   }) async {
-    if (isProcessing || isSpeechBusy) {
+    if (isProcessing || isRunningAutoModels || isSpeechBusy) {
       return false;
     }
     if (hasPhotoGitDraft) {
@@ -1484,6 +1682,7 @@ class EditorController extends ChangeNotifier {
     if (manualSourceEditId != item.editId) {
       _cancelPreview(clearDraft: true);
     }
+    _clearAutoComparisonOutside(item.editId);
     selectedEdit = item;
     selectedEditId = item.editId;
     _clearCommandPlan();
@@ -1503,6 +1702,7 @@ class EditorController extends ChangeNotifier {
     _cancelPreview(clearDraft: true);
     _clearPhotoGitDraft(notify: false);
     _clearCommandPlan();
+    _clearAutoComparisonOutside(originalParentSentinel);
     selectedEdit = null;
     selectedEditId = originalParentSentinel;
     comparisonView = ComparisonView.original;
@@ -1679,7 +1879,11 @@ class EditorController extends ChangeNotifier {
   Future<bool> commitManual() async {
     final currentSession = sessionId;
     final sourceEdit = manualSourceEditId;
-    if (currentSession == null || sourceEdit == null || !manualIsDirty) {
+    if (isRunningAutoModels ||
+        isCommittingManual ||
+        currentSession == null ||
+        sourceEdit == null ||
+        !manualIsDirty) {
       return false;
     }
     _previewTimer?.cancel();
@@ -1739,6 +1943,7 @@ class EditorController extends ChangeNotifier {
   }
 
   void _applyCommittedItem(EditHistoryItem item) {
+    _clearAutoComparisonOutside(item.editId);
     sessionId = item.sessionId;
     selectedEditId = item.editId;
     selectedEdit = item;
@@ -1758,6 +1963,52 @@ class EditorController extends ChangeNotifier {
   void _clearPendingEditRequest() {
     _pendingEditClientRequestId = null;
     _pendingEditFingerprint = null;
+  }
+
+  bool _pendingAutoRequestMatchesCurrent(
+    String? currentSession,
+    String? currentSource,
+  ) {
+    if (_pendingAutoModelOriginalBytes != null) {
+      if (currentSession == null) {
+        return currentSource == null && originalImageBytes != null;
+      }
+      return autoModelComparison?.sessionId == currentSession &&
+          currentSource == originalParentSentinel;
+    }
+    return _pendingAutoModelSessionId == currentSession &&
+        _pendingAutoModelSourceEditId == currentSource;
+  }
+
+  void _clearPendingAutoModelRequest() {
+    _pendingAutoModelClientRequestId = null;
+    _pendingAutoModelSessionId = null;
+    _pendingAutoModelSourceEditId = null;
+    _pendingAutoModelOriginalBytes = null;
+  }
+
+  void _cancelAutoModelRequest({required bool clearComparison}) {
+    ++_autoModelRequestSequence;
+    _autoModelClient?.close();
+    _autoModelClient = null;
+    isRunningAutoModels = false;
+    autoModelRunState = AutoModelRunState.idle;
+    _clearPendingAutoModelRequest();
+    if (clearComparison) {
+      autoModelComparison = null;
+    }
+  }
+
+  void _clearAutoComparisonOutside(String editId) {
+    final comparison = autoModelComparison;
+    if (comparison == null ||
+        comparison.sourceEditId == editId ||
+        comparison.candidates.values.any(
+          (candidate) => candidate.editId == editId,
+        )) {
+      return;
+    }
+    _cancelAutoModelRequest(clearComparison: true);
   }
 
   EditHistoryItem? _findEdit(String editId) {
@@ -1978,6 +2229,7 @@ class EditorController extends ChangeNotifier {
     ++_speechRequestSequence;
     _speechRecordingTimer?.cancel();
     _speechRecordingTimer = null;
+    _cancelAutoModelRequest(clearComparison: false);
     if (_speechInputService case final service?) {
       unawaited(service.dispose());
     }

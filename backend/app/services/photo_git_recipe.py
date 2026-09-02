@@ -431,6 +431,12 @@ def _is_style_anchor_boundary(record: Mapping[str, Any]) -> bool:
     return (
         _record_plan_type(record) == "style"
         or str(record.get("resolved_intent") or "") == "apply_style"
+        or str(record.get("edit_mode") or "") == "auto_model"
+        or (
+            isinstance(record.get("visual_anchor"), Mapping)
+            and str(record["visual_anchor"].get("kind") or "")
+            == "auto_model"
+        )
     )
 
 

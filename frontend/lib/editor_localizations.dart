@@ -122,6 +122,7 @@ String localizedEditModeLabel(AppLocalizations l10n, EditHistoryItem edit) {
     'photo_git_revert' => l10n.photoGitSelectiveRevert,
     'manual' || 'manual_preview' => l10n.modeManual,
     'reference' => l10n.modeReference,
+    'auto_model' => l10n.modeAutoModel,
     _ => l10n.modePrompt,
   };
 }
@@ -143,6 +144,13 @@ String localizedEditDisplayTitle(AppLocalizations l10n, EditHistoryItem edit) {
   }
   if (edit.editMode == 'reference') {
     return l10n.referenceEditDisplayTitle;
+  }
+  if (edit.editMode == 'auto_model') {
+    return switch (edit.autoModel?.modelKey) {
+      'expert_faithful_lut' => l10n.autoModelExpertHistoryTitle,
+      'vivid_residual_fusion' => l10n.autoModelVividHistoryTitle,
+      _ => l10n.modeAutoModel,
+    };
   }
   return edit.prompt.isEmpty ? l10n.promptEditFallbackTitle : edit.prompt;
 }

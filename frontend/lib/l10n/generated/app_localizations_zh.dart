@@ -51,6 +51,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get toolPrompt => '指令';
 
   @override
+  String get toolAutoModels => '模型';
+
+  @override
   String get toolStyles => '風格';
 
   @override
@@ -61,6 +64,61 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get toolHistory => '歷史';
+
+  @override
+  String get autoModelTitle => '自動修圖比較';
+
+  @override
+  String get autoModelSubtitle => '從目前版本一次建立並保存兩個候選';
+
+  @override
+  String get autoModelSource => '共同來源';
+
+  @override
+  String get autoModelExpertTitle => '專家忠實';
+
+  @override
+  String get autoModelExpertDescription => '較克制、接近所選 Expert C 專家成品的訓練結果。';
+
+  @override
+  String get autoModelVividTitle => '鮮明對比';
+
+  @override
+  String get autoModelVividDescription => '對比與色彩更強、較明亮鮮豔的另一種詮釋。';
+
+  @override
+  String get autoModelRun => '產生兩個候選';
+
+  @override
+  String get autoModelRetry => '重試或取回候選';
+
+  @override
+  String get autoModelRunning => '正在產生兩個候選…';
+
+  @override
+  String get autoModelCancel => '停止等待';
+
+  @override
+  String get autoModelSelect => '使用這個版本';
+
+  @override
+  String get autoModelSelected => '目前選取';
+
+  @override
+  String get autoModelSourceHint => '目前版本會成為兩個候選的共同 parent；成功結果都會永久保留在歷史。';
+
+  @override
+  String get autoModelRepeatHint => '這個來源已包含自動修圖；仍可再次執行，但效果可能會加強。';
+
+  @override
+  String get autoModelNoSource => '請先選擇原圖或一個已保存版本。';
+
+  @override
+  String get autoModelCandidateFailed => '這個候選未完成';
+
+  @override
+  String get autoModelCancelledHint =>
+      '後端可能仍會完成；再次產生會連回同一請求，既有工作階段也可從歷史取回已保存結果。';
 
   @override
   String get labelOriginal => '原圖';
@@ -589,6 +647,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get modePrompt => '指令';
 
   @override
+  String get modeAutoModel => '自動修圖';
+
+  @override
   String get modeStyle => '風格';
 
   @override
@@ -599,6 +660,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get promptEditFallbackTitle => '指令修圖';
+
+  @override
+  String get autoModelExpertHistoryTitle => '專家忠實自動修圖';
+
+  @override
+  String get autoModelVividHistoryTitle => '鮮明對比自動修圖';
 
   @override
   String get referenceEditDisplayTitle => '參考圖修圖';
@@ -1129,6 +1196,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get toolPrompt => '指令';
 
   @override
+  String get toolAutoModels => '模型';
+
+  @override
   String get toolStyles => '風格';
 
   @override
@@ -1139,6 +1209,61 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get toolHistory => '歷史';
+
+  @override
+  String get autoModelTitle => '自動修圖比較';
+
+  @override
+  String get autoModelSubtitle => '從目前版本一次建立並保存兩個候選';
+
+  @override
+  String get autoModelSource => '共同來源';
+
+  @override
+  String get autoModelExpertTitle => '專家忠實';
+
+  @override
+  String get autoModelExpertDescription => '較克制、接近所選 Expert C 專家成品的訓練結果。';
+
+  @override
+  String get autoModelVividTitle => '鮮明對比';
+
+  @override
+  String get autoModelVividDescription => '對比與色彩更強、較明亮鮮豔的另一種詮釋。';
+
+  @override
+  String get autoModelRun => '產生兩個候選';
+
+  @override
+  String get autoModelRetry => '重試或取回候選';
+
+  @override
+  String get autoModelRunning => '正在產生兩個候選…';
+
+  @override
+  String get autoModelCancel => '停止等待';
+
+  @override
+  String get autoModelSelect => '使用這個版本';
+
+  @override
+  String get autoModelSelected => '目前選取';
+
+  @override
+  String get autoModelSourceHint => '目前版本會成為兩個候選的共同 parent；成功結果都會永久保留在歷史。';
+
+  @override
+  String get autoModelRepeatHint => '這個來源已包含自動修圖；仍可再次執行，但效果可能會加強。';
+
+  @override
+  String get autoModelNoSource => '請先選擇原圖或一個已保存版本。';
+
+  @override
+  String get autoModelCandidateFailed => '這個候選未完成';
+
+  @override
+  String get autoModelCancelledHint =>
+      '後端可能仍會完成；再次產生會連回同一請求，既有工作階段也可從歷史取回已保存結果。';
 
   @override
   String get labelOriginal => '原圖';
@@ -1667,6 +1792,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get modePrompt => '指令';
 
   @override
+  String get modeAutoModel => '自動修圖';
+
+  @override
   String get modeStyle => '風格';
 
   @override
@@ -1677,6 +1805,12 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get promptEditFallbackTitle => '指令修圖';
+
+  @override
+  String get autoModelExpertHistoryTitle => '專家忠實自動修圖';
+
+  @override
+  String get autoModelVividHistoryTitle => '鮮明對比自動修圖';
 
   @override
   String get referenceEditDisplayTitle => '參考圖修圖';

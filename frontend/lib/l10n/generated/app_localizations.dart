@@ -183,6 +183,12 @@ abstract class AppLocalizations {
   /// **'Prompt'**
   String get toolPrompt;
 
+  /// No description provided for @toolAutoModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get toolAutoModels;
+
   /// No description provided for @toolStyles.
   ///
   /// In en, this message translates to:
@@ -206,6 +212,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'History'**
   String get toolHistory;
+
+  /// No description provided for @autoModelTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic comparison'**
+  String get autoModelTitle;
+
+  /// No description provided for @autoModelSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create two saved candidates from the selected version'**
+  String get autoModelSubtitle;
+
+  /// No description provided for @autoModelSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Source'**
+  String get autoModelSource;
+
+  /// No description provided for @autoModelExpertTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Expert faithful'**
+  String get autoModelExpertTitle;
+
+  /// No description provided for @autoModelExpertDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'A restrained result trained to follow the selected Expert C finish.'**
+  String get autoModelExpertDescription;
+
+  /// No description provided for @autoModelVividTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Vivid contrast'**
+  String get autoModelVividTitle;
+
+  /// No description provided for @autoModelVividDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'A brighter, more saturated interpretation with stronger contrast.'**
+  String get autoModelVividDescription;
+
+  /// No description provided for @autoModelRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Create both candidates'**
+  String get autoModelRun;
+
+  /// No description provided for @autoModelRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry or recover candidates'**
+  String get autoModelRetry;
+
+  /// No description provided for @autoModelRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating both candidates…'**
+  String get autoModelRunning;
+
+  /// No description provided for @autoModelCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop waiting'**
+  String get autoModelCancel;
+
+  /// No description provided for @autoModelSelect.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this version'**
+  String get autoModelSelect;
+
+  /// No description provided for @autoModelSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected'**
+  String get autoModelSelected;
+
+  /// No description provided for @autoModelSourceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The selected source is committed as the shared parent. Both successful results stay in history.'**
+  String get autoModelSourceHint;
+
+  /// No description provided for @autoModelRepeatHint.
+  ///
+  /// In en, this message translates to:
+  /// **'This source already includes automatic enhancement. Running it again is allowed and may strengthen the look.'**
+  String get autoModelRepeatHint;
+
+  /// No description provided for @autoModelNoSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an original photo or a saved version first.'**
+  String get autoModelNoSource;
+
+  /// No description provided for @autoModelCandidateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'This candidate failed'**
+  String get autoModelCandidateFailed;
+
+  /// No description provided for @autoModelCancelledHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The backend may still finish. Create again to reconnect to the same request; existing sessions can also recover saved results from History.'**
+  String get autoModelCancelledHint;
 
   /// No description provided for @labelOriginal.
   ///
@@ -1197,6 +1311,12 @@ abstract class AppLocalizations {
   /// **'Prompt'**
   String get modePrompt;
 
+  /// No description provided for @modeAutoModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get modeAutoModel;
+
   /// No description provided for @modeStyle.
   ///
   /// In en, this message translates to:
@@ -1220,6 +1340,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Prompt edit'**
   String get promptEditFallbackTitle;
+
+  /// No description provided for @autoModelExpertHistoryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Expert faithful enhancement'**
+  String get autoModelExpertHistoryTitle;
+
+  /// No description provided for @autoModelVividHistoryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Vivid contrast enhancement'**
+  String get autoModelVividHistoryTitle;
 
   /// No description provided for @referenceEditDisplayTitle.
   ///

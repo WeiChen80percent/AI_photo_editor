@@ -71,6 +71,65 @@ class EditHistoryStore:
             self._write_session_atomic(session_id, session)
             return session
 
+    def save_edits_atomic(
+        self,
+        records: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        """Append one sibling batch with a single atomic session replace."""
+
+        if not records:
+            raise EditHistoryConflict("At least one edit record is required")
+        session_ids = {
+            self._validate_session_id(record.get("session_id"))
+            for record in records
+        }
+        if len(session_ids) != 1:
+            raise EditHistoryConflict(
+                "Atomic edit records must belong to the same session"
+            )
+        session_id = next(iter(session_ids))
+        edit_ids = [
+            self._validate_edit_id(record.get("edit_id"))
+            for record in records
+        ]
+        if len(set(edit_ids)) != len(edit_ids):
+            raise EditHistoryConflict("Atomic edit records contain duplicate edit IDs")
+        for record in records:
+            parent_edit_id = record.get("parent_edit_id")
+            if parent_edit_id is not None:
+                self._validate_edit_id(parent_edit_id)
+
+        with self._session_lock(session_id):
+            try:
+                session = self.load_session(session_id)
+            except EditHistoryNotFound:
+                session = {
+                    "session_id": session_id,
+                    "created_at": records[0]["created_at"],
+                    "edits": [],
+                }
+            existing_ids = {
+                str(record.get("edit_id") or "")
+                for record in session.get("edits", [])
+                if isinstance(record, dict)
+            }
+            overlap = existing_ids.intersection(edit_ids)
+            if overlap:
+                raise EditHistoryConflict(
+                    "Atomic edit batch contains an existing edit ID"
+                )
+            valid_parent_ids = existing_ids.union(edit_ids)
+            for record in records:
+                parent_edit_id = record.get("parent_edit_id")
+                if parent_edit_id is not None and parent_edit_id not in valid_parent_ids:
+                    raise EditHistoryConflict(
+                        f"Atomic edit parent is missing: {parent_edit_id}"
+                    )
+            session.setdefault("edits", []).extend(records)
+            session["updated_at"] = records[-1]["created_at"]
+            self._write_session_atomic(session_id, session)
+            return session
+
     def save_edit_idempotent(
         self,
         record: dict[str, Any],
@@ -283,6 +342,8 @@ class EditHistoryStore:
         edit_contract: dict[str, Any] | None = None,
         manual: dict[str, Any] | None = None,
         command: dict[str, Any] | None = None,
+        auto_model: dict[str, Any] | None = None,
+        visual_anchor: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         return {
             "session_id": session_id,
@@ -308,6 +369,8 @@ class EditHistoryStore:
             "edit_contract": edit_contract,
             "manual": manual,
             "command": command,
+            "auto_model": auto_model,
+            "visual_anchor": visual_anchor,
             "parameters": parameters,
             "preset_name": preset_name,
             "explanation": explanation,

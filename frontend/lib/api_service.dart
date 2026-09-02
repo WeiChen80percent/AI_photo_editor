@@ -27,6 +27,16 @@ abstract class EditorApi {
     String? commandPlanHash,
   });
 
+  Future<AutoModelComparison> compareAutoModels({
+    required Uint8List? originalBytes,
+    required String clientRequestId,
+    String? sessionId,
+    String? sourceEditId,
+    http.Client? requestClient,
+  }) {
+    throw UnimplementedError('compareAutoModels is not implemented');
+  }
+
   Future<CommandPlan> planCommand({
     required String instruction,
     String? sessionId,
@@ -247,6 +257,78 @@ class ApiService implements EditorApi {
       );
     }
 
+    return request;
+  }
+
+  @override
+  Future<AutoModelComparison> compareAutoModels({
+    required Uint8List? originalBytes,
+    required String clientRequestId,
+    String? sessionId,
+    String? sourceEditId,
+    http.Client? requestClient,
+  }) async {
+    final request = createAutoModelComparisonRequest(
+      originalBytes: originalBytes,
+      clientRequestId: clientRequestId,
+      sessionId: sessionId,
+      sourceEditId: sourceEditId,
+    );
+    try {
+      final streamed = await (requestClient ?? _client)
+          .send(request)
+          .timeout(const Duration(seconds: 180));
+      final response = await http.Response.fromStream(streamed);
+      return AutoModelComparison.fromJson(
+        _decodeResponse(response),
+        buildImageUrl: buildImageUrl,
+      );
+    } on ApiException {
+      rethrow;
+    } on TimeoutException {
+      throw const ApiException(
+        statusCode: 0,
+        code: 'auto_model_network_timeout',
+        message: '自動修圖等待逾時；已完成的版本仍可從歷史紀錄取回。',
+      );
+    } catch (error) {
+      throw ApiException(
+        statusCode: 0,
+        code: 'auto_model_network_error',
+        message: '無法連線到自動修圖後端：$error',
+      );
+    }
+  }
+
+  http.MultipartRequest createAutoModelComparisonRequest({
+    required Uint8List? originalBytes,
+    required String clientRequestId,
+    String? sessionId,
+    String? sourceEditId,
+  }) {
+    final request =
+        http.MultipartRequest(
+            'POST',
+            Uri.parse('$baseUrl/edit/auto-models/compare'),
+          )
+          ..fields['client_request_id'] = clientRequestId
+          ..fields['comparison_schema_version'] = 'auto_model_comparison_v1';
+    if (sessionId != null && sessionId.isNotEmpty) {
+      request.fields['session_id'] = sessionId;
+      request.fields['source_edit_id'] =
+          sourceEditId == null || sourceEditId.isEmpty
+          ? 'original'
+          : sourceEditId;
+    }
+    if (originalBytes != null) {
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'original_image',
+          originalBytes,
+          filename: 'original.png',
+        ),
+      );
+    }
     return request;
   }
 

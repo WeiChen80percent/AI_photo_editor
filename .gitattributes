@@ -1,1 +1,9 @@
 *.zip binary
+
+# ResidualFusion signs release JSON/manifests by their repository bytes.
+# Keep text artifacts on LF so Windows checkout conversion cannot invalidate
+# those integrity checks while binary checkpoints remain auto-detected.
+residual_fusion/** text=auto eol=lf
+
+# This signed manifest was frozen from CRLF bytes by the delivered model.
+residual_fusion/training/outputs/expert_c_continuous_spatial_strength_post_final_5000_demo001/artifact_manifest.json text eol=crlf

@@ -41,6 +41,14 @@ class EditorToolDock extends StatelessWidget {
                 onTap: onSelected,
               ),
               _ToolItem(
+                key: const Key('tool_auto_models'),
+                tool: EditorTool.autoModels,
+                label: l10n.toolAutoModels,
+                icon: Icons.compare_outlined,
+                selected: selectedTool == EditorTool.autoModels,
+                onTap: onSelected,
+              ),
+              _ToolItem(
                 key: const Key('tool_styles'),
                 tool: EditorTool.styles,
                 label: l10n.toolStyles,

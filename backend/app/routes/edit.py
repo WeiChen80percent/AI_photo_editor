@@ -1,3 +1,4 @@
+import asyncio
 import copy
 import hashlib
 import json
@@ -16,6 +17,12 @@ from app.services.adaptive_adjustment import (
     preflight_adaptive_semantic_prompt,
     resolve_adaptive_adjustment,
 )
+from app.services.auto_model_adapters import build_default_auto_model_adapters
+from app.services.auto_model_schema import (
+    AUTO_MODEL_COMPARISON_SCHEMA_VERSION,
+    AutoModelError,
+)
+from app.services.auto_model_service import AutoModelComparisonService
 from app.services.command_planner import CommandPlanCacheError, CommandPlanner
 from app.services.command_schema import CommandPlanRequest
 from app.services.edit_engines import create_engine_result, normalize_engine_name
@@ -68,6 +75,7 @@ RESULTS_DIR = BASE_DIR / "storage" / "results"
 SESSIONS_DIR = BASE_DIR / "storage" / "sessions"
 MANUAL_PREVIEWS_DIR = BASE_DIR / "storage" / "manual_previews"
 PHOTO_GIT_PREVIEWS_DIR = BASE_DIR / "storage" / "photo_git_previews"
+AUTO_MODEL_COMPARISONS_DIR = BASE_DIR / "storage" / "auto_model_comparisons"
 ORIGINAL_PARENT_SENTINEL = "original"
 SESSION_ID_PATTERN = re.compile(r"^session_[0-9a-f]{32}$")
 EDIT_ID_PATTERN = re.compile(r"^edit_[0-9a-f]{32}$")
@@ -93,6 +101,14 @@ COMMAND_PLANNER = CommandPlanner(
 EDIT_CONTRACT_REGISTRY = get_default_metric_registry()
 EDIT_CONTRACT_SERVICE = EditContractService(registry=EDIT_CONTRACT_REGISTRY)
 GROUNDED_CONTRACT_PROVIDER = get_default_grounded_contract_provider()
+AUTO_MODEL_SERVICE = AutoModelComparisonService(
+    backend_dir=BASE_DIR,
+    history_store=HISTORY_STORE,
+    adapters=build_default_auto_model_adapters(),
+    results_root=RESULTS_DIR,
+    uploads_root=UPLOAD_DIR,
+    comparisons_root=AUTO_MODEL_COMPARISONS_DIR,
+)
 
 
 class ManualEditRequest(BaseModel):
@@ -812,6 +828,47 @@ def get_edit_session(session_id: str):
 @router.get("/edit/contracts/schema")
 def get_edit_contract_schema():
     return EDIT_CONTRACT_REGISTRY.as_schema_payload()
+
+
+@router.get("/edit/auto-models/health")
+def get_auto_model_health():
+    return AUTO_MODEL_SERVICE.health()
+
+
+@router.post("/edit/auto-models/compare")
+async def compare_auto_models(
+    original_image: UploadFile | None = File(None),
+    session_id: str | None = Form(None),
+    source_edit_id: str | None = Form(None),
+    client_request_id: str = Form(...),
+    comparison_schema_version: str = Form(
+        AUTO_MODEL_COMPARISON_SCHEMA_VERSION
+    ),
+):
+    original_bytes = (
+        await original_image.read()
+        if original_image is not None
+        else None
+    )
+    try:
+        return await asyncio.to_thread(
+            AUTO_MODEL_SERVICE.compare,
+            original_bytes=original_bytes,
+            original_filename=(
+                original_image.filename
+                if original_image is not None
+                else None
+            ),
+            session_id=session_id,
+            source_edit_id=source_edit_id,
+            client_request_id=client_request_id,
+            schema_version=comparison_schema_version,
+        )
+    except AutoModelError as exc:
+        raise HTTPException(
+            status_code=exc.status_code,
+            detail=exc.as_dict(),
+        ) from exc
 
 
 @router.post("/edit/commands/plan")

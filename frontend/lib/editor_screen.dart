@@ -333,6 +333,7 @@ class _EditorScreenState extends State<EditorScreen> {
           _toolSheetContext = sheetContext;
           final initial =
               tool == EditorTool.manual ||
+                  tool == EditorTool.autoModels ||
                   tool == EditorTool.history ||
                   tool == EditorTool.styles
               ? 0.72
@@ -446,6 +447,8 @@ class _EditorScreenState extends State<EditorScreen> {
             }
           },
         );
+      case EditorTool.autoModels:
+        return AutoModelsPanel(controller: _controller, onClose: close);
       case EditorTool.styles:
         return StylesPanel(
           controller: _controller,

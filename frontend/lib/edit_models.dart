@@ -1424,6 +1424,195 @@ Map<String, String> _localizedStringMap(dynamic value) {
   };
 }
 
+class AutoModelMetadata {
+  const AutoModelMetadata({
+    required this.schemaVersion,
+    required this.comparisonId,
+    required this.modelKey,
+    required this.modelFamily,
+    required this.sourceEditId,
+    required this.sourceHistoryFingerprint,
+    required this.assetIdentity,
+    required this.runtimeMetadata,
+    required this.timingsMs,
+    required this.warningFlags,
+  });
+
+  final String schemaVersion;
+  final String comparisonId;
+  final String modelKey;
+  final String modelFamily;
+  final String sourceEditId;
+  final String sourceHistoryFingerprint;
+  final Map<String, dynamic> assetIdentity;
+  final Map<String, dynamic> runtimeMetadata;
+  final Map<String, dynamic> timingsMs;
+  final List<String> warningFlags;
+
+  factory AutoModelMetadata.fromJson(Map<String, dynamic> json) {
+    return AutoModelMetadata(
+      schemaVersion: _stringValue(json['schema_version']) ?? '',
+      comparisonId: _stringValue(json['comparison_id']) ?? '',
+      modelKey: _stringValue(json['model_key']) ?? '',
+      modelFamily: _stringValue(json['model_family']) ?? '',
+      sourceEditId: _stringValue(json['source_edit_id']) ?? 'original',
+      sourceHistoryFingerprint:
+          _stringValue(json['source_history_fingerprint']) ?? '',
+      assetIdentity: _mapValue(json['asset_identity']),
+      runtimeMetadata: _mapValue(json['runtime_metadata']),
+      timingsMs: _mapValue(json['timings_ms']),
+      warningFlags: _stringList(json['warning_flags']),
+    );
+  }
+}
+
+class AutoModelCandidateError {
+  const AutoModelCandidateError({
+    required this.code,
+    required this.message,
+    required this.retryable,
+    required this.details,
+  });
+
+  final String code;
+  final String message;
+  final bool retryable;
+  final Map<String, dynamic> details;
+
+  factory AutoModelCandidateError.fromJson(Map<String, dynamic> json) {
+    return AutoModelCandidateError(
+      code: _stringValue(json['code']) ?? 'auto_model_failed',
+      message: _stringValue(json['message']) ?? 'Automatic enhancement failed',
+      retryable: _nullableBoolValue(json['retryable']) ?? false,
+      details: _mapValue(json['details']),
+    );
+  }
+}
+
+class AutoModelCandidate {
+  const AutoModelCandidate({
+    required this.status,
+    required this.modelKey,
+    required this.editId,
+    required this.parentEditId,
+    required this.resultUrl,
+    required this.metadata,
+    required this.error,
+    required this.idempotentReplay,
+  });
+
+  final String status;
+  final String modelKey;
+  final String? editId;
+  final String? parentEditId;
+  final String? resultUrl;
+  final AutoModelMetadata? metadata;
+  final AutoModelCandidateError? error;
+  final bool idempotentReplay;
+
+  bool get isSuccess =>
+      status == 'success' && editId != null && resultUrl != null;
+  bool get isError => status == 'error';
+
+  factory AutoModelCandidate.fromJson(
+    Map<String, dynamic> json, {
+    required ImageUrlBuilder buildImageUrl,
+    String? fallbackModelKey,
+  }) {
+    final resultPath =
+        _stringValue(json['result_url']) ??
+        _stringValue(json['result_saved_path']);
+    final rawMetadata = json['auto_model'];
+    final rawError = json['error'];
+    return AutoModelCandidate(
+      status: _stringValue(json['status']) ?? 'error',
+      modelKey:
+          _stringValue(json['model_key']) ?? fallbackModelKey ?? 'unknown',
+      editId: _stringValue(json['edit_id']),
+      parentEditId: _stringValue(json['parent_edit_id']),
+      resultUrl: resultPath == null ? null : buildImageUrl(resultPath),
+      metadata: rawMetadata is Map
+          ? AutoModelMetadata.fromJson(Map<String, dynamic>.from(rawMetadata))
+          : null,
+      error: rawError is Map
+          ? AutoModelCandidateError.fromJson(
+              Map<String, dynamic>.from(rawError),
+            )
+          : null,
+      idempotentReplay: _nullableBoolValue(json['idempotent_replay']) ?? false,
+    );
+  }
+}
+
+class AutoModelComparison {
+  const AutoModelComparison({
+    required this.schemaVersion,
+    required this.comparisonId,
+    required this.status,
+    required this.sessionId,
+    required this.sourceEditId,
+    required this.parentEditId,
+    required this.sourceHistoryFingerprint,
+    required this.sourceUrl,
+    required this.candidates,
+    required this.executionMode,
+    required this.idempotentReplay,
+    required this.batchTimingsMs,
+  });
+
+  final String schemaVersion;
+  final String comparisonId;
+  final String status;
+  final String sessionId;
+  final String sourceEditId;
+  final String? parentEditId;
+  final String sourceHistoryFingerprint;
+  final String? sourceUrl;
+  final Map<String, AutoModelCandidate> candidates;
+  final String executionMode;
+  final bool idempotentReplay;
+  final Map<String, dynamic> batchTimingsMs;
+
+  bool get isSuccess => status == 'success';
+  bool get isPartialSuccess => status == 'partial_success';
+  bool get isError => status == 'error';
+  Iterable<AutoModelCandidate> get successfulCandidates =>
+      candidates.values.where((candidate) => candidate.isSuccess);
+
+  factory AutoModelComparison.fromJson(
+    Map<String, dynamic> json, {
+    required ImageUrlBuilder buildImageUrl,
+  }) {
+    final rawCandidates = _mapValue(json['candidates']);
+    final source = _mapValue(json['source']);
+    final sourcePath =
+        _stringValue(source['url']) ?? _stringValue(source['saved_path']);
+    return AutoModelComparison(
+      schemaVersion: _stringValue(json['schema_version']) ?? '',
+      comparisonId: _stringValue(json['comparison_id']) ?? '',
+      status: _stringValue(json['status']) ?? 'error',
+      sessionId: _stringValue(json['session_id']) ?? '',
+      sourceEditId: _stringValue(json['source_edit_id']) ?? 'original',
+      parentEditId: _stringValue(json['parent_edit_id']),
+      sourceHistoryFingerprint:
+          _stringValue(json['source_history_fingerprint']) ?? '',
+      sourceUrl: sourcePath == null ? null : buildImageUrl(sourcePath),
+      candidates: <String, AutoModelCandidate>{
+        for (final entry in rawCandidates.entries)
+          if (entry.value is Map)
+            entry.key: AutoModelCandidate.fromJson(
+              Map<String, dynamic>.from(entry.value as Map),
+              buildImageUrl: buildImageUrl,
+              fallbackModelKey: entry.key,
+            ),
+      },
+      executionMode: _stringValue(json['execution_mode']) ?? 'sequential',
+      idempotentReplay: _nullableBoolValue(json['idempotent_replay']) ?? false,
+      batchTimingsMs: _mapValue(json['batch_timings_ms']),
+    );
+  }
+}
+
 class EditHistoryItem {
   const EditHistoryItem({
     required this.sessionId,
@@ -1446,6 +1635,8 @@ class EditHistoryItem {
     this.adaptive = const <String, dynamic>{},
     this.photoGit,
     this.editContract,
+    this.autoModel,
+    this.visualAnchor = const <String, dynamic>{},
   });
 
   final String sessionId;
@@ -1468,6 +1659,8 @@ class EditHistoryItem {
   final Map<String, dynamic> adaptive;
   final PhotoGitMetadata? photoGit;
   final EditContractMetadata? editContract;
+  final AutoModelMetadata? autoModel;
+  final Map<String, dynamic> visualAnchor;
 
   factory EditHistoryItem.fromJson(
     Map<String, dynamic> json, {
@@ -1523,6 +1716,12 @@ class EditHistoryItem {
               Map<String, dynamic>.from(json['edit_contract'] as Map),
             )
           : null,
+      autoModel: json['auto_model'] is Map
+          ? AutoModelMetadata.fromJson(
+              Map<String, dynamic>.from(json['auto_model'] as Map),
+            )
+          : null,
+      visualAnchor: _mapValue(json['visual_anchor']),
     );
   }
 
@@ -1680,6 +1879,8 @@ class EditHistoryItem {
         return '手動調整';
       case 'reference':
         return '參考圖';
+      case 'auto_model':
+        return '自動修圖';
       default:
         return '指令';
     }
@@ -1700,6 +1901,9 @@ class EditHistoryItem {
     }
     if (editMode == 'reference') {
       return '參考圖修圖';
+    }
+    if (editMode == 'auto_model') {
+      return autoModel?.modelKey ?? '自動修圖';
     }
     return prompt.isEmpty ? (resolvedIntent ?? '指令修圖') : prompt;
   }

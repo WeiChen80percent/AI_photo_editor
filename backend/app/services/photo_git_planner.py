@@ -565,7 +565,7 @@ def _require_same_anchor(*recipes: Mapping[str, Any]) -> None:
     if len(anchors) != 1 or not next(iter(anchors), ""):
         raise PhotoGitPlanningError(
             "photo_git_anchor_mismatch",
-            "所選版本無法從同一原圖 anchor 重算。",
+            "所選版本使用不相容的 visual anchor，無法安全重算或合併。",
         )
 
 
