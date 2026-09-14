@@ -1,6 +1,17 @@
-backend/.venv/
+.venv/
 __pycache__/
-*.pyc
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.log
+
+# Local environment and secret files. Commit a sanitized example when needed.
+.env
+.env.*
+!.env.example
 
 backend/uploads/
 backend/results/
@@ -14,33 +25,8 @@ backend/storage/sessions/
 backend/storage/auto_model_comparisons/
 model/outputs/
 
-# local test/eval helpers
-backend/app/services/prompt_eval_runner.py
-backend/run_opencv_demo.py
-backend/run_prompt_eval.py
+# Local photo fixtures; test source code itself must remain trackable.
 backend/test_photo/
-backend/tests/
-frontend/test/
-
-# local adaptive/manual test and evaluation helpers
-backend/app/static/manual_test.html
-backend/app/services/adaptive_sequence_eval_runner.py
-backend/app/services/adaptive_v2_eval_runner.py
-backend/app/services/adaptive_v2_performance.py
-backend/app/services/local_edit_eval_runner.py
-backend/app/services/manual_edit_eval_runner.py
-backend/run_adaptive_sequence_eval.py
-backend/run_adaptive_v2_eval.py
-backend/run_adaptive_v2_performance.py
-backend/run_adaptive_v2_property_audit.py
-backend/run_local_edit_eval.py
-backend/run_manual_edit_eval.py
-backend/run_semantic_model_benchmark.py
-
-# local style evaluation helpers
-backend/app/services/style_eval_runner.py
-backend/tools/run_style_performance.py
-backend/tools/run_style_seed_eval.py
 
 # local Flutter tool sandboxes
 .flutter_build_tmp/
@@ -73,3 +59,65 @@ backend/app/style_catalog/previews/studio_neutral_portrait.jpg
 
 .DS_Store
 Thumbs.db
+
+# Local datasets. Keep the files at these paths for training, but never add
+# the multi-gigabyte photo corpus to the Git repository.
+/data/
+
+# Failed experiments: keep training/source code and documentation, but exclude
+# checkpoints, serialized models, datasets, previews, logs, and run outputs.
+/archive/failed_methods/**/__pycache__/
+/archive/failed_methods/**/*.py[cod]
+/archive/failed_methods/**/*.pt
+/archive/failed_methods/**/*.pth
+/archive/failed_methods/**/*.ckpt
+/archive/failed_methods/**/*.onnx
+/archive/failed_methods/**/*.tflite
+/archive/failed_methods/**/*.safetensors
+/archive/failed_methods/**/*.h5
+/archive/failed_methods/**/*.hdf5
+/archive/failed_methods/**/*.pb
+/archive/failed_methods/**/*.bin
+/archive/failed_methods/**/*.joblib
+/archive/failed_methods/**/*.weights
+/archive/failed_methods/**/*.zip
+/archive/failed_methods/**/*.7z
+/archive/failed_methods/**/*.rar
+/archive/failed_methods/**/*.tar
+/archive/failed_methods/**/*.tar.gz
+/archive/failed_methods/**/*.pkl
+/archive/failed_methods/**/*.npy
+/archive/failed_methods/**/*.npz
+/archive/failed_methods/**/*.jpg
+/archive/failed_methods/**/*.jpeg
+/archive/failed_methods/**/*.png
+/archive/failed_methods/**/*.gif
+/archive/failed_methods/**/*.bmp
+/archive/failed_methods/**/*.webp
+/archive/failed_methods/**/*.tif
+/archive/failed_methods/**/*.tiff
+/archive/failed_methods/**/*.db
+/archive/failed_methods/**/*.sqlite
+/archive/failed_methods/**/*.sqlite3
+/archive/failed_methods/**/*.csv
+/archive/failed_methods/**/*.jsonl
+/archive/failed_methods/**/events.out.tfevents.*
+/archive/failed_methods/**/checkpoints*/
+/archive/failed_methods/**/training_artifacts*/
+/archive/failed_methods/**/tensorboard_logs/
+/archive/failed_methods/**/runs/
+/archive/failed_methods/**/history_*/
+/archive/failed_methods/**/artifacts/
+/archive/failed_methods/**/*.metadata.json
+/archive/failed_methods/lightroom_preset/datasets_description/
+/archive/failed_methods/lightroom_preset/datasets_zip/
+/archive/failed_methods/opencv_rl/train_keys.txt
+/archive/failed_methods/opencv_rl/test_keys.txt
+/archive/failed_methods/opencv_rl/current_model_full_test_results.json
+
+# Generated dataset split manifests. These duplicate the already ignored
+# image_adaptive_3dlut/manifests files and contain local dataset paths/hashes.
+/manifests/
+
+# Generated visual comparison reports and one-off editor outputs.
+/alignment_report/

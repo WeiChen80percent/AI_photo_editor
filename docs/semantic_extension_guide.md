@@ -675,7 +675,7 @@ git diff --check
 git status --short
 ```
 
-確認沒有修改 `langchain_model/`、`model_v2/`、`dataset_pilot/`，並在 commit 前另外處理目前 `.gitignore` 會忽略 `backend/tests/` 的既有問題。未經使用者確認不要 commit；未經使用者同意不要 push。
+舊的 `langchain_model/`、`model_v2/`、`dataset_pilot/` 方法程式已移到 `archive/failed_methods/`；語意功能修改不得依賴該封存內容。封存區只提交程式與文件，模型、資料與訓練輸出一律排除。`backend/tests/` 已不再被 `.gitignore` 忽略。未經使用者確認不要 commit；未經使用者同意不要 push。
 
 ## 7. Code review 禁止清單
 

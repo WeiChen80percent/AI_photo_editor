@@ -7,7 +7,7 @@ from tool import AVAILABLE_TOOLS
 
 def setup_LLM_agent(VLM_response):
     
-    llm = ChatOllama(model="llama3.2:3b", temperature=0.5)
+    llm = ChatOllama(model="qwen3.5:latest", temperature=0.5)
     system_prompt = f"""
     You are a professional AI image editing assistant.
     Your task is to deeply analyze VLM's output and the user's prompt to understand their visual intent (e.g., lighting, color tone, or cinematic style).
