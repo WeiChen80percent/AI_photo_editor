@@ -1,0 +1,606 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:http/http.dart' as http;
+
+import 'edit_models.dart';
+import 'speech_models.dart';
+
+abstract class EditorApi {
+  String buildImageUrl(String path);
+
+  Future<SpeechTranscription> transcribeSpeech({
+    required Uint8List audioBytes,
+    required SpeechLanguageMode languageMode,
+    String filename,
+  });
+
+  Future<EditHistoryItem> submitEdit({
+    required Uint8List? originalBytes,
+    required Uint8List? referenceBytes,
+    required String prompt,
+    required String clientRequestId,
+    String? sessionId,
+    String? parentEditId,
+    String? commandType,
+    String? commandPlanHash,
+  });
+
+  Future<AutoModelComparison> compareAutoModels({
+    required Uint8List? originalBytes,
+    required String clientRequestId,
+    String? sessionId,
+    String? sourceEditId,
+    http.Client? requestClient,
+  }) {
+    throw UnimplementedError('compareAutoModels is not implemented');
+  }
+
+  Future<CommandPlan> planCommand({
+    required String instruction,
+    String? sessionId,
+    String? selectedEditId,
+    String? locale,
+  });
+
+  Future<EditSession> fetchSession(String sessionId);
+
+  Future<StyleCatalog> fetchStyleCatalog();
+
+  Future<ManualSchema> fetchManualSchema();
+
+  Future<EditContractSchema> fetchEditContractSchema();
+
+  Future<ManualEditResponse> previewManual({
+    required String sessionId,
+    required String sourceEditId,
+    required Map<String, double> parameterOverrides,
+    required String clientRequestId,
+    http.Client? requestClient,
+  });
+
+  Future<ManualEditResponse> commitManual({
+    required String sessionId,
+    required String sourceEditId,
+    required Map<String, double> parameterOverrides,
+    required String clientRequestId,
+    String instruction,
+    String? commandPlanHash,
+  });
+
+  Future<PhotoGitPlan> planPhotoGit({
+    required String sessionId,
+    required PhotoGitRequest request,
+  });
+
+  Future<PhotoGitPreview> previewPhotoGit({
+    required String sessionId,
+    required PhotoGitRequest request,
+    required String planHash,
+  });
+
+  Future<EditHistoryItem> commitPhotoGit({
+    required String sessionId,
+    required PhotoGitRequest request,
+    required String planHash,
+    required String clientRequestId,
+  });
+}
+
+class ApiException implements Exception {
+  const ApiException({
+    required this.statusCode,
+    required this.code,
+    required this.message,
+    this.details = const <String, dynamic>{},
+  });
+
+  final int statusCode;
+  final String? code;
+  final String message;
+  final Map<String, dynamic> details;
+
+  @override
+  String toString() => message;
+}
+
+class ApiService implements EditorApi {
+  ApiService({String? baseUrl, http.Client? client})
+    : baseUrl = (baseUrl ?? environmentBaseUrl).replaceFirst(RegExp(r'/$'), ''),
+      _client = client ?? http.Client(),
+      _ownsClient = client == null;
+
+  static const String environmentBaseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://127.0.0.1:8000',
+  );
+
+  final String baseUrl;
+  final http.Client _client;
+  final bool _ownsClient;
+
+  static const requestTimeout = Duration(seconds: 180);
+
+  Future<http.Response> _sendMultipart(
+    http.MultipartRequest request, {
+    http.Client? client,
+    Duration timeout = requestTimeout,
+  }) => (() async {
+    final streamed = await (client ?? _client).send(request);
+    return http.Response.fromStream(streamed);
+  })().timeout(timeout);
+
+  Future<void> checkConnection() async {
+    final response = await _client
+        .get(Uri.parse('$baseUrl/health'))
+        .timeout(const Duration(seconds: 8));
+    final data = _decodeResponse(response);
+    if (data['status'] != 'good') {
+      throw const ApiException(
+        statusCode: 200,
+        code: 'invalid_health',
+        message: 'The server did not return the photo editor health response.',
+      );
+    }
+  }
+
+  Future<Uint8List> downloadResult(String url, {required int maxBytes}) async {
+    // Use a dedicated client so timeout/size rejection actually closes transfer.
+    final client = http.Client();
+    try {
+      return await (() async {
+        final response = await client.send(http.Request('GET', Uri.parse(url)));
+        if (response.statusCode != 200) {
+          throw ApiException(
+            statusCode: response.statusCode,
+            code: 'download_failed',
+            message: 'Image download failed.',
+          );
+        }
+        if ((response.contentLength ?? 0) > maxBytes) {
+          throw const ApiException(
+            statusCode: 0,
+            code: 'image_too_large',
+            message: 'Image exceeds the mobile download limit.',
+          );
+        }
+        final bytes = BytesBuilder(copy: false);
+        await for (final chunk in response.stream) {
+          if (bytes.length + chunk.length > maxBytes) {
+            throw const ApiException(
+              statusCode: 0,
+              code: 'image_too_large',
+              message: 'Image exceeds the mobile download limit.',
+            );
+          }
+          bytes.add(chunk);
+        }
+        return bytes.takeBytes();
+      })().timeout(const Duration(seconds: 90));
+    } finally {
+      client.close();
+    }
+  }
+
+  @override
+  Future<SpeechTranscription> transcribeSpeech({
+    required Uint8List audioBytes,
+    required SpeechLanguageMode languageMode,
+    String filename = 'speech.wav',
+  }) async {
+    final request = createSpeechTranscriptionRequest(
+      audioBytes: audioBytes,
+      languageMode: languageMode,
+      filename: filename,
+    );
+    try {
+      final response = await _sendMultipart(
+        request,
+        timeout: const Duration(seconds: 75),
+      );
+      return SpeechTranscription.fromJson(_decodeResponse(response));
+    } on ApiException {
+      rethrow;
+    } on TimeoutException {
+      throw const ApiException(
+        statusCode: 0,
+        code: 'speech_network_timeout',
+        message: '語音辨識等待逾時，請稍後重試。',
+      );
+    } catch (error) {
+      throw ApiException(
+        statusCode: 0,
+        code: 'speech_network_error',
+        message: '無法連線到語音辨識後端：$error',
+      );
+    }
+  }
+
+  http.MultipartRequest createSpeechTranscriptionRequest({
+    required Uint8List audioBytes,
+    required SpeechLanguageMode languageMode,
+    String filename = 'speech.wav',
+  }) {
+    final request =
+        http.MultipartRequest('POST', Uri.parse('$baseUrl/speech/transcribe'))
+          ..files.add(
+            http.MultipartFile.fromBytes(
+              'audio',
+              audioBytes,
+              filename: filename,
+            ),
+          );
+    final hint = languageMode.apiHint;
+    if (hint != null) {
+      request.fields['language_hint'] = hint;
+    }
+    return request;
+  }
+
+  @override
+  Future<EditHistoryItem> submitEdit({
+    required Uint8List? originalBytes,
+    required Uint8List? referenceBytes,
+    required String prompt,
+    required String clientRequestId,
+    String? sessionId,
+    String? parentEditId,
+    String? commandType,
+    String? commandPlanHash,
+  }) async {
+    final request = createEditRequest(
+      originalBytes: originalBytes,
+      referenceBytes: referenceBytes,
+      prompt: prompt,
+      clientRequestId: clientRequestId,
+      sessionId: sessionId,
+      parentEditId: parentEditId,
+      commandType: commandType,
+      commandPlanHash: commandPlanHash,
+    );
+    try {
+      final response = await _sendMultipart(request);
+      final data = _decodeResponse(response);
+      return EditHistoryItem.fromJson(data, buildImageUrl: buildImageUrl);
+    } on ApiException {
+      rethrow;
+    } catch (error) {
+      throw ApiException(
+        statusCode: 0,
+        code: 'network_error',
+        message: '無法連線到修圖後端：$error',
+      );
+    }
+  }
+
+  http.MultipartRequest createEditRequest({
+    required Uint8List? originalBytes,
+    required Uint8List? referenceBytes,
+    required String prompt,
+    required String clientRequestId,
+    String? sessionId,
+    String? parentEditId,
+    String? commandType,
+    String? commandPlanHash,
+  }) {
+    final request = http.MultipartRequest('POST', Uri.parse('$baseUrl/edit'))
+      ..fields['prompt'] = prompt
+      ..fields['client_request_id'] = clientRequestId;
+
+    if (sessionId != null && sessionId.isNotEmpty) {
+      request.fields['session_id'] = sessionId;
+    }
+    if (parentEditId != null && parentEditId.isNotEmpty) {
+      request.fields['parent_edit_id'] = parentEditId;
+    }
+    if (commandType != null && commandType.isNotEmpty) {
+      request.fields['command_type'] = commandType;
+    }
+    if (commandPlanHash != null && commandPlanHash.isNotEmpty) {
+      request.fields['command_plan_hash'] = commandPlanHash;
+    }
+    if (originalBytes != null) {
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'original_image',
+          originalBytes,
+          filename: 'original.png',
+        ),
+      );
+    }
+    if (referenceBytes != null) {
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'reference_image',
+          referenceBytes,
+          filename: 'reference.png',
+        ),
+      );
+    }
+
+    return request;
+  }
+
+  @override
+  Future<AutoModelComparison> compareAutoModels({
+    required Uint8List? originalBytes,
+    required String clientRequestId,
+    String? sessionId,
+    String? sourceEditId,
+    http.Client? requestClient,
+  }) async {
+    final request = createAutoModelComparisonRequest(
+      originalBytes: originalBytes,
+      clientRequestId: clientRequestId,
+      sessionId: sessionId,
+      sourceEditId: sourceEditId,
+    );
+    try {
+      final response = await _sendMultipart(request, client: requestClient);
+      return AutoModelComparison.fromJson(
+        _decodeResponse(response),
+        buildImageUrl: buildImageUrl,
+      );
+    } on ApiException {
+      rethrow;
+    } on TimeoutException {
+      throw const ApiException(
+        statusCode: 0,
+        code: 'auto_model_network_timeout',
+        message: '自動修圖等待逾時；已完成的版本仍可從歷史紀錄取回。',
+      );
+    } catch (error) {
+      throw ApiException(
+        statusCode: 0,
+        code: 'auto_model_network_error',
+        message: '無法連線到自動修圖後端：$error',
+      );
+    }
+  }
+
+  http.MultipartRequest createAutoModelComparisonRequest({
+    required Uint8List? originalBytes,
+    required String clientRequestId,
+    String? sessionId,
+    String? sourceEditId,
+  }) {
+    final request =
+        http.MultipartRequest(
+            'POST',
+            Uri.parse('$baseUrl/edit/auto-models/compare'),
+          )
+          ..fields['client_request_id'] = clientRequestId
+          ..fields['comparison_schema_version'] = 'auto_model_comparison_v1';
+    if (sessionId != null && sessionId.isNotEmpty) {
+      request.fields['session_id'] = sessionId;
+      request.fields['source_edit_id'] =
+          sourceEditId == null || sourceEditId.isEmpty
+          ? 'original'
+          : sourceEditId;
+    }
+    if (originalBytes != null) {
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'original_image',
+          originalBytes,
+          filename: 'original.png',
+        ),
+      );
+    }
+    return request;
+  }
+
+  @override
+  Future<CommandPlan> planCommand({
+    required String instruction,
+    String? sessionId,
+    String? selectedEditId,
+    String? locale,
+  }) async {
+    final response = await _postJson('/edit/commands/plan', {
+      'instruction': instruction,
+      if (sessionId != null && sessionId.isNotEmpty) 'session_id': sessionId,
+      if (selectedEditId != null && selectedEditId.isNotEmpty)
+        'selected_edit_id': selectedEditId,
+      if (locale != null && locale.isNotEmpty) 'locale': locale,
+    });
+    return CommandPlan.fromJson(response);
+  }
+
+  @override
+  Future<EditSession> fetchSession(String sessionId) async {
+    final response = await _get('/edit/sessions/$sessionId');
+    return EditSession.fromJson(response, buildImageUrl: buildImageUrl);
+  }
+
+  @override
+  Future<StyleCatalog> fetchStyleCatalog() async {
+    final response = await _get('/edit/styles');
+    return StyleCatalog.fromJson(response, buildImageUrl: buildImageUrl);
+  }
+
+  @override
+  Future<ManualSchema> fetchManualSchema() async {
+    final response = await _get('/edit/manual/schema');
+    return ManualSchema.fromJson(response);
+  }
+
+  @override
+  Future<EditContractSchema> fetchEditContractSchema() async {
+    final response = await _get('/edit/contracts/schema');
+    return EditContractSchema.fromJson(response);
+  }
+
+  @override
+  Future<ManualEditResponse> previewManual({
+    required String sessionId,
+    required String sourceEditId,
+    required Map<String, double> parameterOverrides,
+    required String clientRequestId,
+    http.Client? requestClient,
+  }) async {
+    final response = await _postJson('/edit/manual/preview', {
+      'session_id': sessionId,
+      'source_edit_id': sourceEditId,
+      'parameter_overrides': parameterOverrides,
+      'client_request_id': clientRequestId,
+    }, requestClient: requestClient);
+    return ManualEditResponse.fromJson(response, buildImageUrl: buildImageUrl);
+  }
+
+  @override
+  Future<ManualEditResponse> commitManual({
+    required String sessionId,
+    required String sourceEditId,
+    required Map<String, double> parameterOverrides,
+    required String clientRequestId,
+    String instruction = '',
+    String? commandPlanHash,
+  }) async {
+    final body = <String, dynamic>{
+      'session_id': sessionId,
+      'source_edit_id': sourceEditId,
+      'parameter_overrides': parameterOverrides,
+      'client_request_id': clientRequestId,
+      if (instruction.isNotEmpty) 'instruction': instruction,
+    };
+    if (commandPlanHash case final planHash?) {
+      body['command_plan_hash'] = planHash;
+    }
+    final response = await _postJson('/edit/manual/commit', body);
+    return ManualEditResponse.fromJson(response, buildImageUrl: buildImageUrl);
+  }
+
+  @override
+  Future<PhotoGitPlan> planPhotoGit({
+    required String sessionId,
+    required PhotoGitRequest request,
+  }) async {
+    final response = await _postJson(
+      '/edit/photo-git/plan',
+      request.toJson(sessionId),
+    );
+    return PhotoGitPlan.fromJson(response, buildImageUrl: buildImageUrl);
+  }
+
+  @override
+  Future<PhotoGitPreview> previewPhotoGit({
+    required String sessionId,
+    required PhotoGitRequest request,
+    required String planHash,
+  }) async {
+    final response = await _postJson('/edit/photo-git/preview', {
+      ...request.toJson(sessionId),
+      'plan_hash': planHash,
+    });
+    return PhotoGitPreview.fromJson(response, buildImageUrl: buildImageUrl);
+  }
+
+  @override
+  Future<EditHistoryItem> commitPhotoGit({
+    required String sessionId,
+    required PhotoGitRequest request,
+    required String planHash,
+    required String clientRequestId,
+  }) async {
+    final response = await _postJson('/edit/photo-git/commit', {
+      ...request.toJson(sessionId),
+      'plan_hash': planHash,
+      'client_request_id': clientRequestId,
+    });
+    return EditHistoryItem.fromJson(response, buildImageUrl: buildImageUrl);
+  }
+
+  @override
+  String buildImageUrl(String path) {
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return path;
+    }
+    final separator = path.startsWith('/') ? '' : '/';
+    return '$baseUrl$separator$path';
+  }
+
+  Future<Map<String, dynamic>> _get(String path) async {
+    try {
+      final response = await _client
+          .get(Uri.parse('$baseUrl$path'))
+          .timeout(const Duration(seconds: 30));
+      return _decodeResponse(response);
+    } on ApiException {
+      rethrow;
+    } catch (error) {
+      throw ApiException(
+        statusCode: 0,
+        code: 'network_error',
+        message: '無法連線到修圖後端：$error',
+      );
+    }
+  }
+
+  Future<Map<String, dynamic>> _postJson(
+    String path,
+    Map<String, dynamic> body, {
+    http.Client? requestClient,
+  }) async {
+    try {
+      final response = await (requestClient ?? _client)
+          .post(
+            Uri.parse('$baseUrl$path'),
+            headers: const {'Content-Type': 'application/json'},
+            body: jsonEncode(body),
+          )
+          .timeout(requestTimeout);
+      return _decodeResponse(response);
+    } on ApiException {
+      rethrow;
+    } catch (error) {
+      throw ApiException(
+        statusCode: 0,
+        code: 'network_error',
+        message: '無法連線到修圖後端：$error',
+      );
+    }
+  }
+
+  Map<String, dynamic> _decodeResponse(http.Response response) {
+    dynamic decoded;
+    try {
+      decoded = jsonDecode(utf8.decode(response.bodyBytes));
+    } catch (_) {
+      decoded = null;
+    }
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      final detail = decoded is Map ? decoded['detail'] : null;
+      final detailMap = detail is Map
+          ? Map<String, dynamic>.from(detail)
+          : const <String, dynamic>{};
+      final message =
+          detailMap['message']?.toString() ??
+          (detail is String ? detail : null) ??
+          '後端請求失敗（HTTP ${response.statusCode}）';
+      throw ApiException(
+        statusCode: response.statusCode,
+        code: detailMap['code']?.toString(),
+        message: message,
+        details: detailMap,
+      );
+    }
+
+    if (decoded is! Map) {
+      throw const ApiException(
+        statusCode: 200,
+        code: 'invalid_response',
+        message: '後端回傳了無法辨識的資料格式。',
+      );
+    }
+    return Map<String, dynamic>.from(decoded);
+  }
+
+  void close() {
+    if (_ownsClient) {
+      _client.close();
+    }
+  }
+}

@@ -1,0 +1,647 @@
+{
+  "@@locale": "en",
+  "appTitle": "AI Photo Editor",
+  "appCompactTitle": "AI Editor",
+  "languageTraditionalChinese": "Traditional Chinese",
+  "languageEnglish": "English",
+  "switchToTraditionalChinese": "Switch interface to Traditional Chinese",
+  "switchToEnglish": "Switch interface to English",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+  "switchToLightTheme": "Switch to light mode",
+  "switchToDarkTheme": "Switch to dark mode",
+  "clearCurrentWork": "Clear current work",
+  "chooseOriginal": "Choose original",
+  "changeOriginal": "Change original",
+  "toolPrompt": "Prompt",
+  "toolAutoModels": "Auto",
+  "toolStyles": "Styles",
+  "toolReference": "Reference",
+  "toolManual": "Adjust",
+  "toolHistory": "History",
+  "autoModelTitle": "Automatic comparison",
+  "autoModelSubtitle": "Create two saved candidates from the selected version",
+  "autoModelSource": "Source",
+  "autoModelExpertTitle": "Expert faithful",
+  "autoModelExpertDescription": "A restrained result trained to follow the selected Expert C finish.",
+  "autoModelVividTitle": "Vivid contrast",
+  "autoModelVividDescription": "A brighter, more saturated interpretation with stronger contrast.",
+  "autoModelRun": "Create both candidates",
+  "autoModelRetry": "Retry or recover candidates",
+  "autoModelRunning": "Creating both candidates…",
+  "autoModelCancel": "Stop waiting",
+  "autoModelSelect": "Use this version",
+  "autoModelSelected": "Selected",
+  "autoModelSourceHint": "The selected source is committed as the shared parent. Both successful results stay in history.",
+  "autoModelRepeatHint": "This source already includes automatic enhancement. Running it again is allowed and may strengthen the look.",
+  "autoModelNoSource": "Choose an original photo or a saved version first.",
+  "autoModelCandidateFailed": "This candidate failed",
+  "autoModelCancelledHint": "The backend may still finish. Create again to reconnect to the same request; existing sessions can also recover saved results from History.",
+  "labelOriginal": "Original",
+  "labelCompare": "Compare",
+  "labelResult": "Result",
+  "labelPreview": "Preview",
+  "labelBefore": "Before",
+  "labelAfter": "After",
+  "comparisonBaseline": "Compare with",
+  "comparisonBaselineOriginal": "Original",
+  "comparisonBaselineParent": "Previous edit",
+  "comparisonParentUnavailable": "This version has no available previous edit. Comparing with the original instead.",
+  "comparisonDragHandle": "Before and after split",
+  "comparisonDragHandleValue": "Before and after split at {percent}%",
+  "@comparisonDragHandleValue": {
+    "placeholders": {
+      "percent": {
+        "type": "int",
+        "example": "50"
+      }
+    }
+  },
+  "comparisonMoveLeft": "Show more of the result",
+  "comparisonMoveRight": "Show more of the comparison image",
+  "resetZoom": "Reset view",
+  "holdToSeeOriginal": "Press and hold the photo to see the original",
+  "dismissHint": "Dismiss hint",
+  "selectPhotoToStart": "Choose a photo to start",
+  "photoWorkspaceDescription": "Your photo stays fully visible, and edited results and history remain available.",
+  "photoWorkspaceCompactDescription": "Your photo, results, and history remain available.",
+  "selectOriginal": "Choose original photo",
+  "resultAppearsHere": "Your result will appear here after an edit",
+  "noImage": "No image",
+  "processing": "Processing…",
+  "imageLoadFailed": "Could not load image",
+  "discardDraftTitle": "Discard unapplied adjustments?",
+  "discardDraftForHistory": "Switching history versions will discard the current manual adjustment draft.",
+  "discardDraftForOriginal": "Returning to the original to create a new branch will discard the current manual adjustment draft.",
+  "discardPhotoGitForTool": "Opening another tool will discard the current version operation and its preview.",
+  "actionBack": "Back",
+  "actionDiscardAndSwitch": "Discard and switch",
+  "replaceOriginalTitle": "Change original photo?",
+  "replaceOriginalMessage": "Changing it clears the current session, unapplied manual draft, and unfinished version operation.",
+  "actionCancel": "Cancel",
+  "actionReplaceImage": "Change photo",
+  "imagePickFailed": "Could not choose image: {error}",
+  "@imagePickFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "clearWorkTitle": "Clear current work?",
+  "clearWorkMessage": "The screen returns to its initial state and unfinished drafts are discarded. History already saved by the backend is not deleted.",
+  "actionClearScreen": "Clear screen",
+  "promptEditTitle": "Prompt edit",
+  "promptBranchFromOriginal": "Create a new history branch from the original",
+  "promptFirstVersionFromOriginal": "Create the first version from the original",
+  "promptContinueSelected": "Continue editing from the selected version",
+  "promptHint": "For example: increase brightness by ten, apply Cinematic at 100%, or merge version 4 and version 6",
+  "promptModeNotice": "Type or speak one action. Apply routes it to editing, exact parameters, styles, or version tools.",
+  "commandPlanning": "Understanding command…",
+  "commandPlanTitle": "Command plan",
+  "commandPreviewNotice": "Version operations always require a preview and your confirmation before a new version is created.",
+  "speechLanguageLabel": "Recognition language",
+  "speechLanguageHelp": "Choose Chinese or English for short commands; use automatic for mixed speech.",
+  "speechLanguageTraditionalChinese": "Traditional Chinese",
+  "speechLanguageEnglish": "English",
+  "speechLanguageAutomatic": "Automatic detection",
+  "speechResultMetadata": "Recognized as {language} · {model}",
+  "@speechResultMetadata": {
+    "placeholders": {
+      "language": {
+        "type": "String"
+      },
+      "model": {
+        "type": "String"
+      }
+    }
+  },
+  "speechStart": "Use microphone",
+  "speechStop": "Stop",
+  "speechCancel": "Cancel",
+  "speechRequestingPermission": "Requesting microphone permission…",
+  "speechRecordingSeconds": "Recording · {seconds}s",
+  "@speechRecordingSeconds": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "speechTranscribing": "Turning speech into editable text…",
+  "speechPrivacyNotice": "Audio is processed by the local backend and is not saved to edit history.",
+  "speechUnavailable": "Microphone input is unavailable here. You can still type a prompt.",
+  "statusSpeechCompleted": "Speech was added as editable text. Review it before applying.",
+  "statusSpeechCancelled": "Voice input was cancelled.",
+  "errorSpeechPermissionDenied": "Microphone permission was denied. Allow it in Chrome settings or type the prompt instead.",
+  "errorSpeechNoMicrophone": "No usable microphone was found. Check the device or type the prompt instead.",
+  "errorSpeechRecorderUnavailable": "This browser cannot provide the required microphone format. Use current Chrome or type the prompt instead.",
+  "errorSpeechRecordingFailed": "Recording failed. Check the microphone and try again.",
+  "errorSpeechNoAudio": "The microphone returned no usable audio. Please record again.",
+  "errorSpeechInvalidAudio": "The recording could not be read. Please record again.",
+  "errorSpeechUnsupportedFormat": "This recording format is not supported. Please record again in Chrome.",
+  "errorSpeechNoSpeech": "No usable speech was detected. Move closer to the microphone and try again.",
+  "errorSpeechTooLong": "The recording is longer than 15 seconds. Please use a shorter editing prompt.",
+  "errorSpeechTooLarge": "The recording is too large. Please use a shorter editing prompt.",
+  "errorSpeechModelUnavailable": "The local speech model is unavailable. Check the backend model and device settings.",
+  "errorSpeechTranscriptionFailed": "Speech recognition failed. Please record again.",
+  "errorSpeechTimeout": "Speech recognition took too long. Please try again.",
+  "errorSpeechBackendUnavailable": "Could not connect to the local speech backend. Typing is still available.",
+  "applyPrompt": "Apply prompt",
+  "styleCatalogTitle": "Style catalog",
+  "styleCatalogUnavailable": "The style catalog is unavailable. Check that the backend is running.",
+  "styleCatalogSubtitle": "{count} approved styles · v{version}",
+  "@styleCatalogSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "50"
+      },
+      "version": {
+        "type": "String",
+        "example": "1.0.0"
+      }
+    }
+  },
+  "styleCategoryPrevious": "See previous style categories",
+  "styleCategoryNext": "See more style categories",
+  "styleCategoryAll": "All",
+  "styleStrength": "Strength",
+  "applyStyle": "Apply style",
+  "referenceEditTitle": "Reference edit",
+  "referenceFromOriginal": "Adjust the original toward the reference image colors",
+  "referenceFromCurrent": "Apply the reference direction to the current version",
+  "selectReference": "Choose reference",
+  "changeReference": "Change reference",
+  "removeReference": "Remove reference",
+  "applyReference": "Apply reference",
+  "manualEditTitle": "Manual adjustments",
+  "manualSourceVersion": "Source · {target} · {mode}",
+  "@manualSourceVersion": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      },
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "advancedAdjustments": "Advanced adjustments",
+  "historyTitle": "History",
+  "historyVersionCount": "{count} versions",
+  "@historyVersionCount": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "5"
+      }
+    }
+  },
+  "refreshHistory": "Sync history",
+  "selectedOriginalNewBranch": "Original selected · next edit creates a new branch",
+  "createBranchFromOriginal": "Create a new branch from the original",
+  "emptyHistory": "Versions appear here after your first edit.",
+  "currentPreview": "Current preview",
+  "currentAdjustments": "Current adjustments",
+  "styleEffectiveParameters": "Equivalent parameters at {strength}% strength. The style also uses curves, split toning, and other internal recipes.",
+  "@styleEffectiveParameters": {
+    "placeholders": {
+      "strength": {
+        "type": "int",
+        "example": "80"
+      }
+    }
+  },
+  "noManualParameters": "This version has no manual parameters to display.",
+  "styleUnderstanding": "Interpretation: applied {name} at {strength}% strength.",
+  "@styleUnderstanding": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "strength": {
+        "type": "int",
+        "example": "80"
+      }
+    }
+  },
+  "adjustmentCount": "{count} adjustments",
+  "@adjustmentCount": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "adaptiveIntervalReset": "Range reset",
+  "adaptiveConverged": "Converged",
+  "adaptiveContinue": "Continuing fine-tune",
+  "adaptiveFineTune": "Adaptive fine-tune",
+  "relativeAdjustment": "Relative change",
+  "candidateValue": "Candidate value",
+  "currentBounds": "Current bounds",
+  "stepSize": "Step",
+  "stepSizeWithTransform": "Step ({transform})",
+  "@stepSizeWithTransform": {
+    "placeholders": {
+      "transform": {
+        "type": "String"
+      }
+    }
+  },
+  "adaptiveReasonInitial": "Create the initial step",
+  "adaptiveReasonReverse": "Move back from the current effect",
+  "adaptiveReasonHandoff": "Continue with a related parameter",
+  "adaptiveReasonMidpoint": "Use the interval midpoint based on feedback",
+  "adaptiveReasonContinue": "Continue exploring in the same direction",
+  "adaptiveReasonNarrow": "Narrow the range after opposite feedback",
+  "adaptiveReasonReanchor": "Rebuild the adjustment baseline",
+  "adaptiveReasonAbsolute": "Use an explicit value and reset the range",
+  "adaptiveReasonRelative": "Apply a relative numeric change",
+  "adaptiveReasonResetAxis": "Reset one parameter",
+  "adaptiveReasonResetOriginal": "Return to the original",
+  "collapse": "Collapse",
+  "resetParameter": "Reset {label} to neutral",
+  "@resetParameter": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "equivalentParameters": "Equivalent {summary}",
+  "@equivalentParameters": {
+    "placeholders": {
+      "summary": {
+        "type": "String"
+      }
+    }
+  },
+  "historyVersionMode": "Version {version} · {mode}",
+  "@historyVersionMode": {
+    "placeholders": {
+      "version": {
+        "type": "int"
+      },
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "rootBranch": "Root branch",
+  "continuesParent": "Continues parent version",
+  "continuesVersion": "Continues version {version}",
+  "@continuesVersion": {
+    "placeholders": {
+      "version": {
+        "type": "int"
+      }
+    }
+  },
+  "referenceNotSelected": "No reference selected",
+  "actionReset": "Reset",
+  "actionApply": "Apply",
+  "actionApplying": "Applying…",
+  "notApplied": "Not applied",
+  "parameterExposure": "Exposure",
+  "parameterBrightness": "Brightness",
+  "parameterContrast": "Contrast",
+  "parameterHighlights": "Highlights",
+  "parameterShadows": "Shadows",
+  "parameterWhites": "Whites",
+  "parameterBlacks": "Blacks",
+  "parameterSaturation": "Saturation",
+  "parameterVibrance": "Vibrance",
+  "parameterTemperature": "Temperature",
+  "parameterWhiteBalanceTint": "White balance tint",
+  "parameterSharpen": "Sharpen",
+  "parameterClarity": "Clarity",
+  "parameterDehaze": "Dehaze",
+  "parameterVignette": "Vignette",
+  "regionAll": "Whole image",
+  "regionSky": "Sky",
+  "regionPerson": "Person",
+  "regionBackground": "Background",
+  "regionHighlights": "Bright areas",
+  "regionShadows": "Dark areas",
+  "regionCenter": "Center",
+  "regionEdges": "Edges",
+  "modePrompt": "Prompt",
+  "modeAutoModel": "Auto",
+  "modeStyle": "Style",
+  "modeReference": "Reference",
+  "modeManual": "Manual",
+  "promptEditFallbackTitle": "Prompt edit",
+  "autoModelExpertHistoryTitle": "Expert faithful enhancement",
+  "autoModelVividHistoryTitle": "Vivid contrast enhancement",
+  "referenceEditDisplayTitle": "Reference edit",
+  "manualEditDisplayTitle": "Manual adjustments",
+  "parserLlm": "LLM interpretation",
+  "parserRules": "Rule-based interpretation",
+  "parserReference": "Reference mode",
+  "parserManual": "Manual parameters",
+  "styleFamilyNaturalClean": "Natural & clean",
+  "styleFamilyPortraitSkin": "Portrait skin",
+  "styleFamilyLandscapeTravel": "Landscape & travel",
+  "styleFamilyCinematic": "Cinematic",
+  "styleFamilyFilmRetro": "Film & retro",
+  "styleFamilyBlackWhite": "Black & white",
+  "styleFamilyNightNeon": "Night & neon",
+  "styleFamilyPastelCreative": "Pastel & creative",
+  "summaryOriginalNewBranch": "Original · next edit creates a new branch",
+  "summaryChoosePhoto": "Choose a photo, then start with a prompt or reference image",
+  "summaryPreviewPrefix": "Preview · ",
+  "manualUnavailableNeedPrompt": "Complete a prompt edit before opening manual adjustments.",
+  "manualUnavailableReference": "Reference results cannot be manually adjusted yet. Select a prompt or manual version first.",
+  "manualUnavailableEngine": "The first manual adjustment version only supports OpenCV results.",
+  "manualUnavailableGeneric": "This version does not support manual adjustments.",
+  "statusSelectedNewOriginal": "New original photo selected",
+  "statusReferenceReady": "Reference image ready",
+  "errorPromptRequired": "Enter an editing prompt.",
+  "errorReferenceRequired": "Choose a reference image first.",
+  "errorStyleCatalogLoad": "Could not load style catalog: {error}",
+  "@errorStyleCatalogLoad": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "errorOriginalRequired": "Choose an original photo first.",
+  "statusParsingPrompt": "Interpreting edit prompt…",
+  "statusApplyingReference": "Applying reference image…",
+  "statusEditComplete": "Edit complete",
+  "errorEditFailed": "Edit failed: {error}",
+  "@errorEditFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "statusHistorySynced": "History synced",
+  "statusSwitchedHistory": "Switched to history version",
+  "statusSwitchedOriginal": "Switched to original. A new history branch can now be created.",
+  "errorOpenManual": "Could not open manual adjustments: {error}",
+  "@errorOpenManual": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "statusResetSourceParameters": "Restored source version parameters",
+  "errorManualPreview": "Manual preview failed: {error}",
+  "@errorManualPreview": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "statusApplyingManual": "Applying manual adjustments…",
+  "statusManualCommitted": "Manual adjustments applied and added to history",
+  "errorManualCommit": "Could not apply manual adjustments: {error}",
+  "@errorManualCommit": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "errorStyleAmbiguous": "This description matches multiple styles. Choose a specific style from the catalog.",
+  "errorStyleCompound": "Apply a style first, then adjust brightness, color, or other parameters in a follow-up prompt.",
+  "errorStyleAsset": "Style asset or version validation failed. No substitute style was applied.",
+  "errorSemanticTargetNotFound": "The requested area was not found in this photo. Try another photo or edit the whole image.",
+  "errorAdaptiveClarification": "I am not sure which setting to fine-tune. Name a parameter or region.",
+  "errorAdaptiveConverged": "This adjustment is near the minimum step. Use manual parameters for a final fine-tune.",
+  "errorAdaptiveSatisfied": "The current result was kept. No duplicate history version was added.",
+  "errorManualSourceUnsupported": "Reference results cannot be manually adjusted yet. Select a prompt or manual version.",
+  "errorBackendUnavailable": "Could not connect to the editing backend. Check that it is running.",
+  "errorCheckPrompt": "Review the editing prompt and try again.",
+  "adaptiveIssuesContext": "{message} (involves: {contexts})",
+  "@adaptiveIssuesContext": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      },
+      "contexts": {
+        "type": "String"
+      }
+    }
+  },
+  "networkBackendError": "Could not connect to the editing backend: {error}",
+  "@networkBackendError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "backendHttpError": "Backend request failed (HTTP {statusCode})",
+  "@backendHttpError": {
+    "placeholders": {
+      "statusCode": {
+        "type": "int"
+      }
+    }
+  },
+  "backendInvalidResponse": "The backend returned an unrecognized data format.",
+  "photoGitTitle": "Version operations",
+  "photoGitSubtitle": "Merge or selectively undo tracked edits",
+  "photoGitUnavailable": "Select an OpenCV history version to use version operations.",
+  "photoGitManualDraftBlocked": "Finish or discard the manual adjustment draft before starting a version operation.",
+  "photoGitMerge": "Merge versions",
+  "photoGitSelectiveRevert": "Selective undo",
+  "photoGitDeterministic": "Deterministic version plan",
+  "photoGitTarget": "Target",
+  "photoGitSource": "Source",
+  "photoGitRevertStep": "Step to undo",
+  "photoGitChooseSource": "Choose another version",
+  "photoGitChooseRevertStep": "Choose a step from the target lineage",
+  "photoGitInstruction": "Scope description",
+  "photoGitMergeHint": "For example: bring in only the sky saturation",
+  "photoGitRevertHint": "For example: undo only this step's saturation",
+  "photoGitScopeAssist": "Optional scope shortcuts",
+  "photoGitAnyRegion": "Any region",
+  "photoGitAnyParameter": "Any parameter",
+  "photoGitAnalyze": "Analyze changes",
+  "photoGitAnalyzing": "Analyzing…",
+  "photoGitPlanSummary": "Plan summary",
+  "photoGitAdded": "Added",
+  "photoGitRemoved": "Removed",
+  "photoGitConflicts": "Conflicts",
+  "photoGitNoContribution": "No matching tracked change.",
+  "photoGitConflictHelp": "Resolve every conflict before previewing.",
+  "photoGitKeepTarget": "Keep target",
+  "photoGitUseSource": "Use source",
+  "photoGitReplayLater": "Undo and replay later edits",
+  "photoGitPreview": "Create preview",
+  "photoGitPreviewing": "Rendering preview…",
+  "photoGitCommit": "Create version",
+  "photoGitCommitting": "Creating version…",
+  "photoGitCancel": "Cancel operation",
+  "photoGitMergedFrom": "Merged from",
+  "photoGitRevertedFrom": "Undid effects from",
+  "photoGitCommonAncestor": "Common ancestor",
+  "photoGitSchema": "Recipe version",
+  "photoGitPlanHash": "Plan",
+  "photoGitResolutions": "Conflict decisions",
+  "photoGitTargetValue": "Target value",
+  "photoGitSourceValue": "Source value",
+  "photoGitLaterChanges": "Later edits",
+  "statusPhotoGitPlanning": "Analyzing version differences…",
+  "statusPhotoGitConflictsFound": "Conflicts found. Choose a result for each one.",
+  "statusPhotoGitNoChange": "The selected scope would not change the target.",
+  "statusPhotoGitPlanReady": "The version plan is ready.",
+  "statusPhotoGitPreviewing": "Rendering the version preview…",
+  "statusPhotoGitPreviewReady": "Preview ready. Compare it before creating the version.",
+  "statusPhotoGitCommitting": "Creating a tracked version…",
+  "statusPhotoGitCommitted": "The version was added to history.",
+  "errorPhotoGitRequestIncomplete": "Choose a version and specify a region or parameter.",
+  "errorPhotoGitPlan": "Version analysis failed: {error}",
+  "@errorPhotoGitPlan": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "errorPhotoGitPreview": "Version preview failed: {error}",
+  "@errorPhotoGitPreview": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "errorPhotoGitCommit": "Could not create the version: {error}",
+  "@errorPhotoGitCommit": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "errorPhotoGitScope": "Specify a supported region or parameter in text or with a shortcut.",
+  "errorPhotoGitConflict": "Some conflicts are unresolved. Choose each result and try again.",
+  "errorPhotoGitStale": "The version changed. Analyze it again before previewing.",
+  "errorPhotoGitNoChange": "The selected content matches the target, so no duplicate version was created.",
+  "errorPhotoGitUnsupported": "This version does not contain enough tracked information for a safe operation.",
+  "errorPhotoGitDraftActive": "Finish or cancel the current version operation first.",
+  "contractBadgePassed": "Contract {passed}/{total} passed",
+  "@contractBadgePassed": {
+    "placeholders": {
+      "passed": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "contractBadgeAdjusted": "Adjusted to {scale}% to meet the contract",
+  "@contractBadgeAdjusted": {
+    "placeholders": {
+      "scale": {
+        "type": "int"
+      }
+    }
+  },
+  "contractDetailsTitle": "Verified edit contract",
+  "contractStatusPassed": "Passed at requested strength",
+  "contractStatusAdjusted": "Passed after a safe strength adjustment",
+  "contractChecks": "Verification checks",
+  "contractConstraints": "Understood constraints",
+  "contractRequestedScale": "Requested strength",
+  "contractAppliedScale": "Applied strength",
+  "contractThreshold": "Threshold",
+  "contractThresholdSource": "Threshold source",
+  "contractBaseline": "Baseline",
+  "contractActual": "Actual",
+  "contractMetricVersion": "Metric version",
+  "contractTargetVersion": "Verified target",
+  "contractParentVersion": "Parent",
+  "contractVerificationTime": "Verification time",
+  "contractVersions": "Contract versions",
+  "contractRequestedParameters": "Requested parameters",
+  "contractActualParameters": "Applied parameters",
+  "contractPolicyDefault": "Versioned policy default",
+  "contractExplicitUser": "Specified by user",
+  "contractSystemPolicy": "System safety policy",
+  "contractOperatorAtMost": "At most",
+  "contractOperatorNoWorse": "No worse than baseline",
+  "contractCheckPassed": "Passed",
+  "contractCheckFailed": "Failed",
+  "contractUnknownMetric": "Unknown metric",
+  "contractNoChecks": "No verification check data was returned.",
+  "contractMilliseconds": "{value} ms",
+  "@contractMilliseconds": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "errorContractClarification": "One or more protection conditions are unclear. Clarify the metric, area, or limit and try again.",
+  "errorContractUnsupported": "This protection condition or required photo area cannot be verified yet. No edit was applied.",
+  "errorContractUnsatisfied": "No effective edit could satisfy every protection condition. Adjust the limit and try again.",
+  "errorContractNoChange": "The safe result would not create a visible change, so no duplicate version was added.",
+  "errorContractConflict": "This request ID was already used for different edit content. Submit the current prompt again.",
+  "errorContractSchema": "Contract display metadata could not be loaded. Metric identifiers remain available.",
+  "mobileActions": "More actions",
+  "mobileSave": "Save selected version to Photos",
+  "mobileRestore": "Restore recent work",
+  "mobileConnection": "Server connection",
+  "mobileContinue": "Continue",
+  "mobileSaveSettings": "Save address",
+  "mobileServerAddress": "Server address",
+  "mobileCheckConnection": "Check connection",
+  "mobileConnectionHelp": "Connect your phone and computer to the same Wi-Fi. Enter the computer's address. Android Emulator can use http://10.0.2.2:8000. 127.0.0.1 refers to this device. Photos and audio are sent to this server for processing.",
+  "mobileConnectionOk": "Connected. Model availability is checked when you use each tool.",
+  "mobileUrlInvalid": "Enter a complete HTTP(S) address without login information, query or fragment.",
+  "mobileNetworkFailed": "Cannot reach the server. Check the address, Wi-Fi and whether the backend is running.",
+  "mobileTimeout": "The operation timed out. The server may still complete it; refresh History before retrying.",
+  "mobileOperationFailed": "The operation failed. Please try again and check system permissions.",
+  "mobileImageTooLarge": "Images must be 40 MB or smaller. Choose a smaller JPEG or PNG.",
+  "mobileImageDimensions": "Mobile images must be 24 megapixels or smaller. No automatic resizing was performed.",
+  "mobileImageFormat": "Choose a JPEG/JPG or PNG image. HEIC, RAW and other formats are not supported.",
+  "mobileImageInvalid": "This image could not be read. Try another JPEG or PNG.",
+  "mobileImageSize": "Image: {width} × {height} pixels",
+  "@mobileImageSize": {
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      }
+    }
+  },
+  "mobileSaved": "Saved to Photos: {width} × {height} pixels. No additional compression.",
+  "@mobileSaved": {
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      }
+    }
+  },
+  "mobileGalleryDenied": "Photo access was denied. Enable it in system settings and try again.",
+  "mobileGalleryFull": "Not enough storage space to save this image.",
+  "mobileGalleryFailed": "Could not save to Photos. Check permissions and available storage.",
+  "mobileApplyBeforeSave": "Apply or discard the preview before saving a version.",
+  "mobilePersistenceFailed": "Local settings could not be saved. Recent work may not restore after restarting.",
+  "mobileRestoreRetry": "Recent work could not be restored. Check the server, then choose Restore recent work from More actions.",
+  "mobileSessionMissing": "The server no longer has this session. Choose a new original to start again.",
+  "mobileRestoreConfirm": "Restore the last saved session? Current unsubmitted photos and drafts will be discarded after restoration succeeds.",
+  "mobileServerChangeConfirm": "Changing servers opens a new workspace. Current drafts will be discarded. Committed versions remain on the previous server.",
+  "mobilePickerRecoveryFailed": "The interrupted photo selection could not be recovered. Please select the image again.",
+  "mobileReferenceRecoveryFailed": "The original was not saved before interruption. Select the original and reference again.",
+  "mobileWaitForOperation": "Please wait for the current operation to finish, or use its Cancel action.",
+  "mobileExitConfirm": "Discard the unfinished preview and leave? Committed versions remain on the server."
+}
